@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 function Tabs({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+}: React.ComponentProps<typeof TabsPrimitive.Root>): JSX.Element {
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
@@ -19,7 +19,7 @@ function Tabs({
 function TabsList({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.List>) {
+}: React.ComponentProps<typeof TabsPrimitive.List>): JSX.Element {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
@@ -35,7 +35,7 @@ function TabsList({
 function TabsTrigger({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+}: React.ComponentProps<typeof TabsPrimitive.Trigger>): JSX.Element {
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
@@ -51,7 +51,7 @@ function TabsTrigger({
 function TabsContent({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+}: React.ComponentProps<typeof TabsPrimitive.Content>): JSX.Element {
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
@@ -61,4 +61,4 @@ function TabsContent({
   );
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent };
+export { Tabs, TabsContent, TabsList, TabsTrigger };

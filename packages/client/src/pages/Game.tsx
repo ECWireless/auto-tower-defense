@@ -11,20 +11,20 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { zeroAddress } from 'viem';
 
-import { HowToPlay } from '../components/HowToPlay';
-import { PlayAgainModal } from '../components/PlayAgainModal';
-import { SystemModificationDrawer } from '../components/SystemModificationDrawer';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
+import { HowToPlay } from '@/components/HowToPlay';
+import { PlayAgainModal } from '@/components/PlayAgainModal';
+import { SystemModificationDrawer } from '@/components/SystemModificationDrawer';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../components/ui/tooltip';
-import { GameProvider, useGame } from '../contexts/GameContext';
-import { useMUD } from '../MUDContext';
-import { type Tower } from '../utils/types';
+} from '@/components/ui/tooltip';
+import { GameProvider, useGame } from '@/contexts/GameContext';
+import { useMUD } from '@/MUDContext';
+import { type Tower } from '@/utils/types';
 
 const HOW_TO_SEEN_KEY = 'how-to-seen';
 

@@ -20,9 +20,9 @@ import {
 import { toast } from 'sonner';
 import { Address, zeroAddress, zeroHash } from 'viem';
 
-import { useMUD } from '../MUDContext';
-import { MAX_TICKS } from '../utils/constants';
-import type { Castle, Game, Tower } from '../utils/types';
+import { useMUD } from '@/MUDContext';
+import { MAX_TICKS } from '@/utils/constants';
+import type { Castle, Game, Tower } from '@/utils/types';
 
 type GameContextType = {
   activeTowerId: string | null;

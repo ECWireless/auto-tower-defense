@@ -23,11 +23,11 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Address } from 'viem';
 
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
-import { Card, CardContent } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -35,23 +35,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../components/ui/table';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '../components/ui/tabs';
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../components/ui/tooltip';
-import { useMUD } from '../MUDContext';
-import { GAMES_PATH } from '../Routes';
-import { shortenAddress } from '../utils/helpers';
-import { type Game } from '../utils/types';
+} from '@/components/ui/tooltip';
+import { useMUD } from '@/MUDContext';
+import { GAMES_PATH } from '@/Routes';
+import { shortenAddress } from '@/utils/helpers';
+import { type Game } from '@/utils/types';
 
 const formatDateFromTimestamp = (timestamp: bigint): string => {
   const date = new Date(timestamp.toString());

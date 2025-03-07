@@ -12,11 +12,12 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from '../components/ui/sheet';
+} from '@/components/ui/sheet';
 // import SystemList from '@/components/SystemList';
-import { useGame } from '../contexts/GameContext';
-import { useMUD } from '../MUDContext';
-import { type Tower } from '../utils/types';
+import { useGame } from '@/contexts/GameContext';
+import { useMUD } from '@/MUDContext';
+import { type Tower } from '@/utils/types';
+
 import { Button } from './ui/button';
 
 type SystemModificationDrawerProps = {

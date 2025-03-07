@@ -17,11 +17,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../components/ui/dialog';
-import { useGame } from '../contexts/GameContext';
-import { useMUD } from '../MUDContext';
-import { GAMES_PATH } from '../Routes';
-import { MAX_ROUNDS } from '../utils/constants';
+} from '@/components/ui/dialog';
+import { useGame } from '@/contexts/GameContext';
+import { useMUD } from '@/MUDContext';
+import { GAMES_PATH } from '@/Routes';
+import { MAX_ROUNDS } from '@/utils/constants';
+
 import { Button } from './ui/button';
 
 type PlayAgainModalProps = {

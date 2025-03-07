@@ -3,10 +3,10 @@ import { SyncStep } from '@latticexyz/store-sync';
 import { singletonEntity } from '@latticexyz/store-sync/recs';
 import { Route, Routes } from 'react-router-dom';
 
-import { LoadingScreen } from './components/LoadingScreen';
-import { useMUD } from './MUDContext';
-import { GamePage } from './pages/Game';
-import { Home } from './pages/Home';
+import { LoadingScreen } from '@/components/LoadingScreen';
+import { useMUD } from '@/MUDContext';
+import { GamePage } from '@/pages/Game';
+import { Home } from '@/pages/Home';
 
 export const HOME_PATH = '/';
 export const GAMES_PATH = '/games';

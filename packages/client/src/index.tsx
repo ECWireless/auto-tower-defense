@@ -3,9 +3,9 @@ import './index.css';
 import mudConfig from 'contracts/mud.config';
 import { createRoot } from 'react-dom/client';
 
-import { App } from './App';
-import { setup } from './mud/setup';
-import { MUDProvider } from './MUDContext';
+import { App } from '@/App';
+import { setup } from '@/mud/setup';
+import { MUDProvider } from '@/MUDContext';
 
 const rootElement = document.getElementById('react-root');
 if (!rootElement) throw new Error('React root not found');
