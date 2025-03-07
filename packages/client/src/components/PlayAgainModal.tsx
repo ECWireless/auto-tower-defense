@@ -1,4 +1,3 @@
-import { Text } from '@chakra-ui/react';
 import { useComponentValue } from '@latticexyz/react';
 import {
   Entity,
@@ -6,25 +5,24 @@ import {
   getComponentValueStrict,
 } from '@latticexyz/recs';
 import { encodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
+import { AlertTriangle, Frown, Loader2, Play, Trophy } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
 import { GAMES_PATH } from '../Routes';
 import { MAX_ROUNDS } from '../utils/constants';
 import { Button } from './ui/button';
-import {
-  DialogBackdrop,
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-} from './ui/dialog';
-import { toaster } from './ui/toaster';
 
 type PlayAgainModalProps = {
   isGameOverModalOpen: boolean;
@@ -98,10 +96,7 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
         throw new Error(error);
       }
 
-      toaster.create({
-        title: 'Game Created!',
-        type: 'success',
-      });
+      toast('Game Created!');
 
       const newGame = getComponentValue(CurrentGame, playerEntity)?.value;
       if (!newGame) {
@@ -114,10 +109,8 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toaster.create({
+      toast('Error Creating Game', {
         description: (error as Error).message,
-        title: 'Error Creating Game',
-        type: 'error',
       });
     } finally {
       setIsCreatingGame(false);
@@ -136,98 +129,142 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
 
   if (!game) {
     return (
-      <DialogRoot
+      <Dialog
         open={isGameOverModalOpen}
-        onOpenChange={e => setIsGameOverModalOpen(e.open)}
+        onOpenChange={open => setIsGameOverModalOpen(open)}
       >
-        <DialogBackdrop />
-        <DialogContent bgColor="white" color="black">
-          <DialogCloseTrigger bgColor="black" />
+        <DialogContent className="bg-gray-900 border border-pink-900/50 text-white">
           <DialogHeader>
-            <DialogTitle textTransform="uppercase">Game Over</DialogTitle>
+            <DialogTitle className="text-red-400 text-xl">
+              An Error Occurred
+            </DialogTitle>
           </DialogHeader>
-          <DialogBody>
-            <Text>An error occurred.</Text>
-          </DialogBody>
-          <DialogFooter />
+          <div className="flex justify-center my-4">
+            <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
+          </div>
         </DialogContent>
-      </DialogRoot>
+      </Dialog>
     );
   }
 
   if (topLevel === winStreak && topLevelGamesICanPlay.length === 0) {
     return (
-      <DialogRoot
+      <Dialog
         open={isGameOverModalOpen}
-        onOpenChange={e => setIsGameOverModalOpen(e.open)}
+        onOpenChange={open => setIsGameOverModalOpen(open)}
       >
-        <DialogBackdrop />
-        <DialogContent bgColor="white" color="black">
-          <DialogCloseTrigger bgColor="black" />
+        <DialogContent className="bg-gray-900 border border-cyan-900/50 text-white">
           <DialogHeader>
-            <DialogTitle textTransform="uppercase">Game Won</DialogTitle>
+            <DialogTitle className="text-cyan-400 text-xl">
+              Game Won
+            </DialogTitle>
+            <DialogDescription className="text-gray-300 mt-2">
+              <p>
+                Congratulations! You are now{' '}
+                {topLevelGames?.length === 1 ? 'the' : 'a'}{' '}
+                <strong>top player</strong>!
+              </p>
+              <p className="mt-2">
+                Your game has been saved, and other players can try to beat it.
+                Playing again does not affect your top position.
+              </p>
+            </DialogDescription>
           </DialogHeader>
-          <DialogBody spaceY={4}>
-            <Text fontSize="lg">
-              Congratulations! You are now{' '}
-              {topLevelGames?.length === 1 ? 'the' : 'a'}{' '}
-              <strong>top player</strong>!
-            </Text>
-            <Text>
-              Your game has been saved, and other players can try to beat it.
-              Playing again does not affect your top position.
-            </Text>
+          <div className="flex justify-center my-4">
+            <Trophy className="h-16 w-16 text-cyan-400" />
+          </div>
+          <DialogFooter>
             <Button
-              loading={isCreatingGame}
-              mt={4}
+              disabled={isCreatingGame}
               onClick={onCreateGame}
-              variant="surface"
+              className="w-full bg-cyan-400 hover:bg-cyan-900 text-white"
             >
+              {isCreatingGame ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4 mr-2" />
+              )}
               Play Again
             </Button>
-          </DialogBody>
-          <DialogFooter />
+          </DialogFooter>
         </DialogContent>
-      </DialogRoot>
+      </Dialog>
+    );
+  }
+
+  if (game.winner === game.player1Address) {
+    return (
+      <Dialog
+        open={isGameOverModalOpen}
+        onOpenChange={open => setIsGameOverModalOpen(open)}
+      >
+        <DialogContent className="bg-gray-900 border border-cyan-900/50 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-cyan-400 text-xl">
+              Game Won
+            </DialogTitle>
+            <DialogDescription className="text-gray-300 mt-2">
+              {`You beat level ${game.level.toString()}! You can now continue to level ${(game.level + 1n).toString()}.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center my-4">
+            <Trophy className="h-16 w-16 text-cyan-400" />
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={isCreatingGame}
+              onClick={onCreateGame}
+              className="w-full bg-cyan-400 hover:bg-cyan-900 text-white"
+            >
+              {isCreatingGame ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4 mr-2" />
+              )}
+              Next Level
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   return (
-    <DialogRoot
+    <Dialog
       open={isGameOverModalOpen}
-      onOpenChange={e => setIsGameOverModalOpen(e.open)}
+      onOpenChange={open => setIsGameOverModalOpen(open)}
     >
-      <DialogBackdrop />
-      <DialogContent bgColor="white" color="black">
-        <DialogCloseTrigger bgColor="black" />
+      <DialogContent className="bg-gray-900 border border-pink-900/50 text-white">
         <DialogHeader>
-          <DialogTitle textTransform="uppercase">
-            Game {game.winner === game.player1Address ? 'Won' : 'Over'}
-          </DialogTitle>
+          <DialogTitle className="text-pink-400 text-xl">Game Over</DialogTitle>
+          <DialogDescription className="text-gray-300 mt-2">
+            <p>You lost!</p>
+            {game.winner !== game.player1Address &&
+              game.roundCount > MAX_ROUNDS && (
+                <p className="font-semibold mt-2">
+                  You have reached the max rounds you can play in a game.
+                </p>
+              )}
+          </DialogDescription>
         </DialogHeader>
-        <DialogBody>
-          <Text>
-            {game.winner === game.player1Address
-              ? `You beat level ${game.level.toString()}! You can now continue to level ${(game.level + 1n).toString()}.`
-              : 'You lost!'}
-          </Text>
-          {game.winner !== game.player1Address &&
-            game.roundCount > MAX_ROUNDS && (
-              <Text fontWeight={600}>
-                You have reached the max rounds you can play in a game.
-              </Text>
-            )}
+        <div className="flex justify-center my-4">
+          <Frown className="h-16 w-16 text-pink-400" />
+        </div>
+        <DialogFooter>
           <Button
-            loading={isCreatingGame}
-            mt={4}
+            disabled={isCreatingGame}
             onClick={onCreateGame}
-            variant="surface"
+            className="w-full bg-pink-800 hover:bg-pink-700 text-white"
           >
-            {game.winner === game.player1Address ? 'Next Level' : 'Play Again'}
+            {isCreatingGame ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4 mr-2" />
+            )}
+            Play Again
           </Button>
-        </DialogBody>
-        <DialogFooter />
+        </DialogFooter>
       </DialogContent>
-    </DialogRoot>
+    </Dialog>
   );
 };

@@ -17,15 +17,15 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { toast } from 'sonner';
 import { Address, zeroAddress, zeroHash } from 'viem';
 
-import { toaster } from '../components/ui/toaster';
 import { useMUD } from '../MUDContext';
 import { MAX_TICKS } from '../utils/constants';
 import type { Castle, Game, Tower } from '../utils/types';
 
 type GameContextType = {
-  activeTowerId: string;
+  activeTowerId: string | null;
   allowDrop: (e: React.DragEvent) => void;
   enemyCastlePosition: Castle;
   game: Game | null;
@@ -34,13 +34,22 @@ type GameContextType = {
     towerId: string,
     type: 'offense' | 'defense',
   ) => void;
+  handleTowerSelect: (towerId: string, type: 'offense' | 'defense') => void;
   installingPosition: { x: number; y: number } | null;
   isInstallingTower: boolean;
   isPlayer1: boolean;
   isRefreshing: boolean;
   myCastlePosition: Castle;
-  onInstallTower: (e: React.DragEvent, row: number, col: number) => void;
-  onMoveTower: (e: React.DragEvent, row: number, col: number) => void;
+  onInstallTower: (
+    e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
+    row: number,
+    col: number,
+  ) => void;
+  onMoveTower: (
+    e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
+    row: number,
+    col: number,
+  ) => void;
   refreshGame: () => void;
   setTowers: (towers: Tower[]) => void;
   setTriggerAnimation: (value: boolean) => void;
@@ -50,7 +59,7 @@ type GameContextType = {
 };
 
 const GameContext = createContext<GameContextType>({
-  activeTowerId: zeroHash,
+  activeTowerId: null,
   allowDrop: () => {},
   enemyCastlePosition: {
     id: zeroHash as Entity,
@@ -61,6 +70,7 @@ const GameContext = createContext<GameContextType>({
   },
   game: null,
   handleDragStart: () => {},
+  handleTowerSelect: () => {},
   installingPosition: null,
   isInstallingTower: false,
   isPlayer1: false,
@@ -112,7 +122,7 @@ export const GameProvider = ({
   const [game, setGame] = useState<Game | null>(null);
   const [isLoadingGame, setIsLoadingGame] = useState(true);
 
-  const [activeTowerId, setActiveTowerId] = useState<string>(zeroHash);
+  const [activeTowerId, setActiveTowerId] = useState<string | null>(null);
   const [isInstallingTower, setIsInstallingTower] = useState(false);
   const [installingPosition, setInstallingPosition] = useState<{
     x: number;
@@ -251,14 +261,18 @@ export const GameProvider = ({
   }, [fetchGame]);
 
   const onInstallTower = useCallback(
-    async (e: React.DragEvent, row: number, col: number) => {
+    async (
+      e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
+      row: number,
+      col: number,
+    ) => {
       e.preventDefault();
       try {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
 
-        if (activeTowerId !== zeroHash) {
-          throw new Error('Active tower selected. Please move it instead.');
+        if (activeTowerId?.startsWith('0x')) {
+          throw new Error('Installed tower selected. Please move it instead.');
         }
 
         if (!game) {
@@ -278,37 +292,37 @@ export const GameProvider = ({
           throw new Error(error);
         }
 
-        toaster.create({
-          title: 'Tower Installed!',
-          type: 'success',
-        });
+        toast('Tower Installed!');
 
         fetchGame();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
-        toaster.create({
+        toast('Error Installing Tower', {
           description: (error as Error).message,
-          title: 'Error Installing Tower',
-          type: 'error',
         });
       } finally {
         setIsInstallingTower(false);
         setInstallingPosition(null);
+        setActiveTowerId(null);
       }
     },
     [activePiece, activeTowerId, game, installTower, fetchGame],
   );
 
   const onMoveTower = useCallback(
-    async (e: React.DragEvent, row: number, col: number) => {
+    async (
+      e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
+      row: number,
+      col: number,
+    ) => {
       e.preventDefault();
       try {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
 
-        if (activeTowerId === zeroHash) {
+        if (!activeTowerId?.startsWith('0x')) {
           throw new Error('No active tower selected.');
         }
 
@@ -327,24 +341,20 @@ export const GameProvider = ({
           throw new Error(error);
         }
 
-        toaster.create({
-          title: 'Tower Moved!',
-          type: 'success',
-        });
+        toast('Tower Moved!');
 
         fetchGame();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
-        toaster.create({
+        toast('Error Moving Tower', {
           description: (error as Error).message,
-          title: 'Error Moving Tower',
-          type: 'error',
         });
       } finally {
         setIsInstallingTower(false);
         setInstallingPosition(null);
+        setActiveTowerId(null);
       }
     },
     [activeTowerId, game, moveTower, fetchGame],
@@ -359,6 +369,14 @@ export const GameProvider = ({
       setActiveTowerId(towerId);
       setActivePiece(type);
       e.dataTransfer.setData('text/plain', 'piece'); // Arbitrary data to identify the piece
+    },
+    [],
+  );
+
+  const handleTowerSelect = useCallback(
+    (towerId: string, type: 'offense' | 'defense') => {
+      setActiveTowerId(prev => (prev === towerId ? null : towerId));
+      setActivePiece(type);
     },
     [],
   );
@@ -453,6 +471,7 @@ export const GameProvider = ({
         enemyCastlePosition,
         game,
         handleDragStart,
+        handleTowerSelect,
         installingPosition,
         isInstallingTower,
         isPlayer1,

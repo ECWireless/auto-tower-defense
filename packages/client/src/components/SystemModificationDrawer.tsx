@@ -1,37 +1,23 @@
-import { Box, HStack, Text, useDialog } from '@chakra-ui/react';
 import { Entity, getComponentValue } from '@latticexyz/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
+import { Loader2, Rocket } from 'lucide-react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useState } from 'react';
-import { FcRules } from 'react-icons/fc';
+import { toast } from 'sonner';
 
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '../components/ui/sheet';
+// import SystemList from '@/components/SystemList';
 import { useGame } from '../contexts/GameContext';
 import { useMUD } from '../MUDContext';
 import { type Tower } from '../utils/types';
 import { Button } from './ui/button';
-import {
-  DialogBackdrop,
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-  DialogTrigger,
-} from './ui/dialog';
-import {
-  DrawerBackdrop,
-  DrawerBody,
-  DrawerCloseTrigger,
-  DrawerContent,
-  DrawerHeader,
-  DrawerRoot,
-  DrawerTitle,
-} from './ui/drawer';
-import { toaster } from './ui/toaster';
 
 type SystemModificationDrawerProps = {
   isSystemDrawerOpen: boolean;
@@ -52,8 +38,6 @@ export const SystemModificationDrawer: React.FC<
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
-
-  const dialog = useDialog();
 
   const onCompileCode = useCallback(async (): Promise<string | null> => {
     try {
@@ -78,9 +62,8 @@ export const SystemModificationDrawer: React.FC<
       // eslint-disable-next-line no-console
       console.error('Error compiling code:', error);
 
-      toaster.create({
-        title: 'Error Compiling Code',
-        type: 'error',
+      toast('Error Compiling Code', {
+        description: (error as Error).message,
       });
 
       return null;
@@ -117,10 +100,7 @@ export const SystemModificationDrawer: React.FC<
         throw new Error(error);
       }
 
-      toaster.create({
-        title: 'System Deployed!',
-        type: 'success',
-      });
+      toast('System Deployed!');
 
       setIsSystemDrawerOpen(false);
       refreshGame();
@@ -128,10 +108,8 @@ export const SystemModificationDrawer: React.FC<
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toaster.create({
+      toast('Error Deploying System', {
         description: (error as Error).message,
-        title: 'Error Deploying System',
-        type: 'error',
       });
     } finally {
       setIsDeploying(false);
@@ -174,101 +152,86 @@ export const SystemModificationDrawer: React.FC<
   });
 
   return (
-    <DrawerRoot
-      onOpenChange={e => setIsSystemDrawerOpen(e.open)}
+    <Sheet
       open={isSystemDrawerOpen}
-      size="lg"
+      onOpenChange={open => setIsSystemDrawerOpen(open)}
     >
-      <DrawerBackdrop />
-      <DrawerContent
-        bgColor="white"
-        opacity={isSemiTransparent ? 0.2 : 1}
-        transition="opacity 0.3s ease"
+      <SheetContent
+        side="right"
+        className={`w-[90%] md:w-[800px] max-w-none bg-gray-900/95 border-l border-cyan-900/50 p-4 ${isSemiTransparent ? 'opacity-10' : 'opacity-100'}`}
       >
-        <DrawerCloseTrigger bgColor="black" />
-        <DrawerHeader>
-          <DrawerTitle color="black" textTransform="uppercase">
-            System Modification
-          </DrawerTitle>
-        </DrawerHeader>
-        <DrawerBody color="black">
-          <DialogRoot
-            onOpenChange={e =>
-              e.open ? dialog.setOpen(true) : dialog.setOpen(false)
-            }
-            open={dialog.open}
-            scrollBehavior="inside"
-          >
-            <DialogBackdrop />
-            <DialogTrigger
-              as={Button}
-              border="1px black solid"
-              mb={4}
-              _hover={{
-                bgColor: 'gray.200',
-              }}
-            >
-              <Text>View the Rules</Text>
-              <FcRules color="black" />
-            </DialogTrigger>
-            <DialogContent bgColor="white" color="black">
-              <DialogCloseTrigger bgColor="black" />
-              <DialogHeader>
-                <DialogTitle textTransform="uppercase">Rules</DialogTitle>
-              </DialogHeader>
-              <DialogBody>
-                <Box as="ul" listStylePosition="inside" listStyleType="circle">
-                  <li>
-                    Modify the <strong>Solidity</strong> code to change the
-                    behavior of the projectile. The projectile will be deployed
-                    as a smart contract.
-                  </li>
-                  <li>
-                    Projectiles move at a speed of x &quot;pixels&quot; per
-                    tick. However,{' '}
-                    <strong>x can never exceed 10 per tick</strong> (each tile
-                    has a resolution of 10x10 pixels).{' '}
-                    <strong>There are 28 ticks</strong> when the round results
-                    run. The recommended speed is 5 pixels per tick.
-                  </li>
-                  <li>
-                    The size limit of the projectile logic code is{' '}
-                    <strong>{sizeLimit.toString()} bytes</strong>.
-                  </li>
-                </Box>
-              </DialogBody>
-              <DialogFooter />
-            </DialogContent>
-          </DialogRoot>
-          <HStack mb={4}>
+        <SheetHeader>
+          <SheetTitle className="text-2xl font-bold text-cyan-400">
+            SYSTEM MODIFICATION
+          </SheetTitle>
+        </SheetHeader>
+        <div className="mt-6">
+          <h3 className="text-xl font-semibold text-white mb-4">Rules</h3>
+          <ul className="space-y-4 text-gray-300">
+            <li className="flex gap-2">
+              <span>•</span>
+              <span>
+                Modify the <span className="text-cyan-400">Solidity</span> code
+                to change the behavior of the projectile. The projectile will be
+                deployed as a smart contract.
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span>•</span>
+              <span>
+                Projectiles move at a speed of x &quot;pixels&quot; per tick.
+                However,
+                <span className="text-pink-400 font-semibold">
+                  {' '}
+                  x can never exceed 10 per tick{' '}
+                </span>
+                (each tile has a resolution of 10x10 pixels).
+                <span className="text-cyan-400 font-semibold">
+                  {' '}
+                  There are 28 ticks{' '}
+                </span>
+                when the round results run. The recommended speed is 5 pixels
+                per tick.
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span>•</span>
+              <span>
+                The size limit of the projectile logic code is{' '}
+                <span className="text-cyan-400 font-semibold">1000 bytes</span>.
+              </span>
+            </li>
+          </ul>
+
+          <div className="flex gap-3 mt-6 mb-6">
             {isPlayer1 && (
               <Button
+                variant="outline"
                 disabled={isDeploying}
+                className="bg-cyan-950/30 border-cyan-500 text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300"
                 onClick={onModifyTowerSystem}
-                variant="surface"
               >
-                {isDeploying ? 'Deploying...' : 'Deploy'}
+                {isDeploying ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <Rocket className="h-4 w-4 mr-2" />
+                )}
+                Deploy
               </Button>
             )}
             <Button
-              border="1px solid black"
-              color="black"
+              variant="outline"
+              className="border-purple-500 text-purple-400 hover:bg-purple-950/50 hover:text-purple-300"
               onMouseEnter={() => setIsSemiTransparent(true)}
               onMouseLeave={() => setIsSemiTransparent(false)}
-              variant="plain"
             >
               View Board
             </Button>
-          </HStack>
-          <Box border="1px solid black" position="relative" w="100%">
+          </div>
+
+          <div className="relative rounded-lg border border-cyan-900/50 bg-black/50">
             {!isPlayer1 && (
-              <Box
-                bg="transparent"
-                h="300px"
-                position="absolute"
-                w="100%"
-                zIndex={1}
-              />
+              <div className="absolute h-full w-full bg-transparent flex z-1" />
             )}
             <Editor
               defaultLanguage="solidity"
@@ -299,9 +262,9 @@ export const SystemModificationDrawer: React.FC<
               }}
               value={sourceCode}
             />
-          </Box>
-        </DrawerBody>
-      </DrawerContent>
-    </DrawerRoot>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };

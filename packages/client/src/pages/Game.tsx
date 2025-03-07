@@ -1,18 +1,53 @@
-import { Box, Button, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
 import { Entity } from '@latticexyz/recs';
-import { useCallback, useEffect, useState } from 'react';
-import { BiSolidCastle } from 'react-icons/bi';
-import { GiCannon, GiDefensiveWall, GiMineExplosion } from 'react-icons/gi';
+import { AlertTriangle, HelpCircle, Home, Loader2, Play } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  GiCannon,
+  GiCastle,
+  GiDefensiveWall,
+  GiMineExplosion,
+} from 'react-icons/gi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { zeroAddress, zeroHash } from 'viem';
+import { toast } from 'sonner';
+import { zeroAddress } from 'viem';
 
+import { HowToPlay } from '../components/HowToPlay';
 import { PlayAgainModal } from '../components/PlayAgainModal';
-import { StatsPanel } from '../components/StatsPanel';
 import { SystemModificationDrawer } from '../components/SystemModificationDrawer';
-import { TurnSidebar } from '../components/TurnSidebar';
-import { Tooltip } from '../components/ui/tooltip';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../components/ui/tooltip';
 import { GameProvider, useGame } from '../contexts/GameContext';
+import { useMUD } from '../MUDContext';
 import { type Tower } from '../utils/types';
+
+const HOW_TO_SEEN_KEY = 'how-to-seen';
+
+const INSTALLABLE_TOWERS = [
+  {
+    id: 'tower1',
+    name: 'Cannon',
+    icon: <GiCannon size={28} className="text-cyan-400" />,
+    color: 'from-cyan-900/50 to-cyan-800/30',
+    type: 'offense' as 'offense' | 'defense',
+  },
+  {
+    id: 'tower2',
+    name: 'Wall',
+    icon: <GiDefensiveWall size={24} className="text-cyan-400" />,
+    color: 'from-cyan-900/50 to-cyan-800/30',
+    type: 'defense' as 'offense' | 'defense',
+  },
+];
+
+// Grid dimensions
+const GRID_ROWS = 7;
+const GRID_COLS = 14;
 
 export const GamePage = (): JSX.Element => {
   const { id } = useParams();
@@ -26,11 +61,15 @@ export const GamePage = (): JSX.Element => {
 export const InnerGamePage = (): JSX.Element => {
   const navigate = useNavigate();
   const {
+    systemCalls: { nextTurn },
+  } = useMUD();
+  const {
     activeTowerId,
     allowDrop,
     enemyCastlePosition,
     game,
     handleDragStart,
+    handleTowerSelect,
     installingPosition,
     isInstallingTower,
     isPlayer1,
@@ -38,14 +77,48 @@ export const InnerGamePage = (): JSX.Element => {
     myCastlePosition,
     onInstallTower,
     onMoveTower,
+    refreshGame,
+    setTriggerAnimation,
     tickCount,
     towers,
     triggerAnimation,
   } = useGame();
 
+  // Add game ID to tab title
+  useEffect(() => {
+    if (game) {
+      document.title = `Game ${game.id} - Smart Tower Defense`;
+    }
+  }, [game]);
+
+  const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
+  const [isChangingTurn, setIsChangingTurn] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!game) return;
+    if (game.winner === zeroAddress && game.endTimestamp === BigInt(0)) return;
+
+    setIsGameOverModalOpen(true);
+  }, [game]);
+
+  // Open How To info modal if this is the first time the user is playing a game.
+  useEffect(() => {
+    const hasSeenHowToInfo = localStorage.getItem(HOW_TO_SEEN_KEY);
+    if (hasSeenHowToInfo) return;
+    setIsHelpDialogOpen(true);
+  }, []);
+
+  const onChangeDialog = useCallback((open: boolean) => {
+    if (!open) {
+      setIsHelpDialogOpen(false);
+      localStorage.setItem(HOW_TO_SEEN_KEY, 'true');
+    } else {
+      setIsHelpDialogOpen(true);
+    }
+  }, []);
 
   const onViewTower = useCallback(
     (tower: Tower) => {
@@ -55,99 +128,531 @@ export const InnerGamePage = (): JSX.Element => {
     [setSelectedTower],
   );
 
-  useEffect(() => {
-    if (!game) return;
-    if (game.winner === zeroAddress && game.endTimestamp === BigInt(0)) return;
+  const onNextRound = useCallback(async () => {
+    try {
+      setIsChangingTurn(true);
 
-    setIsGameOverModalOpen(true);
+      if (!game) {
+        throw new Error('Game not found.');
+      }
+
+      if (game.turn === game.player2Address) {
+        throw new Error(`Not player2's turn.`);
+      }
+
+      const { error, success } = await nextTurn(game.id);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast('Turn Changed!');
+
+      setTriggerAnimation(true);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast('Error Changing Turn', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsChangingTurn(false);
+    }
+  }, [game, nextTurn, setTriggerAnimation]);
+
+  const onNextTurn = useCallback(async () => {
+    try {
+      setIsChangingTurn(true);
+
+      if (!game) {
+        throw new Error('Game not found.');
+      }
+
+      if (game.turn === game.player2Address) {
+        await onNextRound();
+        return;
+      }
+
+      const { error, success } = await nextTurn(game.id);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      refreshGame();
+      await onNextRound();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast('Error Changing Turn', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsChangingTurn(false);
+    }
+  }, [game, nextTurn, onNextRound, refreshGame]);
+
+  const canChangeTurn = useMemo(() => {
+    if (!game) return false;
+    if (game.endTimestamp !== BigInt(0)) return false;
+    if (game.turn === game.player2Address) return true;
+    return game.turn === game.player1Address && game.actionCount === 0;
   }, [game]);
+
+  useEffect(() => {
+    if (!canChangeTurn) return () => {};
+    if (triggerAnimation) return () => {};
+    if (isSystemDrawerOpen) return () => {};
+
+    const listener = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        onNextTurn();
+      }
+    };
+
+    window.addEventListener('keydown', listener);
+    return () => {
+      window.removeEventListener('keydown', listener);
+    };
+  }, [canChangeTurn, isSystemDrawerOpen, onNextTurn, triggerAnimation]);
 
   if (isRefreshing) {
     return (
-      <VStack h="100vh" justifyContent="center">
-        <Spinner borderWidth="4px" size="xl" />
-      </VStack>
+      <div className="flex flex-col min-h-screen bg-black text-white">
+        <div className="flex justify-center items-center flex-1 p-4 pt-16">
+          <div className="w-full max-w-md flex flex-col items-center">
+            <div className="relative">
+              <Loader2 className="h-16 w-16 text-cyan-400 animate-spin" />
+              <div className="absolute inset-0 h-16 w-16 rounded-full blur-md bg-cyan-400/20 animate-pulse"></div>
+            </div>
+            <h2 className="text-xl font-bold text-cyan-400 mt-6 mb-2">
+              Loading Game
+            </h2>
+            <p className="text-gray-300 text-center">Please wait...</p>
+            <div className="mt-8 w-full max-w-xs bg-gray-800/50 h-1.5 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-purple-500 via-cyan-500 to-pink-500 animate-[gradient-x_2s_ease-in-out_infinite] rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (!game) {
     return (
-      <VStack h="100vh" justifyContent="center">
-        <Text fontSize="3xl" fontWeight={700} textTransform="uppercase">
-          Game not found
-        </Text>
-      </VStack>
+      <div className="flex flex-col min-h-screen bg-black text-white">
+        <div className="flex justify-center items-center flex-1 p-4 pt-16">
+          <div className="w-full max-w-md">
+            <div className="bg-gray-900 border border-red-900/50 rounded-lg overflow-hidden shadow-lg">
+              <div className="p-4 flex flex-col items-center">
+                <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
+                <h2 className="text-xl sm:text-2xl font-bold text-red-400 mb-2">
+                  Game Not Found
+                </h2>
+                <p className="text-gray-300 text-center mb-6">
+                  The game with the provided ID does not exist.
+                </p>
+                <div className="flex mt-4">
+                  <Button
+                    variant="outline"
+                    className="border-cyan-500 text-cyan-400 hover:bg-cyan-950/50 hover:text-cyan-300"
+                    onClick={() => navigate('/')}
+                  >
+                    <Home className="h-4 w-4 mr-2" />
+                    Return Home
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <VStack h="100vh" justifyContent="center" p={6} position="relative">
-      <Button
-        left="50%"
-        onClick={() => {
-          navigate('/');
-        }}
-        position="absolute"
-        top={4}
-        transform="translateX(-50%)"
-      >
-        Home
-      </Button>
-      <Box>
-        <StatsPanel />
-        <Box>
-          <HStack alignItems="stretch" gap={2} h="100%">
-            <Box bgColor="white" display="flex" w={120}>
-              <Box borderRight="2px solid black" h="100%" w="50%">
-                <VStack
-                  borderBottom="2px solid black"
-                  h={16}
-                  justifyContent="center"
-                >
-                  <Tooltip
-                    closeDelay={200}
-                    content="Offensive Tower"
-                    openDelay={200}
-                  >
-                    <Box
-                      draggable={isPlayer1}
-                      onDragStart={e => handleDragStart(e, zeroHash, 'offense')}
-                    >
-                      <GiCannon color="blue" size={26} />
-                    </Box>
-                  </Tooltip>
-                </VStack>
-              </Box>
-              <Box h="100%" w="50%">
-                <VStack
-                  borderBottom="2px solid black"
-                  h={16}
-                  justifyContent="center"
-                >
-                  <Tooltip
-                    closeDelay={200}
-                    content="Defensive Tower"
-                    openDelay={200}
-                  >
-                    <Box
-                      draggable={isPlayer1}
-                      onDragStart={e => handleDragStart(e, zeroHash, 'defense')}
-                    >
-                      <GiDefensiveWall color="blue" size={20} />
-                    </Box>
-                  </Tooltip>
-                </VStack>
-              </Box>
-            </Box>
+    <div className="flex flex-col min-h-screen bg-black text-white">
+      {/* Top Navigation */}
+      <div className="fixed top-4 left-4 z-10">
+        <Button
+          onClick={() => {
+            navigate('/');
+          }}
+          variant="outline"
+          size="sm"
+          className="border-purple-500 text-purple-400 hover:bg-purple-950/50 hover:text-purple-300"
+        >
+          <Home className="h-4 w-4 mr-1" />
+          Home
+        </Button>
+      </div>
 
-            <Box
-              display="grid"
-              gridTemplateColumns="repeat(14, 1fr)"
-              gridTemplateRows="repeat(7, 1fr)"
-              h="300px"
-              position="relative"
-              w="600px"
+      {/* Game ID Display - Hidden on mobile */}
+      <div className="fixed top-4 right-4 text-sm text-cyan-400 hidden sm:block">
+        Game ID: {game.id}
+      </div>
+
+      {/* Game Container */}
+      <div className="flex justify-center items-center flex-1 p-4 pt-16">
+        <div className="w-full max-w-3xl">
+          {/* Status Bar */}
+          <div className="bg-gray-900 border border-purple-900/50 mb-1 p-2 sm:p-4 grid grid-cols-7 text-center items-center rounded-t-md">
+            {/* Player 1 */}
+            <div className="col-span-2 sm:col-span-2 text-left pl-1 sm:pl-4">
+              <div className="text-[10px] sm:text-sm text-purple-300">
+                PLAYER 1
+              </div>
+              <div className="text-xs sm:text-lg font-medium flex items-center truncate pr-1">
+                <span className="truncate text-purple-400">
+                  {game.player1Username}
+                </span>
+                {game.turn === game.player1Address && (
+                  <Badge
+                    variant="outline"
+                    className="ml-1 sm:ml-2 h-4 sm:h-5 px-1 text-[8px] sm:text-xs border-purple-500 text-purple-400 flex-shrink-0"
+                  >
+                    Turn
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Game Info - Desktop */}
+            <div className="hidden sm:flex col-span-3 justify-around">
+              <div>
+                <div className="text-xs text-cyan-300">LEVEL</div>
+                <div className="text-lg font-medium text-cyan-400">
+                  {game.level.toString()}
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="text-xs text-cyan-300">ROUND</div>
+                <div className="text-lg font-medium text-cyan-400">
+                  {game.roundCount}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-cyan-300">ACTIONS</div>
+                <div className="text-lg font-medium text-cyan-400">
+                  {game.actionCount}
+                </div>
+              </div>
+            </div>
+
+            {/* Game Info - Mobile */}
+            <div className="sm:hidden col-span-3 flex justify-around">
+              <div>
+                <div className="text-[8px] text-cyan-300">LVL</div>
+                <div className="text-xs font-medium text-cyan-400">
+                  {game.level.toString()}
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="text-[8px] text-cyan-300">RND</div>
+                <div className="text-xs font-medium text-cyan-400">
+                  {game.roundCount}
+                </div>
+              </div>
+              <div>
+                <div className="text-[8px] text-cyan-300">ACT</div>
+                <div className="text-xs font-medium text-cyan-400">
+                  {game.actionCount}
+                </div>
+              </div>
+            </div>
+
+            {/* Player 2 */}
+            <div className="col-span-2 sm:col-span-2 text-right pr-1 sm:pr-4">
+              <div className="text-[10px] sm:text-sm text-pink-300">
+                PLAYER 2
+              </div>
+              <div className="text-xs sm:text-lg font-medium flex items-center justify-end truncate pl-1">
+                {game.turn === game.player2Address && (
+                  <Badge
+                    variant="outline"
+                    className="mr-1 sm:mr-2 h-4 sm:h-5 px-1 text-[8px] sm:text-xs border-pink-500 text-pink-400 flex-shrink-0"
+                  >
+                    Turn
+                  </Badge>
+                )}
+                <span className="truncate text-pink-400">
+                  {game.player2Username}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Control Buttons - Desktop */}
+          <div className="hidden sm:flex justify-center mb-1 space-x-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-purple-500 text-purple-400 hover:bg-purple-950/50 hover:text-purple-300"
+                    onClick={() => setIsHelpDialogOpen(true)}
+                  >
+                    <HelpCircle className="h-4 w-4 mr-1" />
+                    Help
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Game Information and Rules</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-cyan-500 text-cyan-400 hover:bg-cyan-950/50 hover:text-cyan-300"
+              disabled={isChangingTurn}
+              onClick={onNextTurn}
             >
+              {isChangingTurn ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4 mr-1" />
+              )}
+              Next Turn
+            </Button>
+          </div>
+
+          {/* Main Grid */}
+          <div className="bg-gray-900 overflow-x-auto w-full">
+            <div className="grid grid-rows-[20px_repeat(7,minmax(0,1fr))] gap-1 p-1 w-max min-w-full relative">
+              {/* Center divider line */}
+              <div className="absolute top-0 bottom-0 left-1/2 transform -translate-x-1/2 w-[2px] bg-cyan-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.6)] z-10"></div>
+
+              {/* Column numbers (0-13) */}
+              <div className="grid grid-cols-[auto_repeat(14,minmax(0,1fr))_auto] gap-1 min-w-[600px] sm:min-w-0 mb-1 mt-1">
+                {/* Left spacer to match row numbers */}
+                <div className="w-4"></div>
+
+                {/* Column numbers */}
+                {[...Array(GRID_COLS)].map((_, colIndex) => (
+                  <div key={`col-${colIndex}`} className="flex items-center">
+                    <span className="text-[8px] text-cyan-500/60">
+                      {colIndex * 10}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Right spacer for symmetry */}
+                <div className="w-4"></div>
+              </div>
+
+              {/* Game grid with row numbers */}
+              {[...Array(GRID_ROWS)].map((_, rowIndex) => (
+                <div
+                  key={rowIndex}
+                  className="grid grid-cols-[auto_repeat(14,minmax(0,1fr))_auto] gap-1 min-w-[600px] sm:min-w-0"
+                >
+                  {/* Row number */}
+                  <div className="flex justify-center w-4">
+                    <span className="text-[10px] text-cyan-500/60">
+                      {rowIndex * 10}
+                    </span>
+                  </div>
+
+                  {/* Grid cells */}
+                  {[...Array(GRID_COLS)].map((_, colIndex) => {
+                    // Add game pieces for specific positions
+                    const isBlueBase = rowIndex === 3 && colIndex === 0;
+                    const isOrangeBase = rowIndex === 3 && colIndex === 13;
+                    const isLeftSide = colIndex < 6;
+                    const isRightSide = colIndex > 6;
+
+                    const myCastlePositionX = Math.floor(
+                      (myCastlePosition?.x ?? 10) / 10,
+                    );
+                    const myCastlePositionY = Math.floor(
+                      (myCastlePosition?.y ?? 10) / 10,
+                    );
+
+                    const enemyCastlePositionX = Math.floor(
+                      (enemyCastlePosition?.x ?? 10) / 10,
+                    );
+                    const enemyCastlePositionY = Math.floor(
+                      (enemyCastlePosition?.y ?? 10) / 10,
+                    );
+
+                    const myCastle =
+                      rowIndex === myCastlePositionY &&
+                      colIndex === myCastlePositionX;
+                    const enemyCastle =
+                      rowIndex === enemyCastlePositionY &&
+                      colIndex === enemyCastlePositionX;
+
+                    const towerOnTile = towers.find(
+                      tower =>
+                        Math.floor(tower.x / 10) === colIndex &&
+                        Math.floor(tower.y / 10) === rowIndex,
+                    );
+
+                    const canInstall =
+                      !towerOnTile && !myCastle && !enemyCastle && !isRightSide;
+
+                    const isInstalling =
+                      !!(
+                        installingPosition?.x === colIndex &&
+                        installingPosition?.y === rowIndex
+                      ) && isInstallingTower;
+
+                    // Determine which player's side this cell is on
+                    const playerSideClass = isLeftSide
+                      ? 'border-purple-900/20'
+                      : isRightSide
+                        ? 'border-pink-900/20'
+                        : '';
+
+                    const isTowerSelected = activeTowerId === towerOnTile?.id;
+
+                    return (
+                      <div
+                        key={`${rowIndex}-${colIndex}`}
+                        className={`aspect-square relative ${isLeftSide ? 'left' : ''} ${isTowerSelected ? 'selected' : ''}
+                        ${
+                          isBlueBase
+                            ? 'game-cell base-blue flex items-center justify-center'
+                            : isOrangeBase
+                              ? 'game-cell base-orange flex items-center justify-center'
+                              : `game-cell ${playerSideClass}`
+                        }`}
+                        onClick={e => {
+                          if (isRightSide) return;
+                          if (towerOnTile) {
+                            handleTowerSelect(
+                              towerOnTile.id,
+                              towerOnTile.projectileLogicAddress !== zeroAddress
+                                ? 'offense'
+                                : 'defense',
+                            );
+                          } else if (
+                            canInstall &&
+                            activeTowerId &&
+                            INSTALLABLE_TOWERS.map(tower => tower.id).includes(
+                              activeTowerId,
+                            )
+                          ) {
+                            onInstallTower(e, rowIndex, colIndex);
+                          } else if (canInstall && activeTowerId) {
+                            onMoveTower(e, rowIndex, colIndex);
+                          }
+                        }}
+                        onDrop={e =>
+                          activeTowerId &&
+                          INSTALLABLE_TOWERS.map(tower => tower.id).includes(
+                            activeTowerId,
+                          )
+                            ? onInstallTower(e, rowIndex, colIndex)
+                            : onMoveTower(e, rowIndex, colIndex)
+                        }
+                        onDragOver={canInstall ? allowDrop : undefined}
+                      >
+                        {isInstalling && (
+                          <div className="flex items-center justify-center h-[100%]">
+                            <Loader2 className="h-6 w-6 text-cyan-400 animate-spin" />
+                          </div>
+                        )}
+
+                        {!!towerOnTile && (
+                          <div
+                            className="flex items-center justify-center h-[100%]"
+                            draggable={!isRightSide && isPlayer1}
+                            style={{
+                              transform:
+                                towerOnTile.owner === game.player2Address
+                                  ? 'rotateY(180deg)'
+                                  : 'none',
+                            }}
+                            onClick={() => onViewTower(towerOnTile)}
+                            onDragStart={e =>
+                              handleDragStart(
+                                e,
+                                towerOnTile.id,
+                                towerOnTile.projectileLogicAddress !==
+                                  zeroAddress
+                                  ? 'offense'
+                                  : 'defense',
+                              )
+                            }
+                          >
+                            <TooltipProvider>
+                              <Tooltip delayDuration={200}>
+                                <TooltipTrigger>
+                                  {towerOnTile.projectileLogicAddress !==
+                                  zeroAddress ? (
+                                    <GiCannon
+                                      size={28}
+                                      className="text-cyan-400"
+                                    />
+                                  ) : (
+                                    <GiDefensiveWall
+                                      size={24}
+                                      className="text-cyan-400"
+                                    />
+                                  )}
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    {towerOnTile.projectileLogicAddress !==
+                                    zeroAddress
+                                      ? 'Offensive Tower'
+                                      : 'Defensive Tower'}{' '}
+                                    - Health: {towerOnTile.currentHealth}/
+                                    {towerOnTile.maxHealth}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        )}
+
+                        {isBlueBase && (
+                          <TooltipProvider>
+                            <Tooltip delayDuration={200}>
+                              <TooltipTrigger>
+                                <GiCastle size={24} className="text-blue-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  Your Castle - Health:
+                                  {myCastlePosition?.currentHealth}/
+                                  {myCastlePosition?.maxHealth}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {isOrangeBase && (
+                          <TooltipProvider>
+                            <Tooltip delayDuration={200}>
+                              <TooltipTrigger>
+                                <GiCastle size={24} className="text-pink-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  Enemy Castle - Health:{' '}
+                                  {enemyCastlePosition?.currentHealth}/
+                                  {enemyCastlePosition?.maxHealth}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Right spacer for symmetry */}
+                  <div className="w-4" />
+                </div>
+              ))}
+
               {triggerAnimation &&
                 towers.map(tower => {
                   if (
@@ -206,223 +711,105 @@ export const InnerGamePage = (): JSX.Element => {
 
                     if (collisionEntity) {
                       return (
-                        <Box
+                        <div
                           id={`projectile-${tower.id}`}
                           key={`projectile-${tower.id}`}
-                          alignItems="center"
-                          display="flex"
-                          h="calc(100% / 7)"
-                          justifyContent="center"
-                          left={`calc((100% / 14) * ${collisionEntity.x / 10})`}
-                          position="absolute"
-                          top={`calc((100% / 7) * ${collisionEntity.y / 10})`}
-                          transform="translateX(-50%) translateY(-50%)"
-                          w="calc(100% / 14)"
-                          zIndex={1}
+                          className="flex items-center justify-center absolute"
+                          style={{
+                            left: `calc((100% / 14) * ${collisionEntity.x / 10} - 24px)`,
+                            top: `calc((100% / 7) * ${collisionEntity.y / 10} + 12px)`,
+                            width: 'calc(100% / 14)',
+                            height: 'calc(100% / 7)',
+                            transform: 'translateX(-50%) translateY(-50%)',
+                            zIndex: 1,
+                          }}
                         >
                           <GiMineExplosion color="red" size={20} />
-                        </Box>
+                        </div>
                       );
                     }
 
                     return (
-                      <Box
+                      <div
                         id={`projectile-${tower.id}`}
                         key={`projectile-${tower.id}`}
-                        alignItems="center"
-                        display="flex"
-                        h="calc(100% / 7)"
-                        justifyContent="center"
-                        left={`calc((100% / 14) * ${tower.projectileTrajectory[tickCount].x / 10})`}
-                        position="absolute"
-                        top={`calc((100% / 7) * ${tower.projectileTrajectory[tickCount].y / 10})`}
-                        transform="translateX(-50%) translateY(-50%)"
-                        w="calc(100% / 14)"
-                        zIndex={1}
+                        className={`flex items-center justify-center absolute`}
+                        style={{
+                          left: `calc((100% / 14) * ${tower.projectileTrajectory[tickCount].x / 10})`,
+                          top: `calc((100% / 7) * ${tower.projectileTrajectory[tickCount].y / 10} + 12px)`,
+                          width: 'calc(100% / 14)',
+                          height: 'calc(100% / 7)',
+                          transform: 'translateX(-50%) translateY(-50%)',
+                          zIndex: 1,
+                        }}
                       >
-                        <Box bgColor="red" borderRadius="50%" h={2} w={2} />
-                      </Box>
+                        <div className="projectile" />
+                      </div>
                     );
                   } else {
                     return null;
                   }
                 })}
-              {Array.from({ length: 98 }).map((_, index) => {
-                const row = Math.floor(index / 14);
-                const col = index % 14;
-                const isMiddleLine = index % 14 === 7;
+            </div>
+          </div>
 
-                const myCastlePositionX = Math.floor(
-                  (myCastlePosition?.x ?? 10) / 10,
-                );
-                const myCastlePositionY = Math.floor(
-                  (myCastlePosition?.y ?? 10) / 10,
-                );
+          {/* Tower Selection Row */}
+          <div className="mt-1 bg-gray-900 border border-cyan-900/50 p-2 overflow-x-auto rounded-b-md">
+            <div className="text-cyan-400 text-xs mb-1 px-1">TOWERS</div>
+            <div className="flex space-x-2 min-w-[600px] sm:min-w-0">
+              {INSTALLABLE_TOWERS.map(tower => (
+                <div
+                  key={tower.id}
+                  onClick={() => handleTowerSelect(tower.id, tower.type)}
+                  className={`tower-card ${activeTowerId === tower.id ? 'selected' : ''} bg-gradient-to-b ${tower.color} rounded p-2 flex flex-col items-center cursor-pointer min-w-[60px]`}
+                  draggable={isPlayer1}
+                  onDragStart={e => handleDragStart(e, tower.id, tower.type)}
+                >
+                  <div className="flex items-center justify-center h-8">
+                    {tower.icon}
+                  </div>
+                  <span className="text-xs text-white mt-1">{tower.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-                const enemyCastlePositionX = Math.floor(
-                  (enemyCastlePosition?.x ?? 10) / 10,
-                );
-                const enemyCastlePositionY = Math.floor(
-                  (enemyCastlePosition?.y ?? 10) / 10,
-                );
-
-                const myCastle =
-                  row === myCastlePositionY && col === myCastlePositionX;
-                const enemyCastle =
-                  row === enemyCastlePositionY && col === enemyCastlePositionX;
-
-                const isEnemyTile = col > 6;
-
-                const activeTower = towers.find(
-                  tower =>
-                    Math.floor(tower.x / 10) === col &&
-                    Math.floor(tower.y / 10) === row,
-                );
-
-                const canInstall =
-                  !activeTower && !myCastle && !enemyCastle && !isEnemyTile;
-
-                const isInstalling =
-                  !!(
-                    installingPosition?.x === col &&
-                    installingPosition?.y === row
-                  ) && isInstallingTower;
-
-                return (
-                  <Box
-                    bg="green.300"
-                    border="1px solid black"
-                    borderLeft={isMiddleLine ? '2px solid black' : 'none'}
-                    h="100%"
-                    key={index}
-                    onDrop={e =>
-                      activeTowerId === zeroHash
-                        ? onInstallTower(e, row, col)
-                        : onMoveTower(e, row, col)
-                    }
-                    onDragOver={canInstall ? allowDrop : undefined}
-                    w="100%"
-                  >
-                    {isInstalling && (
-                      <Box
-                        alignItems="center"
-                        color="white"
-                        display="flex"
-                        h="100%"
-                        justifyContent="center"
-                        w="100%"
-                      >
-                        <Spinner borderWidth="2px" size="sm" />
-                      </Box>
-                    )}
-
-                    {!!activeTower && (
-                      <Box
-                        alignItems="center"
-                        color="white"
-                        display="flex"
-                        h="100%"
-                        justifyContent="center"
-                        w="100%"
-                      >
-                        <Tooltip
-                          closeDelay={200}
-                          content={`${
-                            activeTower.projectileLogicAddress !== zeroAddress
-                              ? 'Offensive Tower'
-                              : 'Defensive Tower'
-                          } - Health: ${activeTower.currentHealth}/${activeTower.maxHealth}`}
-                          openDelay={200}
-                        >
-                          <Box
-                            draggable={!isEnemyTile && isPlayer1}
-                            transform={
-                              activeTower.owner === game.player2Address
-                                ? 'rotateY(180deg)'
-                                : 'none'
-                            }
-                            onClick={() => onViewTower(activeTower)}
-                            onDragStart={e =>
-                              handleDragStart(
-                                e,
-                                activeTower.id,
-                                activeTower.projectileLogicAddress !==
-                                  zeroAddress
-                                  ? 'offense'
-                                  : 'defense',
-                              )
-                            }
-                          >
-                            {activeTower.projectileLogicAddress !==
-                            zeroAddress ? (
-                              <GiCannon
-                                color={
-                                  activeTower.owner === game.player1Address
-                                    ? 'blue'
-                                    : 'orange'
-                                }
-                                size={26}
-                              />
-                            ) : (
-                              <GiDefensiveWall
-                                color={
-                                  activeTower.owner === game.player1Address
-                                    ? 'blue'
-                                    : 'orange'
-                                }
-                                size={20}
-                              />
-                            )}
-                          </Box>
-                        </Tooltip>
-                      </Box>
-                    )}
-
-                    {myCastle && (
-                      <Tooltip
-                        closeDelay={200}
-                        content={`Your Castle - Health: ${myCastlePosition?.currentHealth}/${myCastlePosition?.maxHealth}`}
-                        openDelay={200}
-                      >
-                        <Box
-                          alignItems="center"
-                          color="white"
-                          display="flex"
-                          h="100%"
-                          justifyContent="center"
-                          w="100%"
-                        >
-                          <BiSolidCastle color="blue" size={20} />
-                        </Box>
-                      </Tooltip>
-                    )}
-
-                    {enemyCastle && (
-                      <Tooltip
-                        closeDelay={200}
-                        content={`Enemy Castle - Health: ${enemyCastlePosition?.currentHealth}/${enemyCastlePosition?.maxHealth}`}
-                        openDelay={200}
-                      >
-                        <Box
-                          alignItems="center"
-                          color="white"
-                          display="flex"
-                          h="100%"
-                          justifyContent="center"
-                          w="100%"
-                        >
-                          <BiSolidCastle color="orange" size={20} />
-                        </Box>
-                      </Tooltip>
-                    )}
-                  </Box>
-                );
-              })}
-            </Box>
-            <TurnSidebar isSystemDrawerOpen={isSystemDrawerOpen} />
-          </HStack>
-        </Box>
-      </Box>
+          {/* Mobile Control Buttons */}
+          <div className="flex sm:hidden justify-center mt-4 space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-purple-500 text-purple-400 hover:bg-purple-950/50 hover:text-purple-300"
+              onClick={() => setIsHelpDialogOpen(true)}
+            >
+              <HelpCircle className="h-4 w-4 mr-1" />
+              Help
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-cyan-500 text-cyan-400 hover:bg-cyan-950/50 hover:text-cyan-300"
+              disabled={isChangingTurn}
+              onClick={onNextTurn}
+            >
+              {isChangingTurn ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4 mr-1" />
+              )}
+              Next Turn
+            </Button>
+          </div>
+        </div>
+      </div>
+      <HowToPlay
+        onChangeDialog={onChangeDialog}
+        isHelpDialogOpen={isHelpDialogOpen}
+      />
+      <PlayAgainModal
+        isGameOverModalOpen={isGameOverModalOpen}
+        setIsGameOverModalOpen={setIsGameOverModalOpen}
+      />
       {selectedTower && (
         <SystemModificationDrawer
           isSystemDrawerOpen={isSystemDrawerOpen}
@@ -430,10 +817,6 @@ export const InnerGamePage = (): JSX.Element => {
           tower={selectedTower}
         />
       )}
-      <PlayAgainModal
-        isGameOverModalOpen={isGameOverModalOpen}
-        setIsGameOverModalOpen={setIsGameOverModalOpen}
-      />
-    </VStack>
+    </div>
   );
 };
