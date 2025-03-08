@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Address } from 'viem';
 
+import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -679,7 +680,8 @@ export const Home = (): JSX.Element => {
   // Username input screen
   if (!usernameSaved) {
     return (
-      <div className="flex flex-col min-h-screen bg-black text-white p-4">
+      <div className="flex flex-col min-h-screen bg-black text-white p-4 relative">
+        <BackgroundAnimation />
         <h1 className="text-4xl font-bold mt-10 mb-20 text-center bg-gradient-to-r from-purple-400 via-cyan-400 to-pink-400 text-transparent bg-clip-text">
           AUTO TOWER DEFENSE
         </h1>
@@ -728,7 +730,8 @@ export const Home = (): JSX.Element => {
 
   // Main game interface
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white p-4">
+    <div className="flex flex-col min-h-screen bg-black text-white p-4 relative">
+      <BackgroundAnimation />
       <h1 className="text-4xl font-bold mt-10 mb-20 text-center bg-gradient-to-r from-purple-400 via-cyan-400 to-pink-400 text-transparent bg-clip-text">
         AUTO TOWER DEFENSE
       </h1>
