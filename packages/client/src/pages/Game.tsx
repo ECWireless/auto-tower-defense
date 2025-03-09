@@ -1,5 +1,5 @@
 import { Entity } from '@latticexyz/recs';
-import { Check, Copy, HelpCircle, Home, Loader2, Play } from 'lucide-react';
+import { Check, Copy, Home, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   GiCannon,
@@ -11,6 +11,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { zeroAddress } from 'viem';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
+import { GameControlButtons } from '@/components/GameControlButtons';
 import { GameStatusBar } from '@/components/GameStatusBar';
 import { HowToPlay } from '@/components/HowToPlay';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -210,40 +211,12 @@ export const InnerGamePage = (): JSX.Element => {
           <GameStatusBar game={game} />
 
           {/* Control Buttons - Desktop */}
-          <div className="hidden sm:flex justify-center mb-1 space-x-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-purple-500 text-purple-400 hover:bg-purple-950/50 hover:text-purple-300"
-                    onClick={() => setIsHelpDialogOpen(true)}
-                  >
-                    <HelpCircle className="h-4 w-4 mr-1" />
-                    Help
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Game Information and Rules</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-cyan-500 text-cyan-400 hover:bg-cyan-950/50 hover:text-cyan-300"
-              disabled={isChangingTurn}
-              onClick={onNextTurn}
-            >
-              {isChangingTurn ? (
-                <Loader2 className="h-6 w-6 animate-spin" />
-              ) : (
-                <Play className="h-4 w-4 mr-1" />
-              )}
-              Next Turn
-            </Button>
+          <div className="hidden justify-center mb-1 sm:flex space-x-2">
+            <GameControlButtons
+              isChangingTurn={isChangingTurn}
+              onNextTurn={onNextTurn}
+              setIsHelpDialogOpen={setIsHelpDialogOpen}
+            />
           </div>
 
           {/* Main Grid */}
@@ -599,34 +572,17 @@ export const InnerGamePage = (): JSX.Element => {
             </div>
           </div>
 
-          {/* Mobile Control Buttons */}
-          <div className="flex sm:hidden justify-center mt-4 space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-purple-500 text-purple-400 hover:bg-purple-950/50 hover:text-purple-300"
-              onClick={() => setIsHelpDialogOpen(true)}
-            >
-              <HelpCircle className="h-4 w-4 mr-1" />
-              Help
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-cyan-500 text-cyan-400 hover:bg-cyan-950/50 hover:text-cyan-300"
-              disabled={isChangingTurn}
-              onClick={onNextTurn}
-            >
-              {isChangingTurn ? (
-                <Loader2 className="h-6 w-6 animate-spin" />
-              ) : (
-                <Play className="h-4 w-4 mr-1" />
-              )}
-              Next Turn
-            </Button>
+          {/* Control Buttons - Mobile */}
+          <div className="flex justify-center mt-4 sm:hidden space-x-2">
+            <GameControlButtons
+              isChangingTurn={isChangingTurn}
+              onNextTurn={onNextTurn}
+              setIsHelpDialogOpen={setIsHelpDialogOpen}
+            />
           </div>
         </div>
       </div>
+
       <HowToPlay
         onChangeHowToDialog={onChangeHowToDialog}
         isHelpDialogOpen={isHelpDialogOpen}
