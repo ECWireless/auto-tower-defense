@@ -154,20 +154,20 @@ export const SystemModificationDrawer: React.FC<
 
   return (
     <Sheet
-      open={isSystemDrawerOpen}
       onOpenChange={open => setIsSystemDrawerOpen(open)}
+      open={isSystemDrawerOpen}
     >
       <SheetContent
+        className={`bg-gray-900/95 border-l border-cyan-900/50 max-w-none md:w-[800px] p-4 ${isSemiTransparent ? 'opacity-10' : 'opacity-100'} w-[90%]`}
         side="right"
-        className={`w-[90%] md:w-[800px] max-w-none bg-gray-900/95 border-l border-cyan-900/50 p-4 ${isSemiTransparent ? 'opacity-10' : 'opacity-100'}`}
       >
         <SheetHeader>
-          <SheetTitle className="text-2xl font-bold text-cyan-400">
+          <SheetTitle className="font-bold text-cyan-400 text-2xl">
             SYSTEM MODIFICATION
           </SheetTitle>
         </SheetHeader>
-        <div className="mt-6">
-          <h3 className="text-xl font-semibold text-white mb-4">Rules</h3>
+        <div className="mt-6 overflow-y-auto">
+          <h3 className="font-semibold mb-4 text-white text-xl">Rules</h3>
           <ul className="space-y-4 text-gray-300">
             <li className="flex gap-2">
               <span>•</span>
@@ -182,12 +182,12 @@ export const SystemModificationDrawer: React.FC<
               <span>
                 Projectiles move at a speed of x &quot;pixels&quot; per tick.
                 However,
-                <span className="text-pink-400 font-semibold">
+                <span className="font-semibold text-pink-400">
                   {' '}
                   x can never exceed 10 per tick{' '}
                 </span>
                 (each tile has a resolution of 10x10 pixels).
-                <span className="text-cyan-400 font-semibold">
+                <span className="font-semibold text-cyan-400">
                   {' '}
                   There are 28 ticks{' '}
                 </span>
@@ -199,40 +199,40 @@ export const SystemModificationDrawer: React.FC<
               <span>•</span>
               <span>
                 The size limit of the projectile logic code is{' '}
-                <span className="text-cyan-400 font-semibold">1000 bytes</span>.
+                <span className="font-semibold text-cyan-400">1000 bytes</span>.
               </span>
             </li>
           </ul>
 
-          <div className="flex gap-3 mt-6 mb-6">
+          <div className="flex gap-3 mb-6 mt-6">
             {isPlayer1 && (
               <Button
-                variant="outline"
+                className="bg-cyan-950/30 border-cyan-500 hover:bg-cyan-900/50 hover:text-cyan-300 text-cyan-400"
                 disabled={isDeploying}
-                className="bg-cyan-950/30 border-cyan-500 text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300"
+                variant="outline"
                 onClick={onModifyTowerSystem}
               >
                 {isDeploying ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <Loader2 className="animate-spin h-6 w-6" />
                 ) : (
-                  <Rocket className="h-4 w-4 mr-2" />
+                  <Rocket className="h-4 mr-2 w-4" />
                 )}
                 Deploy
               </Button>
             )}
             <Button
-              variant="outline"
-              className="border-purple-500 text-purple-400 hover:bg-purple-950/50 hover:text-purple-300"
+              className="border-purple-500 hover:text-purple-300 hover:bg-purple-950/50 text-purple-400"
               onMouseEnter={() => setIsSemiTransparent(true)}
               onMouseLeave={() => setIsSemiTransparent(false)}
+              variant="outline"
             >
               View Board
             </Button>
           </div>
 
-          <div className="relative rounded-lg border border-cyan-900/50 bg-black/50">
+          <div className="bg-black/50 border border-cyan-900/50 relative rounded-lg">
             {!isPlayer1 && (
-              <div className="absolute h-full w-full bg-transparent flex z-1" />
+              <div className="absolute bg-transparent flex h-full w-full z-1" />
             )}
             <Editor
               defaultLanguage="solidity"

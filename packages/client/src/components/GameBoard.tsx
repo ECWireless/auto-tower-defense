@@ -200,7 +200,7 @@ export const GameBoard: React.FC = () => {
                               : `game-cell ${playerSideClass}`
                         }`}
                   onClick={e => {
-                    if (isLeftSide) return;
+                    if (!isLeftSide) return;
                     if (towerOnTile) {
                       handleTowerSelect(
                         towerOnTile.id,
@@ -264,14 +264,18 @@ export const GameBoard: React.FC = () => {
                             zeroAddress ? (
                               <GiCannon
                                 className={
-                                  isLeftSide ? 'text-cyan-400' : 'text-pink-400'
+                                  isLeftSide
+                                    ? 'text-cyan-400 hover:cursor-pointer'
+                                    : 'text-pink-400'
                                 }
                                 size={28}
                               />
                             ) : (
                               <GiDefensiveWall
                                 className={
-                                  isLeftSide ? 'text-cyan-400' : 'text-pink-400'
+                                  isLeftSide
+                                    ? 'text-cyan-400 hover:cursor-pointer'
+                                    : 'text-pink-400'
                                 }
                                 size={24}
                               />
