@@ -11,12 +11,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { zeroAddress } from 'viem';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
+import { GameStatusBar } from '@/components/GameStatusBar';
 import { HowToPlay } from '@/components/HowToPlay';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { NoGameScreen } from '@/components/NoGameScreen';
 import { PlayAgainDialog } from '@/components/PlayAgainDialog';
 import { SystemModificationDrawer } from '@/components/SystemModificationDrawer';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -207,92 +207,7 @@ export const InnerGamePage = (): JSX.Element => {
       {/* Game Container */}
       <div className="flex justify-center items-center flex-1 p-4 pt-16 z-1">
         <div className="w-full max-w-3xl">
-          {/* Status Bar */}
-          <div className="bg-gray-900 border border-purple-900/50 mb-1 p-2 sm:p-4 grid grid-cols-7 text-center items-center rounded-t-md">
-            {/* Player 1 */}
-            <div className="col-span-2 sm:col-span-2 text-left pl-1 sm:pl-4">
-              <div className="text-[10px] sm:text-sm text-purple-300">
-                PLAYER 1
-              </div>
-              <div className="text-xs sm:text-lg font-medium flex items-center truncate pr-1">
-                <span className="truncate text-purple-400">
-                  {game.player1Username}
-                </span>
-                {game.turn === game.player1Address && (
-                  <Badge
-                    variant="outline"
-                    className="ml-1 sm:ml-2 h-4 sm:h-5 px-1 text-[8px] sm:text-xs border-purple-500 text-purple-400 flex-shrink-0"
-                  >
-                    Turn
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Game Info - Desktop */}
-            <div className="hidden sm:flex col-span-3 justify-around">
-              <div>
-                <div className="text-xs text-cyan-300">LEVEL</div>
-                <div className="text-lg font-medium text-cyan-400">
-                  {game.level.toString()}
-                </div>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="text-xs text-cyan-300">ROUND</div>
-                <div className="text-lg font-medium text-cyan-400">
-                  {game.roundCount}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-cyan-300">ACTIONS</div>
-                <div className="text-lg font-medium text-cyan-400">
-                  {game.actionCount}
-                </div>
-              </div>
-            </div>
-
-            {/* Game Info - Mobile */}
-            <div className="sm:hidden col-span-3 flex justify-around">
-              <div>
-                <div className="text-[8px] text-cyan-300">LVL</div>
-                <div className="text-xs font-medium text-cyan-400">
-                  {game.level.toString()}
-                </div>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="text-[8px] text-cyan-300">RND</div>
-                <div className="text-xs font-medium text-cyan-400">
-                  {game.roundCount}
-                </div>
-              </div>
-              <div>
-                <div className="text-[8px] text-cyan-300">ACT</div>
-                <div className="text-xs font-medium text-cyan-400">
-                  {game.actionCount}
-                </div>
-              </div>
-            </div>
-
-            {/* Player 2 */}
-            <div className="col-span-2 sm:col-span-2 text-right pr-1 sm:pr-4">
-              <div className="text-[10px] sm:text-sm text-pink-300">
-                PLAYER 2
-              </div>
-              <div className="text-xs sm:text-lg font-medium flex items-center justify-end truncate pl-1">
-                {game.turn === game.player2Address && (
-                  <Badge
-                    variant="outline"
-                    className="mr-1 sm:mr-2 h-4 sm:h-5 px-1 text-[8px] sm:text-xs border-pink-500 text-pink-400 flex-shrink-0"
-                  >
-                    Turn
-                  </Badge>
-                )}
-                <span className="truncate text-pink-400">
-                  {game.player2Username}
-                </span>
-              </div>
-            </div>
-          </div>
+          <GameStatusBar game={game} />
 
           {/* Control Buttons - Desktop */}
           <div className="hidden sm:flex justify-center mb-1 space-x-2">
