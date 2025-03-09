@@ -36,6 +36,7 @@ type GameContextType = {
   ) => void;
   handleTowerSelect: (towerId: string, type: 'offense' | 'defense') => void;
   installingPosition: { x: number; y: number } | null;
+  isChangingTurn: boolean;
   isInstallingTower: boolean;
   isPlayer1: boolean;
   isRefreshing: boolean;
@@ -50,6 +51,7 @@ type GameContextType = {
     row: number,
     col: number,
   ) => void;
+  onNextTurn: () => void;
   refreshGame: () => void;
   setTowers: (towers: Tower[]) => void;
   setTriggerAnimation: (value: boolean) => void;
@@ -71,6 +73,7 @@ const GameContext = createContext<GameContextType>({
   game: null,
   handleDragStart: () => {},
   handleTowerSelect: () => {},
+  isChangingTurn: false,
   installingPosition: null,
   isInstallingTower: false,
   isPlayer1: false,
@@ -84,6 +87,7 @@ const GameContext = createContext<GameContextType>({
   },
   onInstallTower: () => {},
   onMoveTower: () => {},
+  onNextTurn: () => {},
   refreshGame: async () => {},
   setTowers: () => {},
   setTriggerAnimation: () => {},
@@ -116,7 +120,7 @@ export const GameProvider = ({
       Username,
     },
     network: { playerEntity },
-    systemCalls: { installTower, moveTower },
+    systemCalls: { installTower, moveTower, nextTurn },
   } = useMUD();
 
   const [game, setGame] = useState<Game | null>(null);
@@ -133,6 +137,8 @@ export const GameProvider = ({
   >('none');
 
   const [towers, setTowers] = useState<Tower[]>([]);
+  const [isChangingTurn, setIsChangingTurn] = useState(false);
+
   const [triggerAnimation, setTriggerAnimation] = useState(false);
   const [tickCount, setTickCount] = useState(0);
 
@@ -381,6 +387,72 @@ export const GameProvider = ({
     [],
   );
 
+  const onNextRound = useCallback(async () => {
+    try {
+      setIsChangingTurn(true);
+
+      if (!game) {
+        throw new Error('Game not found.');
+      }
+
+      if (game.turn === game.player2Address) {
+        throw new Error(`Not player2's turn.`);
+      }
+
+      const { error, success } = await nextTurn(game.id);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast('Turn Changed!');
+
+      setTriggerAnimation(true);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast('Error Changing Turn', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsChangingTurn(false);
+    }
+  }, [game, nextTurn, setTriggerAnimation]);
+
+  const onNextTurn = useCallback(async () => {
+    try {
+      setIsChangingTurn(true);
+
+      if (!game) {
+        throw new Error('Game not found.');
+      }
+
+      if (game.turn === game.player2Address) {
+        await onNextRound();
+        return;
+      }
+
+      const { error, success } = await nextTurn(game.id);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      fetchGame();
+      await onNextRound();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast('Error Changing Turn', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsChangingTurn(false);
+    }
+  }, [fetchGame, game, nextTurn, onNextRound]);
+
   useEffect(() => {
     if (!game) return () => {};
     if (game.turn !== game.player2Address) return () => {};
@@ -473,12 +545,14 @@ export const GameProvider = ({
         handleDragStart,
         handleTowerSelect,
         installingPosition,
+        isChangingTurn,
         isInstallingTower,
         isPlayer1,
         isRefreshing: isLoadingGame,
         myCastlePosition,
         onInstallTower,
         onMoveTower,
+        onNextTurn,
         refreshGame: fetchGame,
         setTowers,
         setTriggerAnimation,

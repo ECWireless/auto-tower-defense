@@ -25,14 +25,14 @@ import { MAX_ROUNDS } from '@/utils/constants';
 
 import { Button } from './ui/button';
 
-type PlayAgainModalProps = {
-  isGameOverModalOpen: boolean;
-  setIsGameOverModalOpen: (isOpen: boolean) => void;
+type PlayAgainDialogProps = {
+  isGameOverDialogOpen: boolean;
+  setIsGameOverDialogOpen: (isOpen: boolean) => void;
 };
 
-export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
-  isGameOverModalOpen,
-  setIsGameOverModalOpen,
+export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
+  isGameOverDialogOpen,
+  setIsGameOverDialogOpen,
 }) => {
   const navigate = useNavigate();
   const {
@@ -105,7 +105,7 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
       }
 
       navigate(`${GAMES_PATH}/${newGame}`);
-      setIsGameOverModalOpen(false);
+      setIsGameOverDialogOpen(false);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -122,7 +122,7 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
     game,
     navigate,
     playerEntity,
-    setIsGameOverModalOpen,
+    setIsGameOverDialogOpen,
     topLevel,
     topLevelGamesICanPlay,
     winStreak,
@@ -131,8 +131,8 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
   if (!game) {
     return (
       <Dialog
-        open={isGameOverModalOpen}
-        onOpenChange={open => setIsGameOverModalOpen(open)}
+        open={isGameOverDialogOpen}
+        onOpenChange={open => setIsGameOverDialogOpen(open)}
       >
         <DialogContent className="bg-gray-900 border border-pink-900/50 text-white">
           <DialogHeader>
@@ -151,8 +151,8 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
   if (topLevel === winStreak && topLevelGamesICanPlay.length === 0) {
     return (
       <Dialog
-        open={isGameOverModalOpen}
-        onOpenChange={open => setIsGameOverModalOpen(open)}
+        open={isGameOverDialogOpen}
+        onOpenChange={open => setIsGameOverDialogOpen(open)}
       >
         <DialogContent className="bg-gray-900 border border-cyan-900/50 text-white">
           <DialogHeader>
@@ -196,8 +196,8 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
   if (game.winner === game.player1Address) {
     return (
       <Dialog
-        open={isGameOverModalOpen}
-        onOpenChange={open => setIsGameOverModalOpen(open)}
+        open={isGameOverDialogOpen}
+        onOpenChange={open => setIsGameOverDialogOpen(open)}
       >
         <DialogContent className="bg-gray-900 border border-cyan-900/50 text-white">
           <DialogHeader>
@@ -232,8 +232,8 @@ export const PlayAgainModal: React.FC<PlayAgainModalProps> = ({
 
   return (
     <Dialog
-      open={isGameOverModalOpen}
-      onOpenChange={open => setIsGameOverModalOpen(open)}
+      open={isGameOverDialogOpen}
+      onOpenChange={open => setIsGameOverDialogOpen(open)}
     >
       <DialogContent className="bg-gray-900 border border-pink-900/50 text-white">
         <DialogHeader>

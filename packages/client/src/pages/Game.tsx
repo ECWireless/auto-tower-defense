@@ -1,5 +1,5 @@
 import { Entity } from '@latticexyz/recs';
-import { AlertTriangle, HelpCircle, Home, Loader2, Play } from 'lucide-react';
+import { HelpCircle, Home, Loader2, Play } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   GiCannon,
@@ -8,13 +8,13 @@ import {
   GiMineExplosion,
 } from 'react-icons/gi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { toast } from 'sonner';
 import { zeroAddress } from 'viem';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { HowToPlay } from '@/components/HowToPlay';
 import { LoadingScreen } from '@/components/LoadingScreen';
-import { PlayAgainModal } from '@/components/PlayAgainModal';
+import { NoGameScreen } from '@/components/NoGameScreen';
+import { PlayAgainDialog } from '@/components/PlayAgainDialog';
 import { SystemModificationDrawer } from '@/components/SystemModificationDrawer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { GameProvider, useGame } from '@/contexts/GameContext';
-import { useMUD } from '@/MUDContext';
 import { type Tower } from '@/utils/types';
 
 const HOW_TO_SEEN_KEY = 'how-to-seen';
@@ -33,16 +32,16 @@ const HOW_TO_SEEN_KEY = 'how-to-seen';
 const INSTALLABLE_TOWERS = [
   {
     id: 'tower1',
-    name: 'Cannon',
-    icon: <GiCannon size={28} className="text-cyan-400" />,
     color: 'from-cyan-900/50 to-cyan-800/30',
+    icon: <GiCannon size={28} className="text-cyan-400" />,
+    name: 'Cannon',
     type: 'offense' as 'offense' | 'defense',
   },
   {
     id: 'tower2',
-    name: 'Wall',
-    icon: <GiDefensiveWall size={24} className="text-cyan-400" />,
     color: 'from-cyan-900/50 to-cyan-800/30',
+    icon: <GiDefensiveWall size={24} className="text-cyan-400" />,
+    name: 'Wall',
     type: 'defense' as 'offense' | 'defense',
   },
 ];
@@ -63,9 +62,6 @@ export const GamePage = (): JSX.Element => {
 export const InnerGamePage = (): JSX.Element => {
   const navigate = useNavigate();
   const {
-    systemCalls: { nextTurn },
-  } = useMUD();
-  const {
     activeTowerId,
     allowDrop,
     enemyCastlePosition,
@@ -73,14 +69,14 @@ export const InnerGamePage = (): JSX.Element => {
     handleDragStart,
     handleTowerSelect,
     installingPosition,
+    isChangingTurn,
     isInstallingTower,
     isPlayer1,
     isRefreshing,
     myCastlePosition,
     onInstallTower,
     onMoveTower,
-    refreshGame,
-    setTriggerAnimation,
+    onNextTurn,
     tickCount,
     towers,
     triggerAnimation,
@@ -96,24 +92,23 @@ export const InnerGamePage = (): JSX.Element => {
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
-  const [isChangingTurn, setIsChangingTurn] = useState(false);
-  const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
+  const [isGameOverDialogOpen, setIsGameOverDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!game) return;
     if (game.winner === zeroAddress && game.endTimestamp === BigInt(0)) return;
 
-    setIsGameOverModalOpen(true);
+    setIsGameOverDialogOpen(true);
   }, [game]);
 
-  // Open How To info modal if this is the first time the user is playing a game.
+  // Open How To info dialog if this is the first time the user is playing a game.
   useEffect(() => {
     const hasSeenHowToInfo = localStorage.getItem(HOW_TO_SEEN_KEY);
     if (hasSeenHowToInfo) return;
     setIsHelpDialogOpen(true);
   }, []);
 
-  const onChangeDialog = useCallback((open: boolean) => {
+  const onChangeHowToDialog = useCallback((open: boolean) => {
     if (!open) {
       setIsHelpDialogOpen(false);
       localStorage.setItem(HOW_TO_SEEN_KEY, 'true');
@@ -129,72 +124,6 @@ export const InnerGamePage = (): JSX.Element => {
     },
     [setSelectedTower],
   );
-
-  const onNextRound = useCallback(async () => {
-    try {
-      setIsChangingTurn(true);
-
-      if (!game) {
-        throw new Error('Game not found.');
-      }
-
-      if (game.turn === game.player2Address) {
-        throw new Error(`Not player2's turn.`);
-      }
-
-      const { error, success } = await nextTurn(game.id);
-
-      if (error && !success) {
-        throw new Error(error);
-      }
-
-      toast('Turn Changed!');
-
-      setTriggerAnimation(true);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`Smart contract error: ${(error as Error).message}`);
-
-      toast('Error Changing Turn', {
-        description: (error as Error).message,
-      });
-    } finally {
-      setIsChangingTurn(false);
-    }
-  }, [game, nextTurn, setTriggerAnimation]);
-
-  const onNextTurn = useCallback(async () => {
-    try {
-      setIsChangingTurn(true);
-
-      if (!game) {
-        throw new Error('Game not found.');
-      }
-
-      if (game.turn === game.player2Address) {
-        await onNextRound();
-        return;
-      }
-
-      const { error, success } = await nextTurn(game.id);
-
-      if (error && !success) {
-        throw new Error(error);
-      }
-
-      refreshGame();
-      await onNextRound();
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`Smart contract error: ${(error as Error).message}`);
-
-      toast('Error Changing Turn', {
-        description: (error as Error).message,
-      });
-    } finally {
-      setIsChangingTurn(false);
-    }
-  }, [game, nextTurn, onNextRound, refreshGame]);
 
   const canChangeTurn = useMemo(() => {
     if (!game) return false;
@@ -225,36 +154,7 @@ export const InnerGamePage = (): JSX.Element => {
   }
 
   if (!game) {
-    return (
-      <div className="flex flex-col min-h-screen bg-black text-white relative">
-        <BackgroundAnimation />
-        <div className="flex justify-center items-center flex-1 p-4 pt-16">
-          <div className="w-full max-w-md">
-            <div className="bg-gray-900 border border-red-900/50 rounded-lg overflow-hidden shadow-lg">
-              <div className="p-4 flex flex-col items-center">
-                <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
-                <h2 className="text-xl sm:text-2xl font-bold text-red-400 mb-2">
-                  Game Not Found
-                </h2>
-                <p className="text-gray-300 text-center mb-6">
-                  The game with the provided ID does not exist.
-                </p>
-                <div className="flex mt-4">
-                  <Button
-                    variant="outline"
-                    className="border-cyan-500 text-cyan-400 hover:bg-cyan-950/50 hover:text-cyan-300"
-                    onClick={() => navigate('/')}
-                  >
-                    <Home className="h-4 w-4 mr-2" />
-                    Return Home
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <NoGameScreen />;
   }
 
   return (
@@ -789,12 +689,12 @@ export const InnerGamePage = (): JSX.Element => {
         </div>
       </div>
       <HowToPlay
-        onChangeDialog={onChangeDialog}
+        onChangeHowToDialog={onChangeHowToDialog}
         isHelpDialogOpen={isHelpDialogOpen}
       />
-      <PlayAgainModal
-        isGameOverModalOpen={isGameOverModalOpen}
-        setIsGameOverModalOpen={setIsGameOverModalOpen}
+      <PlayAgainDialog
+        isGameOverDialogOpen={isGameOverDialogOpen}
+        setIsGameOverDialogOpen={setIsGameOverDialogOpen}
       />
       {selectedTower && (
         <SystemModificationDrawer
