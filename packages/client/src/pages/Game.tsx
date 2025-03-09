@@ -1,5 +1,5 @@
 import { Entity } from '@latticexyz/recs';
-import { HelpCircle, Home, Loader2, Play } from 'lucide-react';
+import { Check, Copy, HelpCircle, Home, Loader2, Play } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   GiCannon,
@@ -25,6 +25,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { GameProvider, useGame } from '@/contexts/GameContext';
+import useCopy from '@/hooks/useCopy';
+import { shortenAddress } from '@/utils/helpers';
 import { type Tower } from '@/utils/types';
 
 const HOW_TO_SEEN_KEY = 'how-to-seen';
@@ -60,6 +62,7 @@ export const GamePage = (): JSX.Element => {
 };
 
 export const InnerGamePage = (): JSX.Element => {
+  const { copiedText, copyToClipboard } = useCopy();
   const navigate = useNavigate();
   const {
     activeTowerId,
@@ -160,24 +163,45 @@ export const InnerGamePage = (): JSX.Element => {
   return (
     <div className="flex flex-col min-h-screen bg-black text-white relative">
       <BackgroundAnimation />
+
       {/* Top Navigation */}
-      <div className="fixed top-4 left-4 z-10">
+      <div className="fixed left-4 top-4 z-10">
         <Button
+          className="border-purple-500 hover:bg-purple-950/50 hover:text-purple-300 text-purple-400"
           onClick={() => {
             navigate('/');
           }}
-          variant="outline"
           size="sm"
-          className="border-purple-500 text-purple-400 hover:bg-purple-950/50 hover:text-purple-300"
+          variant="outline"
         >
-          <Home className="h-4 w-4 mr-1" />
+          <Home className="h-4 mr-1 w-4" />
           Home
         </Button>
       </div>
 
-      {/* Game ID Display - Hidden on mobile */}
-      <div className="fixed top-4 right-4 text-sm text-cyan-400 hidden sm:block">
-        Game ID: {game.id}
+      <div className="fixed right-4 text-cyan-400 text-sm top-4 z-10">
+        <div className="flex items-center space-x-2">
+          <span>Game ID: {shortenAddress(game.id)}</span>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                className="h-6 hover:text-black text-gray-400 w-6"
+                onClick={() => copyToClipboard(game.id)}
+                size="icon"
+                variant="ghost"
+              >
+                {copiedText === game.id ? (
+                  <Check className="h-3 w-3" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{copiedText === game.id ? 'Copied!' : 'Copy address'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
       {/* Game Container */}
