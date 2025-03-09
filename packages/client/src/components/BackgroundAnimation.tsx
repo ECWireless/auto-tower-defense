@@ -21,7 +21,7 @@ export const BackgroundAnimation: React.FC = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
       <div className="bg-tech-pattern fixed inset-0" />
       {Array.from({ length: 30 }).map((_, i) => {
         if (!randomAnimationNumbers[i]) return null;

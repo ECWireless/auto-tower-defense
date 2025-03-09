@@ -259,7 +259,7 @@
     -1px -1px;
 }
 
-/* Add this animation back for the vertical streaming lines */
+/* This animation is for the vertical data stream lines */
 @keyframes float-up {
   0% {
     transform: translateY(100vh);
@@ -269,7 +269,6 @@
   }
 }
 
-/* Add back the vertical data stream class */
 .data-stream {
   position: absolute;
   width: 1px;

@@ -47,11 +47,16 @@ function Button({
   const Comp = asChild ? Slot : 'button';
 
   return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
+    <div className={props.disabled ? 'hover:cursor-not-allowed' : ''}>
+      <Comp
+        data-slot="button"
+        className={cn(
+          buttonVariants({ variant, size, className }),
+          'hover:cursor-pointer',
+        )}
+        {...props}
+      />
+    </div>
   );
 }
 
