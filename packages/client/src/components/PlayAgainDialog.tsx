@@ -141,7 +141,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
             </DialogTitle>
           </DialogHeader>
           <div className="flex justify-center my-4">
-            <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
+            <AlertTriangle className="h-16 text-red-500 mb-4 w-16" />
           </div>
         </DialogContent>
       </Dialog>
@@ -172,18 +172,18 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center my-4">
-            <Trophy className="h-16 w-16 text-cyan-400" />
+            <Trophy className="h-16 text-cyan-400 w-16" />
           </div>
-          <DialogFooter>
+          <DialogFooter className="sm:justify-center">
             <Button
               disabled={isCreatingGame}
               onClick={onCreateGame}
-              className="w-full bg-cyan-400 hover:bg-cyan-900 text-white"
+              className="bg-cyan-400 hover:bg-cyan-900 text-white w-full"
             >
               {isCreatingGame ? (
-                <Loader2 className="h-6 w-6 animate-spin" />
+                <Loader2 className="animate-spin h-6 w-6" />
               ) : (
-                <Play className="h-4 w-4 mr-2" />
+                <Play className="h-4 mr-2 w-4" />
               )}
               Play Again
             </Button>
@@ -204,23 +204,23 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
             <DialogTitle className="text-cyan-400 text-xl">
               Game Won
             </DialogTitle>
-            <DialogDescription className="text-gray-300 mt-2">
+            <DialogDescription className="mt-2 text-gray-300">
               {`You beat level ${game.level.toString()}! You can now continue to level ${(game.level + 1n).toString()}.`}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center my-4">
-            <Trophy className="h-16 w-16 text-cyan-400" />
+            <Trophy className="h-16 text-cyan-400 w-16" />
           </div>
-          <DialogFooter>
+          <DialogFooter className="sm:justify-center">
             <Button
               disabled={isCreatingGame}
               onClick={onCreateGame}
-              className="w-full bg-cyan-400 hover:bg-cyan-900 text-white"
+              className="bg-cyan-400 hover:bg-cyan-900 text-white w-full"
             >
               {isCreatingGame ? (
-                <Loader2 className="h-6 w-6 animate-spin" />
+                <Loader2 className="animate-spin h-6 w-6" />
               ) : (
-                <Play className="h-4 w-4 mr-2" />
+                <Play className="h-4 mr-2 w-4" />
               )}
               Next Level
             </Button>
@@ -238,7 +238,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
       <DialogContent className="bg-gray-900 border border-pink-900/50 text-white">
         <DialogHeader>
           <DialogTitle className="text-pink-400 text-xl">Game Over</DialogTitle>
-          <DialogDescription className="text-gray-300 mt-2">
+          <DialogDescription className="mt-2 text-gray-300">
             <p>You lost!</p>
             {game.winner !== game.player1Address &&
               game.roundCount > MAX_ROUNDS && (
@@ -249,18 +249,18 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-center my-4">
-          <Frown className="h-16 w-16 text-pink-400" />
+          <Frown className="h-16 text-pink-400 w-16" />
         </div>
-        <DialogFooter>
+        <DialogFooter className="sm:justify-center">
           <Button
             disabled={isCreatingGame}
             onClick={onCreateGame}
-            className="w-full bg-pink-800 hover:bg-pink-700 text-white"
+            className="bg-pink-800 hover:bg-pink-700 text-white w-full"
           >
             {isCreatingGame ? (
-              <Loader2 className="h-6 w-6 animate-spin" />
+              <Loader2 className="animate-spin h-6 w-6" />
             ) : (
-              <Play className="h-4 w-4 mr-2" />
+              <Play className="h-4 mr-2 w-4" />
             )}
             Play Again
           </Button>
