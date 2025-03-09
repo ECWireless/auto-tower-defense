@@ -100,7 +100,12 @@ export const GameBoard: React.FC = () => {
     <div className="bg-gray-900 overflow-x-auto w-full">
       <div className="gap-1 grid grid-rows-[20px_repeat(7,minmax(0,1fr))] min-w-full p-1 relative w-max">
         {/* Center divider line */}
-        <div className="absolute bg-cyan-400 bottom-0 left-1/2 shadow-[0_0_8px_2px_rgba(34,211,238,0.6)] top-0 transform -translate-x-1/2 w-[2px] z-10"></div>
+        <div
+          className="absolute bg-cyan-400 bottom-0 left-1/2 top-0 transform -translate-x-1/2 w-[2px] z-10"
+          style={{
+            boxShadow: '0 0 8px 2px rgba(34,211,238,0.6)',
+          }}
+        />
 
         {/* Column numbers (0-13) */}
         <div className="gap-1 grid grid-cols-[auto_repeat(14,minmax(0,1fr))_auto] min-w-[600px] mt-1 sm:min-w-0 mb-1">
