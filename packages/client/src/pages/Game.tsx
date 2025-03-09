@@ -149,21 +149,21 @@ export const InnerGamePage = (): JSX.Element => {
           <GameBoard />
 
           {/* Tower Selection Row */}
-          <div className="mt-1 bg-gray-900 border border-cyan-900/50 p-2 overflow-x-auto rounded-b-md">
-            <div className="text-cyan-400 text-xs mb-1 px-1">TOWERS</div>
-            <div className="flex space-x-2 min-w-[600px] sm:min-w-0">
+          <div className="bg-gray-900 border border-cyan-900/50 mt-1 p-2 overflow-x-auto rounded-b-md">
+            <div className="mb-1 px-1 text-cyan-400 text-xs">TOWERS</div>
+            <div className="flex min-w-[600px] sm:min-w-0 space-x-2">
               {INSTALLABLE_TOWERS.map(tower => (
                 <div
                   key={tower.id}
                   onClick={() => handleTowerSelect(tower.id, tower.type)}
-                  className={`tower-card ${activeTowerId === tower.id ? 'selected' : ''} bg-gradient-to-b ${tower.color} rounded p-2 flex flex-col items-center cursor-pointer min-w-[60px]`}
+                  className={`tower-card ${activeTowerId === tower.id ? 'selected' : ''} bg-gradient-to-b ${tower.color} cursor-pointer flex flex-col items-center min-w-[60px] p-2 rounded`}
                   draggable={isPlayer1}
                   onDragStart={e => handleDragStart(e, tower.id, tower.type)}
                 >
-                  <div className="flex items-center justify-center h-8">
+                  <div className="flex h-8 items-center justify-center">
                     {tower.icon}
                   </div>
-                  <span className="text-xs text-white mt-1">{tower.name}</span>
+                  <span className="mt-1 text-white text-xs">{tower.name}</span>
                 </div>
               ))}
             </div>
