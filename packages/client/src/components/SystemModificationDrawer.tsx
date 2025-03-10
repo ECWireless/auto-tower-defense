@@ -1,12 +1,19 @@
 import { Entity, getComponentValue } from '@latticexyz/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
-import { Loader2, Rocket } from 'lucide-react';
+import { Loader2, Rocket, Scroll } from 'lucide-react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   Sheet,
   SheetContent,
@@ -158,6 +165,7 @@ export const SystemModificationDrawer: React.FC<
       open={isSystemDrawerOpen}
     >
       <SheetContent
+        aria-describedby={undefined}
         className={`bg-gray-900/95 border-l border-cyan-900/50 max-w-none md:w-[800px] p-4 ${isSemiTransparent ? 'opacity-10' : 'opacity-100'} w-[90%]`}
         side="right"
       >
@@ -167,42 +175,62 @@ export const SystemModificationDrawer: React.FC<
           </SheetTitle>
         </SheetHeader>
         <div className="mt-6 overflow-y-auto">
-          <h3 className="font-semibold mb-4 text-white text-xl">Rules</h3>
-          <ul className="space-y-4 text-gray-300">
-            <li className="flex gap-2">
-              <span>•</span>
-              <span>
-                Modify the <span className="text-cyan-400">Solidity</span> code
-                to change the behavior of the projectile. The projectile will be
-                deployed as a smart contract.
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span>•</span>
-              <span>
-                Projectiles move at a speed of x &quot;pixels&quot; per tick.
-                However,
-                <span className="font-semibold text-pink-400">
-                  {' '}
-                  x can never exceed 10 per tick{' '}
-                </span>
-                (each tile has a resolution of 10x10 pixels).
-                <span className="font-semibold text-cyan-400">
-                  {' '}
-                  There are 28 ticks{' '}
-                </span>
-                when the round results run. The recommended speed is 5 pixels
-                per tick.
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span>•</span>
-              <span>
-                The size limit of the projectile logic code is{' '}
-                <span className="font-semibold text-cyan-400">1000 bytes</span>.
-              </span>
-            </li>
-          </ul>
+          <Dialog aria-describedby={undefined}>
+            <DialogTrigger asChild>
+              <Button
+                className="border-purple-500 hover:text-purple-300 hover:bg-purple-950/50 text-purple-400"
+                variant="outline"
+              >
+                <Scroll className="h-4 mr-2 w-4" />
+                View Rules
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gray-900 border border-cyan-900/50 text-white">
+              <DialogHeader>
+                <DialogTitle className="text-cyan-400 text-xl">
+                  Rules
+                </DialogTitle>
+              </DialogHeader>
+              <ul className="space-y-4 text-gray-300">
+                <li className="flex gap-2">
+                  <span>•</span>
+                  <span>
+                    Modify the <span className="text-cyan-400">Solidity</span>{' '}
+                    code to change the behavior of the projectile. The
+                    projectile will be deployed as a smart contract.
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span>•</span>
+                  <span>
+                    Projectiles move at a speed of x &quot;pixels&quot; per
+                    tick. However,
+                    <span className="font-semibold text-pink-400">
+                      {' '}
+                      x can never exceed 10 per tick{' '}
+                    </span>
+                    (each tile has a resolution of 10x10 pixels).
+                    <span className="font-semibold text-cyan-400">
+                      {' '}
+                      There are 28 ticks{' '}
+                    </span>
+                    when the round results run. The recommended speed is 5
+                    pixels per tick.
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span>•</span>
+                  <span>
+                    The size limit of the projectile logic code is{' '}
+                    <span className="font-semibold text-cyan-400">
+                      1000 bytes
+                    </span>
+                    .
+                  </span>
+                </li>
+              </ul>
+            </DialogContent>
+          </Dialog>
 
           <div className="flex gap-3 mb-6 mt-6">
             {isPlayer1 && (
