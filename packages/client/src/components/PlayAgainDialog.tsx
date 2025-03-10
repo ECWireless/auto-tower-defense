@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -134,7 +133,10 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
         open={isGameOverDialogOpen}
         onOpenChange={open => setIsGameOverDialogOpen(open)}
       >
-        <DialogContent className="bg-gray-900 border border-pink-900/50 text-white">
+        <DialogContent
+          aria-describedby={undefined}
+          className="bg-gray-900 border border-pink-900/50 text-white"
+        >
           <DialogHeader>
             <DialogTitle className="text-red-400 text-xl">
               An Error Occurred
@@ -151,6 +153,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   if (topLevel === winStreak && topLevelGamesICanPlay.length === 0) {
     return (
       <Dialog
+        aria-describedby={undefined}
         open={isGameOverDialogOpen}
         onOpenChange={open => setIsGameOverDialogOpen(open)}
       >
@@ -159,18 +162,16 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
             <DialogTitle className="text-cyan-400 text-xl">
               Game Won
             </DialogTitle>
-            <DialogDescription className="text-gray-300 mt-2">
-              <p>
-                Congratulations! You are now{' '}
-                {topLevelGames?.length === 1 ? 'the' : 'a'}{' '}
-                <strong>top player</strong>!
-              </p>
-              <p className="mt-2">
-                Your game has been saved, and other players can try to beat it.
-                Playing again does not affect your top position.
-              </p>
-            </DialogDescription>
           </DialogHeader>
+          <p>
+            Congratulations! You are now{' '}
+            {topLevelGames?.length === 1 ? 'the' : 'a'}{' '}
+            <strong>top player</strong>!
+          </p>
+          <p>
+            Your game has been saved, and other players can try to beat it.
+            Playing again does not affect your top position.
+          </p>
           <div className="flex justify-center my-4">
             <Trophy className="h-16 text-cyan-400 w-16" />
           </div>
@@ -196,6 +197,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   if (game.winner === game.player1Address) {
     return (
       <Dialog
+        aria-describedby={undefined}
         open={isGameOverDialogOpen}
         onOpenChange={open => setIsGameOverDialogOpen(open)}
       >
@@ -204,10 +206,8 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
             <DialogTitle className="text-cyan-400 text-xl">
               Game Won
             </DialogTitle>
-            <DialogDescription className="mt-2 text-gray-300">
-              {`You beat level ${game.level.toString()}! You can now continue to level ${(game.level + 1n).toString()}.`}
-            </DialogDescription>
           </DialogHeader>
+          <p>{`You beat level ${game.level.toString()}! You can now continue to level ${(game.level + 1n).toString()}.`}</p>
           <div className="flex justify-center my-4">
             <Trophy className="h-16 text-cyan-400 w-16" />
           </div>
@@ -232,22 +232,21 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
 
   return (
     <Dialog
+      aria-describedby={undefined}
       open={isGameOverDialogOpen}
       onOpenChange={open => setIsGameOverDialogOpen(open)}
     >
       <DialogContent className="bg-gray-900 border border-pink-900/50 text-white">
         <DialogHeader>
           <DialogTitle className="text-pink-400 text-xl">Game Over</DialogTitle>
-          <DialogDescription className="mt-2 text-gray-300">
-            <p>You lost!</p>
-            {game.winner !== game.player1Address &&
-              game.roundCount > MAX_ROUNDS && (
-                <p className="font-semibold mt-2">
-                  You have reached the max rounds you can play in a game.
-                </p>
-              )}
-          </DialogDescription>
         </DialogHeader>
+        <p>You lost!</p>
+        {game.winner !== game.player1Address &&
+          game.roundCount > MAX_ROUNDS && (
+            <p className="font-semibold mt-2">
+              You have reached the max rounds you can play in a game.
+            </p>
+          )}
         <div className="flex justify-center my-4">
           <Frown className="h-16 text-pink-400 w-16" />
         </div>

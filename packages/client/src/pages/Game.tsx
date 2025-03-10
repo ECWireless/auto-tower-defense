@@ -106,24 +106,19 @@ export const InnerGamePage = (): JSX.Element => {
           Home
         </Button>
       </div>
-
       <div className="fixed right-4 text-cyan-400 text-sm top-4 z-10">
         <div className="flex items-center space-x-2">
           <span>Game ID: {shortenAddress(game.id)}</span>
           <Tooltip>
-            <TooltipTrigger>
-              <Button
-                className="h-6 hover:text-black text-gray-400 w-6"
-                onClick={() => copyToClipboard(game.id)}
-                size="icon"
-                variant="ghost"
-              >
-                {copiedText === game.id ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </Button>
+            <TooltipTrigger
+              className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
+              onClick={() => copyToClipboard(game.id)}
+            >
+              {copiedText === game.id ? (
+                <Check className="h-3 w-3" />
+              ) : (
+                <Copy className="h-3 w-3" />
+              )}
             </TooltipTrigger>
             <TooltipContent>
               <p>{copiedText === game.id ? 'Copied!' : 'Copy address'}</p>

@@ -331,19 +331,15 @@ export const HomeTabs: React.FC = () => {
                         <div className="flex items-center space-x-2">
                           <span>{shortenAddress(player.address)}</span>
                           <Tooltip>
-                            <TooltipTrigger>
-                              <Button
-                                className="h-6 w-6 text-gray-400 hover:text-black"
-                                onClick={() => copyToClipboard(player.address)}
-                                size="icon"
-                                variant="ghost"
-                              >
-                                {copiedText === player.address ? (
-                                  <Check className="h-3 w-3" />
-                                ) : (
-                                  <Copy className="h-3 w-3" />
-                                )}
-                              </Button>
+                            <TooltipTrigger
+                              className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
+                              onClick={() => copyToClipboard(player.address)}
+                            >
+                              {copiedText === player.address ? (
+                                <Check className="h-3 w-3" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>
