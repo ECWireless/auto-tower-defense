@@ -85,7 +85,7 @@ contract TowerSystem is System {
       size := extcodesize(newSystem)
     }
 
-    require(size > 0, "Contract creation failed");
+    require(size > 0, "TowerSystem: contract creation failed");
     require(
       size <= DEFAULT_LOGIC_SIZE_LIMIT,
       string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
@@ -99,25 +99,26 @@ contract TowerSystem is System {
     return address(newSystem);
   }
 
-  function saveModification(uint256 size, bytes memory bytecode, string memory description, string memory name, string memory sourceCode) external returns (bytes32 savedModificationId) {
+  function saveModification(bytes memory bytecode, string memory description, string memory name, string memory sourceCode) external returns (bytes32 savedModificationId) {
     address author = _msgSender();
-    
-    require(size > 0, "Contract creation failed");
+    uint256 contractSize = getContractSize(bytecode);
+
+    require(contractSize > 0, "TowerSystem: bytecode is invalid");
     require(
-      size <= DEFAULT_LOGIC_SIZE_LIMIT,
+      contractSize <= DEFAULT_LOGIC_SIZE_LIMIT,
       string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
     );
 
     savedModificationId = keccak256(abi.encodePacked(bytecode));
 
     bytes memory savedModificationBytecode = SavedModification.getBytecode(savedModificationId);
-    require(keccak256(abi.encodePacked(savedModificationBytecode)) != savedModificationId, "Modification already exists");
+    require(keccak256(abi.encodePacked(savedModificationBytecode)) != savedModificationId, "TowerSystem: modification already exists");
 
-    SavedModification.set(savedModificationId, author, size, 0, bytecode, description, name, sourceCode);
+    SavedModification.set(savedModificationId, author, contractSize, 0, bytecode, description, name, sourceCode);
     return savedModificationId;
   }
 
-  function getContractSize(bytes memory bytecode) external returns (uint256 size) {
+  function getContractSize(bytes memory bytecode) public returns (uint256 size) {
     address newSystem;
     assembly {
       newSystem := create(0, add(bytecode, 0x20), mload(bytecode))

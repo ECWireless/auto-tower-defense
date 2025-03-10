@@ -183,11 +183,6 @@
     "name": "app__saveModification",
     "inputs": [
       {
-        "name": "size",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
         "name": "bytecode",
         "type": "bytes",
         "internalType": "bytes"

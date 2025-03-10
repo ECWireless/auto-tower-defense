@@ -22,7 +22,6 @@ interface ITowerSystem {
   ) external returns (address projectileLogicAddress);
 
   function app__saveModification(
-    uint256 size,
     bytes memory bytecode,
     string memory description,
     string memory name,

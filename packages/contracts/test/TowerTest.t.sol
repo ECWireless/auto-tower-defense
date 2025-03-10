@@ -7,7 +7,7 @@ import { getKeysWithValue } from "@latticexyz/world-modules/src/modules/keyswith
 
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 import { Counter } from "../src/codegen/index.sol";
-import { CurrentGame, EntityAtPosition, Health, Position, Projectile, Tower, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { CurrentGame, EntityAtPosition, Health, Position, Projectile, SavedModification, SavedModificationData, Tower, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 
 contract TowerTest is MudTest {
@@ -202,5 +202,47 @@ contract TowerTest is MudTest {
     IWorld(worldAddress).app__createGame("Bob", true);
     vm.expectRevert(bytes("TowerSystem: game does not match player's ongoing game"));
     IWorld(worldAddress).app__modifyTowerSystem(towerId, BYTECODE, "");
+  }
+
+  function testSaveMoficiationSystem() public {
+    vm.startPrank(alice);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, true, 65, 35);
+    IWorld(worldAddress).app__modifyTowerSystem(towerId, BYTECODE, "");
+
+    string memory description = "Test description";
+    string memory name = "Test name";
+    string memory sourceCode = "Test source code";
+    bytes32 savedModificationId = IWorld(worldAddress).app__saveModification(BYTECODE, description, name, sourceCode);
+
+    SavedModificationData memory savedModification = SavedModification.get(savedModificationId);
+    assertEq(savedModification.bytecode, BYTECODE);
+    assertEq(savedModification.description, description);
+    assertEq(savedModification.name, name);
+    assertEq(savedModification.sourceCode, sourceCode);
+    assertEq(savedModification.author, alice);
+  }
+
+  function testSaveModificationEmptyBytes() public {
+    vm.startPrank(alice);
+    string memory description = "Test description";
+    string memory name = "Test name";
+    string memory sourceCode = "Test source code";
+    bytes memory emptyBytecode;
+
+    vm.expectRevert(bytes("TowerSystem: bytecode is invalid"));
+    IWorld(worldAddress).app__saveModification(emptyBytecode, description, name, sourceCode);
+  }
+
+  function testSaveModificationNoDuplicateBytecode() public {
+    vm.startPrank(alice);
+    string memory description = "Test description";
+    string memory name = "Test name";
+    string memory sourceCode = "Test source code";
+
+    IWorld(worldAddress).app__saveModification(BYTECODE, description, name, sourceCode);
+
+    vm.expectRevert(bytes("TowerSystem: modification already exists"));
+    IWorld(worldAddress).app__saveModification(BYTECODE, description, name, sourceCode);
   }
 }
