@@ -7,7 +7,7 @@ import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import SystemList from '@/components/SystemList';
+import { SystemsList } from '@/components/SystemsList';
 import {
   Dialog,
   DialogContent,
@@ -254,7 +254,7 @@ export const SystemModificationDrawer: React.FC<
             </TooltipProvider>
           </div>
 
-          <SystemList />
+          <SystemsList />
 
           <div className="flex gap-3 mb-6 mt-6">
             {isPlayer1 && (

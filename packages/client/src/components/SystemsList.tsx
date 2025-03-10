@@ -75,7 +75,7 @@ const OTHER_SYSTEMS_LIST = [
   },
 ];
 
-export default function SystemList(): JSX.Element {
+export const SystemsList: React.FC = () => {
   const [selectedSystem, setSelectedSystem] = useState(SYSTEMS_LIST[0]);
   const [systemsTab, setSystemsTab] = useState<'your' | 'other'>('your');
 
@@ -186,4 +186,4 @@ export default function SystemList(): JSX.Element {
       </div>
     </div>
   );
-}
+};
