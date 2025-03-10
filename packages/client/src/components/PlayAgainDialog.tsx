@@ -97,7 +97,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
         throw new Error(error);
       }
 
-      toast('Game Created!');
+      toast.success('Game Created!');
 
       const newGame = getComponentValue(CurrentGame, playerEntity)?.value;
       if (!newGame) {
@@ -110,7 +110,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toast('Error Creating Game', {
+      toast.error('Error Creating Game', {
         description: (error as Error).message,
       });
     } finally {

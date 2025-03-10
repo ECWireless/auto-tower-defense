@@ -63,7 +63,7 @@ export const SystemModificationDrawer: React.FC<
       // eslint-disable-next-line no-console
       console.error('Error compiling code:', error);
 
-      toast('Error Compiling Code', {
+      toast.error('Error Compiling Code', {
         description: (error as Error).message,
       });
 
@@ -101,7 +101,7 @@ export const SystemModificationDrawer: React.FC<
         throw new Error(error);
       }
 
-      toast('System Deployed!');
+      toast.success('System Deployed!');
 
       setIsSystemDrawerOpen(false);
       refreshGame();
@@ -109,7 +109,7 @@ export const SystemModificationDrawer: React.FC<
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toast('Error Deploying System', {
+      toast.error('Error Deploying System', {
         description: (error as Error).message,
       });
     } finally {

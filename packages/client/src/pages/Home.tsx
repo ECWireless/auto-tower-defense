@@ -50,7 +50,7 @@ export const Home = (): JSX.Element => {
           throw new Error(error);
         }
 
-        toast('Game Created!');
+        toast.success('Game Created!');
 
         currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
 
@@ -63,7 +63,7 @@ export const Home = (): JSX.Element => {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
-        toast('Error Creating Game', {
+        toast.error('Error Creating Game', {
           description: (error as Error).message,
         });
       } finally {

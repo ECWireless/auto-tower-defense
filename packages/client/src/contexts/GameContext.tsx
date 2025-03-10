@@ -298,14 +298,14 @@ export const GameProvider = ({
           throw new Error(error);
         }
 
-        toast('Tower Installed!');
+        toast.success('Tower Installed!');
 
         fetchGame();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
-        toast('Error Installing Tower', {
+        toast.error('Error Installing Tower', {
           description: (error as Error).message,
         });
       } finally {
@@ -347,14 +347,14 @@ export const GameProvider = ({
           throw new Error(error);
         }
 
-        toast('Tower Moved!');
+        toast.success('Tower Moved!');
 
         fetchGame();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
-        toast('Error Moving Tower', {
+        toast.error('Error Moving Tower', {
           description: (error as Error).message,
         });
       } finally {
@@ -405,14 +405,14 @@ export const GameProvider = ({
         throw new Error(error);
       }
 
-      toast('Turn Changed!');
+      toast.success('Turn Changed!');
 
       setTriggerAnimation(true);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toast('Error Changing Turn', {
+      toast.error('Error Changing Turn', {
         description: (error as Error).message,
       });
     } finally {
@@ -445,7 +445,7 @@ export const GameProvider = ({
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toast('Error Changing Turn', {
+      toast.error('Error Changing Turn', {
         description: (error as Error).message,
       });
     } finally {
