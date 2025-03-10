@@ -94,8 +94,8 @@ contract TowerSystem is System {
     Game.setActionCount(playerGameId, currentGame.actionCount - 1);
     Projectile.set(towerId, address(newSystem), DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
 
+    TowerHelpers.incrementSavedModificationUseCount(bytecode);
     TowerHelpers.storeModifyTowerAction(playerGameId, playerAddress, towerId, bytecode, newSystem, sourceCode);
-
     return address(newSystem);
   }
 
