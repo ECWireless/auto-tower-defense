@@ -7,6 +7,7 @@ import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
+import SystemList from '@/components/SystemList';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +27,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-// import SystemList from '@/components/SystemList';
 import { useGame } from '@/contexts/GameContext';
 import { useMUD } from '@/MUDContext';
 import { type Tower } from '@/utils/types';
@@ -240,7 +240,7 @@ export const SystemModificationDrawer: React.FC<
 
           <div className="flex gap-2 items-center">
             <h3 className="font-semibold my-4 text-white text-xl">
-              Your Systems
+              Saved Systems
             </h3>
             <TooltipProvider>
               <Tooltip>
@@ -253,6 +253,8 @@ export const SystemModificationDrawer: React.FC<
               </Tooltip>
             </TooltipProvider>
           </div>
+
+          <SystemList />
 
           <div className="flex gap-3 mb-6 mt-6">
             {isPlayer1 && (
