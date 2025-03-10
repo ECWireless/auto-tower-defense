@@ -1,7 +1,7 @@
 import { Entity, getComponentValue } from '@latticexyz/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
-import { Loader2, Rocket, Scroll } from 'lucide-react';
+import { Info, Loader2, Rocket, Scroll } from 'lucide-react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useState } from 'react';
@@ -20,6 +20,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 // import SystemList from '@/components/SystemList';
 import { useGame } from '@/contexts/GameContext';
 import { useMUD } from '@/MUDContext';
@@ -231,6 +237,22 @@ export const SystemModificationDrawer: React.FC<
               </ul>
             </DialogContent>
           </Dialog>
+
+          <div className="flex gap-2 items-center">
+            <h3 className="font-semibold my-4 text-white text-xl">
+              Your Systems
+            </h3>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6">
+                  <Info className="h-3 w-3" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Basic templates are included in your list of systems</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
 
           <div className="flex gap-3 mb-6 mt-6">
             {isPlayer1 && (

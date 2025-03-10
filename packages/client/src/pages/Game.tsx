@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { GameProvider, useGame } from '@/contexts/GameContext';
@@ -109,21 +110,23 @@ export const InnerGamePage = (): JSX.Element => {
       <div className="fixed right-4 text-cyan-400 text-sm top-4 z-10">
         <div className="flex items-center space-x-2">
           <span>Game ID: {shortenAddress(game.id)}</span>
-          <Tooltip>
-            <TooltipTrigger
-              className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
-              onClick={() => copyToClipboard(game.id)}
-            >
-              {copiedText === game.id ? (
-                <Check className="h-3 w-3" />
-              ) : (
-                <Copy className="h-3 w-3" />
-              )}
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{copiedText === game.id ? 'Copied!' : 'Copy address'}</p>
-            </TooltipContent>
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
+                onClick={() => copyToClipboard(game.id)}
+              >
+                {copiedText === game.id ? (
+                  <Check className="h-3 w-3" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{copiedText === game.id ? 'Copied!' : 'Copy address'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
