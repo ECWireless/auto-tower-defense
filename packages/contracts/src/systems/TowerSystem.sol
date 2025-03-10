@@ -7,7 +7,7 @@ import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
 import { Systems } from "@latticexyz/world/src/codegen/tables/Systems.sol";
 
 import { _gameSystemAddress } from "../utils.sol";
-import { CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, TowerCounter } from "../codegen/index.sol";
+import { CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, SavedModification, TowerCounter } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
@@ -97,6 +97,24 @@ contract TowerSystem is System {
     TowerHelpers.storeModifyTowerAction(playerGameId, playerAddress, towerId, bytecode, newSystem, sourceCode);
 
     return address(newSystem);
+  }
+
+  function saveModification(uint256 size, bytes memory bytecode, string memory description, string memory name, string memory sourceCode) external returns (bytes32 savedModificationId) {
+    address author = _msgSender();
+    
+    require(size > 0, "Contract creation failed");
+    require(
+      size <= DEFAULT_LOGIC_SIZE_LIMIT,
+      string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
+    );
+
+    savedModificationId = keccak256(abi.encodePacked(bytecode));
+
+    bytes memory savedModificationBytecode = SavedModification.getBytecode(savedModificationId);
+    require(keccak256(abi.encodePacked(savedModificationBytecode)) != savedModificationId, "Modification already exists");
+
+    SavedModification.set(savedModificationId, author, size, 0, bytecode, description, name, sourceCode);
+    return savedModificationId;
   }
 
   function getContractSize(bytes memory bytecode) external returns (uint256 size) {

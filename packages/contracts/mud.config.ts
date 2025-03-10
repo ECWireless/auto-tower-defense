@@ -128,6 +128,19 @@ export default defineWorld({
       },
       key: ["id"],
     },
+    SavedModification: {
+      schema: {
+        id: "bytes32", // keccak256(abi.encodePacked(bytecode))
+        author: "address",
+        size: "uint256",
+        useCount: "uint256",
+        bytecode: "bytes",
+        description: "string",
+        name: "string",
+        sourceCode: "string",
+      },
+      key: ["id"],
+    },
     TopLevel: {
       schema: {
         level: "uint256",
