@@ -5,7 +5,7 @@ import { RESOURCE_SYSTEM } from "@latticexyz/world/src/worldResourceTypes.sol";
 import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
 
 import { _gameSystemAddress } from "../utils.sol";
-import { Action, ActionData, CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedGame, SavedGameData, Tower } from "../codegen/index.sol";
+import { Action, ActionData, CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedGame, SavedGameData, SavedModification, Tower } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
@@ -127,7 +127,7 @@ library TowerHelpers {
       Projectile.setLogicAddress(towerId, defaultProjectileLogicLeftAddress);
       Projectile.setSourceCode(
         towerId,
-        "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x + 5, y); }}"
+        "contract DefaultProjectileLogic { function getNextProjectilePosition( int16 x, int16 y ) public pure returns (int16, int16) { return (x + 5, y); } }"
       );
       Projectile.setSizeLimit(towerId, DEFAULT_LOGIC_SIZE_LIMIT);
     } else {
@@ -396,5 +396,15 @@ library TowerHelpers {
     string memory sourceCode
   ) internal {
     Projectile.set(actionId, systemAddress, DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
+  }
+
+  function incrementSavedModificationUseCount(bytes memory bytecode) public {
+    bytes32 savedModificationId = keccak256(abi.encodePacked(bytecode));
+    bytes memory potentialExistingBytecode = SavedModification.getBytecode(savedModificationId);
+
+    if (keccak256(abi.encodePacked(potentialExistingBytecode)) == savedModificationId) {
+      uint256 existingBytecodeUseCount = SavedModification.getUseCount(savedModificationId);
+      SavedModification.setUseCount(savedModificationId, existingBytecodeUseCount + 1);
+    }
   }
 }
