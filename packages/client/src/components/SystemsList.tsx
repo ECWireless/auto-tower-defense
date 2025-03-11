@@ -1,9 +1,10 @@
 import { User } from 'lucide-react';
 import { useState } from 'react';
+import { zeroHash } from 'viem';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { shortenAddress } from '@/utils/helpers';
+import { formatDateFromTimestamp, shortenAddress } from '@/utils/helpers';
 import { type SavedModification } from '@/utils/types';
 
 type SystemsListProps = {
@@ -121,6 +122,16 @@ export const SystemsList: React.FC<SystemsListProps> = ({
             </div>
           ))}
         </div>
+      </div>
+      <div className="mt-4">
+        <h3 className="font-semibold text-lg text-white">
+          {selectedModification.name}
+        </h3>
+        {selectedModification.id !== zeroHash && (
+          <div className="text-gray-400 text-[10px]">
+            Created {formatDateFromTimestamp(selectedModification.timestamp)}
+          </div>
+        )}
       </div>
       <div className="mt-4">
         <h3 className="font-semibold text-md text-white">Description</h3>

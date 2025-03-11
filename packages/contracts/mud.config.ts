@@ -136,6 +136,7 @@ export default defineWorld({
         id: "bytes32", // keccak256(abi.encodePacked(bytecode))
         author: "address",
         size: "uint256",
+        timestamp: "uint256",
         useCount: "uint256",
         bytecode: "bytes",
         description: "string",

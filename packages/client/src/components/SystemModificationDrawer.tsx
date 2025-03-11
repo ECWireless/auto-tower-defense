@@ -94,10 +94,13 @@ export const SystemModificationDrawer: React.FC<
           name: _savedModification.name,
           size: `${_savedModification.size.toString()} bytes`,
           sourceCode: _savedModification.sourceCode,
+          timestamp: _savedModification.timestamp,
           useCount: Number(_savedModification.useCount),
         } as SavedModification;
       });
-      return _savedModifications;
+      return _savedModifications.sort(
+        (a, b) => Number(b.timestamp) - Number(a.timestamp),
+      );
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error fetching saved systems:', error);
@@ -119,6 +122,7 @@ export const SystemModificationDrawer: React.FC<
         name: 'New System',
         size: '0 bytes',
         sourceCode: '',
+        timestamp: BigInt(Date.now()),
         useCount: 0,
       };
 

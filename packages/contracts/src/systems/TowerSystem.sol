@@ -114,7 +114,7 @@ contract TowerSystem is System {
     bytes memory savedModificationBytecode = SavedModification.getBytecode(savedModificationId);
     require(keccak256(abi.encodePacked(savedModificationBytecode)) != savedModificationId, "TowerSystem: modification already exists");
 
-    SavedModification.set(savedModificationId, author, contractSize, 0, bytecode, description, name, sourceCode);
+    SavedModification.set(savedModificationId, author, contractSize, block.timestamp, 0, bytecode, description, name, sourceCode);
     return savedModificationId;
   }
 

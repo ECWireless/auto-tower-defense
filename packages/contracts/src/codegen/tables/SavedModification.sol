@@ -19,6 +19,7 @@ import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 struct SavedModificationData {
   address author;
   uint256 size;
+  uint256 timestamp;
   uint256 useCount;
   bytes bytecode;
   string description;
@@ -31,12 +32,12 @@ library SavedModification {
   ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000053617665644d6f64696669636174696f);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0054030414202000000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0074040414202020000000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (address, uint256, uint256, bytes, string, string, string)
-  Schema constant _valueSchema = Schema.wrap(0x00540304611f1fc4c5c5c5000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (address, uint256, uint256, uint256, bytes, string, string, string)
+  Schema constant _valueSchema = Schema.wrap(0x00740404611f1f1fc4c5c5c50000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -52,14 +53,15 @@ library SavedModification {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](7);
+    fieldNames = new string[](8);
     fieldNames[0] = "author";
     fieldNames[1] = "size";
-    fieldNames[2] = "useCount";
-    fieldNames[3] = "bytecode";
-    fieldNames[4] = "description";
-    fieldNames[5] = "name";
-    fieldNames[6] = "sourceCode";
+    fieldNames[2] = "timestamp";
+    fieldNames[3] = "useCount";
+    fieldNames[4] = "bytecode";
+    fieldNames[5] = "description";
+    fieldNames[6] = "name";
+    fieldNames[7] = "sourceCode";
   }
 
   /**
@@ -161,13 +163,55 @@ library SavedModification {
   }
 
   /**
+   * @notice Get timestamp.
+   */
+  function getTimestamp(bytes32 id) internal view returns (uint256 timestamp) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    return (uint256(bytes32(_blob)));
+  }
+
+  /**
+   * @notice Get timestamp.
+   */
+  function _getTimestamp(bytes32 id) internal view returns (uint256 timestamp) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    return (uint256(bytes32(_blob)));
+  }
+
+  /**
+   * @notice Set timestamp.
+   */
+  function setTimestamp(bytes32 id, uint256 timestamp) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((timestamp)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set timestamp.
+   */
+  function _setTimestamp(bytes32 id, uint256 timestamp) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((timestamp)), _fieldLayout);
+  }
+
+  /**
    * @notice Get useCount.
    */
   function getUseCount(bytes32 id) internal view returns (uint256 useCount) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -178,7 +222,7 @@ library SavedModification {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -189,7 +233,7 @@ library SavedModification {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((useCount)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((useCount)), _fieldLayout);
   }
 
   /**
@@ -199,7 +243,7 @@ library SavedModification {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((useCount)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((useCount)), _fieldLayout);
   }
 
   /**
@@ -887,13 +931,14 @@ library SavedModification {
     bytes32 id,
     address author,
     uint256 size,
+    uint256 timestamp,
     uint256 useCount,
     bytes memory bytecode,
     string memory description,
     string memory name,
     string memory sourceCode
   ) internal {
-    bytes memory _staticData = encodeStatic(author, size, useCount);
+    bytes memory _staticData = encodeStatic(author, size, timestamp, useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(bytecode, description, name, sourceCode);
     bytes memory _dynamicData = encodeDynamic(bytecode, description, name, sourceCode);
@@ -911,13 +956,14 @@ library SavedModification {
     bytes32 id,
     address author,
     uint256 size,
+    uint256 timestamp,
     uint256 useCount,
     bytes memory bytecode,
     string memory description,
     string memory name,
     string memory sourceCode
   ) internal {
-    bytes memory _staticData = encodeStatic(author, size, useCount);
+    bytes memory _staticData = encodeStatic(author, size, timestamp, useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(bytecode, description, name, sourceCode);
     bytes memory _dynamicData = encodeDynamic(bytecode, description, name, sourceCode);
@@ -932,7 +978,7 @@ library SavedModification {
    * @notice Set the full data using the data struct.
    */
   function set(bytes32 id, SavedModificationData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.author, _table.size, _table.useCount);
+    bytes memory _staticData = encodeStatic(_table.author, _table.size, _table.timestamp, _table.useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.bytecode, _table.description, _table.name, _table.sourceCode);
     bytes memory _dynamicData = encodeDynamic(_table.bytecode, _table.description, _table.name, _table.sourceCode);
@@ -947,7 +993,7 @@ library SavedModification {
    * @notice Set the full data using the data struct.
    */
   function _set(bytes32 id, SavedModificationData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.author, _table.size, _table.useCount);
+    bytes memory _staticData = encodeStatic(_table.author, _table.size, _table.timestamp, _table.useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.bytecode, _table.description, _table.name, _table.sourceCode);
     bytes memory _dynamicData = encodeDynamic(_table.bytecode, _table.description, _table.name, _table.sourceCode);
@@ -961,12 +1007,16 @@ library SavedModification {
   /**
    * @notice Decode the tightly packed blob of static data using this table's field layout.
    */
-  function decodeStatic(bytes memory _blob) internal pure returns (address author, uint256 size, uint256 useCount) {
+  function decodeStatic(
+    bytes memory _blob
+  ) internal pure returns (address author, uint256 size, uint256 timestamp, uint256 useCount) {
     author = (address(Bytes.getBytes20(_blob, 0)));
 
     size = (uint256(Bytes.getBytes32(_blob, 20)));
 
-    useCount = (uint256(Bytes.getBytes32(_blob, 52)));
+    timestamp = (uint256(Bytes.getBytes32(_blob, 52)));
+
+    useCount = (uint256(Bytes.getBytes32(_blob, 84)));
   }
 
   /**
@@ -1017,7 +1067,7 @@ library SavedModification {
     EncodedLengths _encodedLengths,
     bytes memory _dynamicData
   ) internal pure returns (SavedModificationData memory _table) {
-    (_table.author, _table.size, _table.useCount) = decodeStatic(_staticData);
+    (_table.author, _table.size, _table.timestamp, _table.useCount) = decodeStatic(_staticData);
 
     (_table.bytecode, _table.description, _table.name, _table.sourceCode) = decodeDynamic(
       _encodedLengths,
@@ -1049,8 +1099,13 @@ library SavedModification {
    * @notice Tightly pack static (fixed length) data using this table's schema.
    * @return The static data, encoded into a sequence of bytes.
    */
-  function encodeStatic(address author, uint256 size, uint256 useCount) internal pure returns (bytes memory) {
-    return abi.encodePacked(author, size, useCount);
+  function encodeStatic(
+    address author,
+    uint256 size,
+    uint256 timestamp,
+    uint256 useCount
+  ) internal pure returns (bytes memory) {
+    return abi.encodePacked(author, size, timestamp, useCount);
   }
 
   /**
@@ -1096,13 +1151,14 @@ library SavedModification {
   function encode(
     address author,
     uint256 size,
+    uint256 timestamp,
     uint256 useCount,
     bytes memory bytecode,
     string memory description,
     string memory name,
     string memory sourceCode
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(author, size, useCount);
+    bytes memory _staticData = encodeStatic(author, size, timestamp, useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(bytecode, description, name, sourceCode);
     bytes memory _dynamicData = encodeDynamic(bytecode, description, name, sourceCode);

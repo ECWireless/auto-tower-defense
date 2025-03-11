@@ -32,6 +32,7 @@ export type SavedModification = {
   name: string;
   size: string;
   sourceCode: string;
+  timestamp: bigint;
   useCount: number;
 };
 
