@@ -8,10 +8,10 @@ import {
 import { encodeEntity } from '@latticexyz/store-sync/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
-import { Info, Loader2, Rocket, Scroll } from 'lucide-react';
+import { FileText, Info, Loader2, Rocket, Scroll } from 'lucide-react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { zeroAddress, zeroHash } from 'viem';
 
@@ -19,10 +19,14 @@ import { SystemsList } from '@/components/SystemsList';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Sheet,
   SheetContent,
@@ -52,7 +56,7 @@ export const SystemModificationDrawer: React.FC<
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
     components: { Projectile, SavedModification, Username },
-    systemCalls: { getContractSize, modifyTowerSystem },
+    systemCalls: { getContractSize, modifyTowerSystem, saveModification },
   } = useMUD();
   const { game, isPlayer1, refreshGame } = useGame();
 
@@ -66,6 +70,11 @@ export const SystemModificationDrawer: React.FC<
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
+
+  const [showSaveSystemModal, setShowSaveSystemModal] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchSavedModifications = useCallback(() => {
     try {
@@ -257,6 +266,75 @@ export const SystemModificationDrawer: React.FC<
     tower,
   ]);
 
+  const onSaveModification = useCallback(async () => {
+    try {
+      setIsSaving(true);
+      const bytecode = await onCompileCode();
+      if (!bytecode) {
+        setIsSaving(false);
+        return;
+      }
+
+      const currentContractSize = await getContractSize(bytecode);
+      if (!currentContractSize) {
+        throw new Error('Failed to get contract size');
+      }
+
+      if (currentContractSize > sizeLimit) {
+        throw new Error(
+          `Contract size of ${currentContractSize} exceeds limit of ${sizeLimit} bytes`,
+        );
+      }
+
+      const { error, success } = await saveModification(
+        bytecode,
+        description,
+        name,
+        sourceCode.replace(/\s+/g, ' ').trim(),
+      );
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast.success('System Saved!');
+
+      setShowSaveSystemModal(false);
+      setName('');
+      setDescription('');
+      setIsSystemDrawerOpen(false);
+      refreshGame();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Saving System', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    description,
+    getContractSize,
+    onCompileCode,
+    refreshGame,
+    name,
+    setIsSystemDrawerOpen,
+    saveModification,
+    sizeLimit,
+    sourceCode,
+  ]);
+
+  const isSourceCodeAlreadySaved = useMemo(() => {
+    if (!sourceCode) return false;
+    const flattenedSourceCode = sourceCode.replace(/\s+/g, ' ').trim();
+
+    return savedModifications
+      .slice(1)
+      .some(s => s.sourceCode === flattenedSourceCode);
+  }, [savedModifications, sourceCode]);
+
   // Configure Solidity language
   loader.init().then(monacoInstance => {
     monacoInstance.languages.register({ id: 'solidity' });
@@ -380,31 +458,106 @@ export const SystemModificationDrawer: React.FC<
             />
           )}
 
-          <div className="flex gap-3 mb-6 mt-6">
-            {isPlayer1 && (
+          <div className="flex flex-col gap-3 mb-6 mt-6 sm:flex-row">
+            <div className="flex gap-3">
+              {isPlayer1 && (
+                <Button
+                  className="bg-cyan-950/30 border-cyan-500 hover:bg-cyan-900/50 hover:text-cyan-300 text-cyan-400"
+                  disabled={isDeploying}
+                  onClick={onModifyTowerSystem}
+                  variant="outline"
+                >
+                  {isDeploying ? (
+                    <Loader2 className="animate-spin h-6 w-6" />
+                  ) : (
+                    <Rocket className="h-4 mr-2 w-4" />
+                  )}
+                  Deploy
+                </Button>
+              )}
               <Button
-                className="bg-cyan-950/30 border-cyan-500 hover:bg-cyan-900/50 hover:text-cyan-300 text-cyan-400"
-                disabled={isDeploying}
+                className="border-purple-500 hover:bg-purple-950/50 hover:text-purple-300 text-purple-400"
+                onMouseEnter={() => setIsSemiTransparent(true)}
+                onMouseLeave={() => setIsSemiTransparent(false)}
                 variant="outline"
-                onClick={onModifyTowerSystem}
               >
-                {isDeploying ? (
-                  <Loader2 className="animate-spin h-6 w-6" />
-                ) : (
-                  <Rocket className="h-4 mr-2 w-4" />
-                )}
-                Deploy
+                View Board
+              </Button>
+            </div>
+            {isPlayer1 && !isSourceCodeAlreadySaved && (
+              <Button
+                className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
+                onClick={() => setShowSaveSystemModal(true)}
+                variant="outline"
+              >
+                <FileText className="h-4 mr-2 w-4" />
+                Save System
               </Button>
             )}
-            <Button
-              className="border-purple-500 hover:text-purple-300 hover:bg-purple-950/50 text-purple-400"
-              onMouseEnter={() => setIsSemiTransparent(true)}
-              onMouseLeave={() => setIsSemiTransparent(false)}
-              variant="outline"
-            >
-              View Board
-            </Button>
           </div>
+
+          <Dialog
+            open={showSaveSystemModal}
+            onOpenChange={setShowSaveSystemModal}
+          >
+            <DialogContent className="bg-gray-900/95 border border-pink-900/50 text-white">
+              <DialogHeader>
+                <DialogTitle className="font-bold text-pink-400 text-2xl">
+                  Save System
+                </DialogTitle>
+                <DialogDescription className="mt-2 text-gray-300">
+                  Save your custom projectile system for future use.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-white" htmlFor="system-name">
+                    System Name
+                  </Label>
+                  <Input
+                    className="bg-gray-800 border-gray-700 text-white"
+                    disabled={isSaving}
+                    id="system-name"
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Enter a name for your system"
+                    value={name}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white" htmlFor="system-description">
+                    Description
+                  </Label>
+                  <textarea
+                    className="bg-gray-800 border border-gray-700 h-24 p-2 rounded-md text-white text-sm w-full"
+                    disabled={isSaving}
+                    id="system-description"
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder="Describe what your system does"
+                    value={description}
+                  />
+                </div>
+              </div>
+              <DialogFooter className="mt-6">
+                <Button
+                  className="border-gray-700 text-gray-400"
+                  onClick={() => setShowSaveSystemModal(false)}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-pink-800 hover:bg-pink-700 text-white"
+                  onClick={onSaveModification}
+                >
+                  {isSaving ? (
+                    <Loader2 className="animate-spin h-6 w-6" />
+                  ) : (
+                    'Save System'
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <div className="bg-black/50 border border-cyan-900/50 relative rounded-lg">
             {!isPlayer1 && (
