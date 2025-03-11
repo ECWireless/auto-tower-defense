@@ -24,6 +24,17 @@ export type Game = {
   winner: Address;
 };
 
+export type SavedModification = {
+  id: Entity;
+  author: string;
+  bytecode: string;
+  description: string;
+  name: string;
+  size: string;
+  sourceCode: string;
+  useCount: number;
+};
+
 export type Tower = {
   id: Entity;
   currentHealth: number;

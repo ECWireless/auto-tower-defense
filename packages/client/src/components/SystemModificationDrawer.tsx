@@ -1,11 +1,19 @@
-import { Entity, getComponentValue } from '@latticexyz/recs';
+import {
+  Entity,
+  getComponentValue,
+  getComponentValueStrict,
+  Has,
+  runQuery,
+} from '@latticexyz/recs';
+import { encodeEntity } from '@latticexyz/store-sync/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
 import { Info, Loader2, Rocket, Scroll } from 'lucide-react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { zeroAddress, zeroHash } from 'viem';
 
 import { SystemsList } from '@/components/SystemsList';
 import {
@@ -29,7 +37,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useGame } from '@/contexts/GameContext';
 import { useMUD } from '@/MUDContext';
-import { type Tower } from '@/utils/types';
+import type { SavedModification, Tower } from '@/utils/types';
 
 import { Button } from './ui/button';
 
@@ -43,15 +51,121 @@ export const SystemModificationDrawer: React.FC<
   SystemModificationDrawerProps
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
-    components: { Projectile },
+    components: { Projectile, SavedModification, Username },
     systemCalls: { getContractSize, modifyTowerSystem },
   } = useMUD();
-  const { isPlayer1, refreshGame } = useGame();
+  const { game, isPlayer1, refreshGame } = useGame();
+
+  const [savedModifications, setSavedModifications] = useState<
+    SavedModification[]
+  >([]);
+  const [selectedModification, setSelectedModification] =
+    useState<SavedModification | null>(null);
 
   const [isSemiTransparent, setIsSemiTransparent] = useState<boolean>(false);
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
+
+  const fetchSavedModifications = useCallback(() => {
+    try {
+      const _savedModifications = Array.from(
+        runQuery([Has(SavedModification)]),
+      ).map(entity => {
+        const _savedModification = getComponentValueStrict(
+          SavedModification,
+          entity as Entity,
+        );
+        const authorEntity = encodeEntity(
+          { address: 'address' },
+          { address: _savedModification.author as `0x${string}` },
+        );
+        const authorUsername =
+          getComponentValue(Username, authorEntity)?.value ?? 'Unknown';
+
+        return {
+          id: entity as Entity,
+          author:
+            _savedModification.author === zeroAddress
+              ? 'Template'
+              : authorUsername,
+          bytecode: _savedModification.bytecode,
+          description: _savedModification.description,
+          name: _savedModification.name,
+          size: `${_savedModification.size.toString()} bytes`,
+          sourceCode: _savedModification.sourceCode,
+          useCount: Number(_savedModification.useCount),
+        } as SavedModification;
+      });
+      return _savedModifications;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error fetching saved systems:', error);
+      toast.error('Error Fetching Saved Systems', {
+        description: (error as Error).message,
+      });
+      return [];
+    }
+  }, [SavedModification, Username]);
+
+  useEffect(() => {
+    if (game && isSystemDrawerOpen) {
+      const _savedModifications = fetchSavedModifications();
+      const newModification = {
+        id: zeroHash as Entity,
+        author: game.player1Username,
+        bytecode: zeroHash,
+        description: 'Create a new system!',
+        name: 'New System',
+        size: '0 bytes',
+        sourceCode: '',
+        useCount: 0,
+      };
+
+      const projectile = getComponentValue(Projectile, tower.id as Entity);
+
+      if (projectile) {
+        format(projectile.sourceCode, {
+          parser: 'solidity-parse',
+          plugins: [solidityPlugin],
+        }).then(formattedSourceCode => {
+          const flattenedSourceCode = formattedSourceCode
+            .replace(/\s+/g, ' ')
+            .trim();
+          newModification.sourceCode = flattenedSourceCode.trim();
+
+          const savedModificationMatch = _savedModifications.find(
+            s => s.sourceCode === flattenedSourceCode,
+          );
+
+          if (savedModificationMatch) {
+            setSelectedModification(savedModificationMatch);
+          } else {
+            setSelectedModification(_savedModifications[0]);
+          }
+          setSizeLimit(projectile.sizeLimit);
+          setSourceCode(formattedSourceCode.trim());
+        });
+      } else {
+        setSourceCode('');
+      }
+
+      setSavedModifications([newModification, ..._savedModifications]);
+    }
+  }, [fetchSavedModifications, game, isSystemDrawerOpen, Projectile, tower.id]);
+
+  const onSelectSavedModification = useCallback(
+    (modification: SavedModification) => {
+      format(modification.sourceCode, {
+        parser: 'solidity-parse',
+        plugins: [solidityPlugin],
+      }).then(formattedSourceCode => {
+        setSourceCode(formattedSourceCode.trim());
+        setSelectedModification(modification);
+      });
+    },
+    [],
+  );
 
   const onCompileCode = useCallback(async (): Promise<string | null> => {
     try {
@@ -100,14 +214,14 @@ export const SystemModificationDrawer: React.FC<
 
       if (currentContractSize > sizeLimit) {
         throw new Error(
-          `Contract size of ${currentContractSize} exceeds limit of ${sizeLimit}`,
+          `Contract size of ${currentContractSize} exceeds limit of ${sizeLimit} bytes`,
         );
       }
 
       const { error, success } = await modifyTowerSystem(
         tower.id,
         bytecode,
-        sourceCode,
+        sourceCode.replace(/\s+/g, ' ').trim(),
       );
 
       if (error && !success) {
@@ -254,7 +368,13 @@ export const SystemModificationDrawer: React.FC<
             </TooltipProvider>
           </div>
 
-          <SystemsList />
+          {selectedModification && (
+            <SystemsList
+              onSelectSavedModification={onSelectSavedModification}
+              savedModifications={savedModifications}
+              selectedModification={selectedModification}
+            />
+          )}
 
           <div className="flex gap-3 mb-6 mt-6">
             {isPlayer1 && (
@@ -289,24 +409,20 @@ export const SystemModificationDrawer: React.FC<
             <Editor
               defaultLanguage="solidity"
               height="300px"
-              onChange={value => setSourceCode(value ?? '')}
-              onMount={() => {
-                const projectile = getComponentValue(
-                  Projectile,
-                  tower.id as Entity,
-                );
+              onChange={value => {
+                if (!value) return;
+                const flattenedSourceCode = value.replace(/\s+/g, ' ').trim();
 
-                if (projectile) {
-                  format(projectile.sourceCode, {
-                    parser: 'solidity-parse',
-                    plugins: [solidityPlugin],
-                  }).then(formattedSourceCode => {
-                    setSizeLimit(projectile.sizeLimit);
-                    setSourceCode(formattedSourceCode.trim());
-                  });
+                const savedModificationMatch = savedModifications
+                  .slice(1)
+                  .find(s => s.sourceCode === flattenedSourceCode);
+
+                if (savedModificationMatch) {
+                  setSelectedModification(savedModificationMatch);
                 } else {
-                  setSourceCode('');
+                  setSelectedModification(savedModifications[0]);
                 }
+                setSourceCode(value ?? '');
               }}
               options={{
                 fontSize: 14,

@@ -127,7 +127,7 @@ library TowerHelpers {
       Projectile.setLogicAddress(towerId, defaultProjectileLogicLeftAddress);
       Projectile.setSourceCode(
         towerId,
-        "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x + 5, y); }}"
+        "contract DefaultProjectileLogic { function getNextProjectilePosition( int16 x, int16 y ) public pure returns (int16, int16) { return (x + 5, y); } }"
       );
       Projectile.setSizeLimit(towerId, DEFAULT_LOGIC_SIZE_LIMIT);
     } else {
