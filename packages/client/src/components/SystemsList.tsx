@@ -1,9 +1,11 @@
+import { getComponentValue } from '@latticexyz/recs';
 import { User } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { zeroHash } from 'viem';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useMUD } from '@/MUDContext';
 import { formatDateFromTimestamp, shortenAddress } from '@/utils/helpers';
 import { type SavedModification } from '@/utils/types';
 
@@ -18,7 +20,36 @@ export const SystemsList: React.FC<SystemsListProps> = ({
   savedModifications,
   selectedModification,
 }) => {
+  const {
+    components: { Username },
+    network: { playerEntity },
+  } = useMUD();
   const [systemsTab, setSystemsTab] = useState<'your' | 'other'>('your');
+
+  const myUsername = useMemo(() => {
+    return getComponentValue(Username, playerEntity)?.value ?? '';
+  }, [playerEntity, Username]);
+
+  const mySavedModifications = useMemo(() => {
+    return savedModifications.filter(
+      s => s.author === myUsername || s.author === 'Template',
+    );
+  }, [myUsername, savedModifications]);
+
+  const otherSavedModifications = useMemo(() => {
+    return savedModifications.filter(
+      s => s.author !== myUsername && s.author !== 'Template',
+    );
+  }, [myUsername, savedModifications]);
+
+  useEffect(() => {
+    if (mySavedModifications.find(s => s.id === selectedModification.id)) {
+      setSystemsTab('your');
+    }
+    if (otherSavedModifications.find(s => s.id === selectedModification.id)) {
+      setSystemsTab('other');
+    }
+  }, [selectedModification, mySavedModifications, otherSavedModifications]);
 
   return (
     <div className="mb-6 sm:mr-2">
@@ -57,17 +88,17 @@ export const SystemsList: React.FC<SystemsListProps> = ({
           <span className="font-medium">
             #
             {systemsTab === 'your'
-              ? savedModifications.findIndex(
+              ? mySavedModifications.findIndex(
                   s => s.id === selectedModification.id,
                 ) + 1
-              : savedModifications.findIndex(
+              : otherSavedModifications.findIndex(
                   s => s.id === selectedModification.id,
                 ) + 1 || 0}
           </span>{' '}
           of{' '}
           {systemsTab === 'your'
-            ? savedModifications.length
-            : savedModifications.length}{' '}
+            ? mySavedModifications.length
+            : otherSavedModifications.length}{' '}
           selected
         </div>
       </div>
@@ -75,8 +106,8 @@ export const SystemsList: React.FC<SystemsListProps> = ({
       <div className="bg-black/30 border border-gray-800 h-[240px] overflow-y-auto pr-1 rounded-md systems-scrollbar">
         <div className="p-1 space-y-1">
           {(systemsTab === 'your'
-            ? savedModifications
-            : savedModifications
+            ? mySavedModifications
+            : otherSavedModifications
           ).map(system => (
             <div
               key={system.id}
