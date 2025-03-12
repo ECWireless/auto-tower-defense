@@ -10,7 +10,7 @@ app.use(express.json());
 const port = process.env.PORT || 3002;
 
 app.get("/", (_, res) => {
-  res.send("Smart Tower Defense API");
+  res.send("Auto Defense API");
 });
 
 app.post("/compile", (req, res) => {
@@ -52,5 +52,5 @@ app.post("/compile", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Smart Tower Defense API listening on port ${port}`);
+  console.log(`Auto Tower Defense API listening on port ${port}`);
 });

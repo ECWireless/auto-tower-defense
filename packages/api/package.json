@@ -1,7 +1,7 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "description": "Smart Tower Defense API",
+  "description": "Auto Tower Defense API",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

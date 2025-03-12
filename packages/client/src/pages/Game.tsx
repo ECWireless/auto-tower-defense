@@ -51,7 +51,7 @@ export const InnerGamePage = (): JSX.Element => {
   // Add game ID to tab title
   useEffect(() => {
     if (game) {
-      document.title = `Game ${game.id} - Smart Tower Defense`;
+      document.title = `Game ${game.id} - Auto Tower Defense`;
     }
   }, [game]);
 
