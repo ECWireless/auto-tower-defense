@@ -44,10 +44,13 @@ export function createSystemCalls(
 ) {
   const createGame = async (username: string, resetLevel: boolean) => {
     try {
-      const tx = await worldContract.write.app__createGame([
-        username,
-        resetLevel,
-      ]);
+      const tx = await worldContract.write.app__createGame(
+        [username, resetLevel],
+        // Because the system function uses prevrandao and a loop, automatic gas estimation can be wrong
+        {
+          gas: BigInt('10000000'),
+        },
+      );
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
 
@@ -191,6 +194,36 @@ export function createSystemCalls(
     }
   };
 
+  const saveModification = async (
+    bytecode: string,
+    description: string,
+    name: string,
+    sourceCode: string,
+  ) => {
+    try {
+      const tx = await worldContract.write.app__saveModification([
+        bytecode as `0x${string}`,
+        description,
+        name,
+        sourceCode,
+      ]);
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to save modification.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   return {
     createGame,
     getContractSize,
@@ -198,5 +231,6 @@ export function createSystemCalls(
     modifyTowerSystem,
     moveTower,
     nextTurn,
+    saveModification,
   };
 }

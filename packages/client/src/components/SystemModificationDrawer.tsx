@@ -1,26 +1,49 @@
-import { Box, Heading, HStack } from '@chakra-ui/react';
-import { Entity, getComponentValue } from '@latticexyz/recs';
-import { decodeEntity } from '@latticexyz/store-sync/recs';
+import {
+  Entity,
+  getComponentValue,
+  getComponentValueStrict,
+  Has,
+  runQuery,
+} from '@latticexyz/recs';
+import { encodeEntity } from '@latticexyz/store-sync/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
+import { FileText, Info, Loader2, Rocket, Scroll } from 'lucide-react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { zeroAddress, zeroHash } from 'viem';
 
-import { useGame } from '../contexts/GameContext';
-import { useMUD } from '../MUDContext';
-import { type Tower } from '../utils/types';
-import { Button } from './ui/button';
+import { SystemsList } from '@/components/SystemsList';
 import {
-  DrawerBackdrop,
-  DrawerBody,
-  DrawerCloseTrigger,
-  DrawerContent,
-  DrawerHeader,
-  DrawerRoot,
-  DrawerTitle,
-} from './ui/drawer';
-import { toaster } from './ui/toaster';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useGame } from '@/contexts/GameContext';
+import { useMUD } from '@/MUDContext';
+import type { SavedModification, Tower } from '@/utils/types';
+
+import { Button } from './ui/button';
 
 type SystemModificationDrawerProps = {
   isSystemDrawerOpen: boolean;
@@ -32,16 +55,130 @@ export const SystemModificationDrawer: React.FC<
   SystemModificationDrawerProps
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
-    components: { Projectile },
-    network: { playerEntity },
-    systemCalls: { getContractSize, modifyTowerSystem },
+    components: { Projectile, SavedModification, Username },
+    systemCalls: { getContractSize, modifyTowerSystem, saveModification },
   } = useMUD();
-  const { refreshGame } = useGame();
+  const { game, isPlayer1, refreshGame } = useGame();
+
+  const [savedModifications, setSavedModifications] = useState<
+    SavedModification[]
+  >([]);
+  const [selectedModification, setSelectedModification] =
+    useState<SavedModification | null>(null);
 
   const [isSemiTransparent, setIsSemiTransparent] = useState<boolean>(false);
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
+
+  const [showSaveSystemModal, setShowSaveSystemModal] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const fetchSavedModifications = useCallback(() => {
+    try {
+      const _savedModifications = Array.from(
+        runQuery([Has(SavedModification)]),
+      ).map(entity => {
+        const _savedModification = getComponentValueStrict(
+          SavedModification,
+          entity as Entity,
+        );
+        const authorEntity = encodeEntity(
+          { address: 'address' },
+          { address: _savedModification.author as `0x${string}` },
+        );
+        const authorUsername =
+          getComponentValue(Username, authorEntity)?.value ?? 'Unknown';
+
+        return {
+          id: entity as Entity,
+          author:
+            _savedModification.author === zeroAddress
+              ? 'Template'
+              : authorUsername,
+          bytecode: _savedModification.bytecode,
+          description: _savedModification.description,
+          name: _savedModification.name,
+          size: `${_savedModification.size.toString()} bytes`,
+          sourceCode: _savedModification.sourceCode,
+          timestamp: _savedModification.timestamp,
+          useCount: Number(_savedModification.useCount),
+        } as SavedModification;
+      });
+      return _savedModifications.sort(
+        (a, b) => Number(b.timestamp) - Number(a.timestamp),
+      );
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error fetching saved systems:', error);
+      toast.error('Error Fetching Saved Systems', {
+        description: (error as Error).message,
+      });
+      return [];
+    }
+  }, [SavedModification, Username]);
+
+  useEffect(() => {
+    if (game && isSystemDrawerOpen) {
+      const _savedModifications = fetchSavedModifications();
+      const newModification = {
+        id: zeroHash as Entity,
+        author: game.player1Username,
+        bytecode: zeroHash,
+        description: 'Create a new system!',
+        name: 'New System',
+        size: '0 bytes',
+        sourceCode: '',
+        timestamp: BigInt(Date.now()),
+        useCount: 0,
+      };
+
+      const projectile = getComponentValue(Projectile, tower.id as Entity);
+
+      if (projectile) {
+        format(projectile.sourceCode, {
+          parser: 'solidity-parse',
+          plugins: [solidityPlugin],
+        }).then(formattedSourceCode => {
+          const flattenedSourceCode = formattedSourceCode
+            .replace(/\s+/g, ' ')
+            .trim();
+          newModification.sourceCode = flattenedSourceCode.trim();
+
+          const savedModificationMatch = _savedModifications.find(
+            s => s.sourceCode === flattenedSourceCode,
+          );
+
+          if (savedModificationMatch) {
+            setSelectedModification(savedModificationMatch);
+          } else {
+            setSelectedModification(_savedModifications[0]);
+          }
+          setSizeLimit(projectile.sizeLimit);
+          setSourceCode(formattedSourceCode.trim());
+        });
+      } else {
+        setSourceCode('');
+      }
+
+      setSavedModifications([newModification, ..._savedModifications]);
+    }
+  }, [fetchSavedModifications, game, isSystemDrawerOpen, Projectile, tower.id]);
+
+  const onSelectSavedModification = useCallback(
+    (modification: SavedModification) => {
+      format(modification.sourceCode, {
+        parser: 'solidity-parse',
+        plugins: [solidityPlugin],
+      }).then(formattedSourceCode => {
+        setSourceCode(formattedSourceCode.trim());
+        setSelectedModification(modification);
+      });
+    },
+    [],
+  );
 
   const onCompileCode = useCallback(async (): Promise<string | null> => {
     try {
@@ -66,9 +203,8 @@ export const SystemModificationDrawer: React.FC<
       // eslint-disable-next-line no-console
       console.error('Error compiling code:', error);
 
-      toaster.create({
-        title: 'Error Compiling Code',
-        type: 'error',
+      toast.error('Error Compiling Code', {
+        description: (error as Error).message,
       });
 
       return null;
@@ -91,24 +227,21 @@ export const SystemModificationDrawer: React.FC<
 
       if (currentContractSize > sizeLimit) {
         throw new Error(
-          `Contract size of ${currentContractSize} exceeds limit of ${sizeLimit}`,
+          `Contract size of ${currentContractSize} exceeds limit of ${sizeLimit} bytes`,
         );
       }
 
       const { error, success } = await modifyTowerSystem(
         tower.id,
         bytecode,
-        sourceCode,
+        sourceCode.replace(/\s+/g, ' ').trim(),
       );
 
       if (error && !success) {
         throw new Error(error);
       }
 
-      toaster.create({
-        title: 'System Deployed!',
-        type: 'success',
-      });
+      toast.success('System Deployed!');
 
       setIsSystemDrawerOpen(false);
       refreshGame();
@@ -116,10 +249,8 @@ export const SystemModificationDrawer: React.FC<
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toaster.create({
+      toast.error('Error Deploying System', {
         description: (error as Error).message,
-        title: 'Error Deploying System',
-        type: 'error',
       });
     } finally {
       setIsDeploying(false);
@@ -135,18 +266,74 @@ export const SystemModificationDrawer: React.FC<
     tower,
   ]);
 
-  const isMyTower = useMemo(() => {
-    if (!(playerEntity && tower.owner)) return false;
+  const onSaveModification = useCallback(async () => {
+    try {
+      setIsSaving(true);
+      const bytecode = await onCompileCode();
+      if (!bytecode) {
+        setIsSaving(false);
+        return;
+      }
 
-    const playerAddress = decodeEntity(
-      {
-        address: 'address',
-      },
-      playerEntity,
-    );
+      const currentContractSize = await getContractSize(bytecode);
+      if (!currentContractSize) {
+        throw new Error('Failed to get contract size');
+      }
 
-    return playerAddress.address === tower.owner;
-  }, [playerEntity, tower]);
+      if (currentContractSize > sizeLimit) {
+        throw new Error(
+          `Contract size of ${currentContractSize} exceeds limit of ${sizeLimit} bytes`,
+        );
+      }
+
+      const { error, success } = await saveModification(
+        bytecode,
+        description,
+        name,
+        sourceCode.replace(/\s+/g, ' ').trim(),
+      );
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast.success('System Saved!');
+
+      setShowSaveSystemModal(false);
+      setName('');
+      setDescription('');
+      setIsSystemDrawerOpen(false);
+      refreshGame();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Saving System', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    description,
+    getContractSize,
+    onCompileCode,
+    refreshGame,
+    name,
+    setIsSystemDrawerOpen,
+    saveModification,
+    sizeLimit,
+    sourceCode,
+  ]);
+
+  const isSourceCodeAlreadySaved = useMemo(() => {
+    if (!sourceCode) return false;
+    const flattenedSourceCode = sourceCode.replace(/\s+/g, ' ').trim();
+
+    return savedModifications
+      .slice(1)
+      .some(s => s.sourceCode === flattenedSourceCode);
+  }, [savedModifications, sourceCode]);
 
   // Configure Solidity language
   loader.init().then(monacoInstance => {
@@ -175,96 +362,224 @@ export const SystemModificationDrawer: React.FC<
   });
 
   return (
-    <DrawerRoot
-      onOpenChange={e => setIsSystemDrawerOpen(e.open)}
+    <Sheet
+      onOpenChange={open => setIsSystemDrawerOpen(open)}
       open={isSystemDrawerOpen}
-      size="lg"
     >
-      <DrawerBackdrop />
-      <DrawerContent
-        bgColor="white"
-        opacity={isSemiTransparent ? 0.2 : 1}
-        transition="opacity 0.3s ease"
+      <SheetContent
+        aria-describedby={undefined}
+        className={`bg-gray-900/95 border-l border-cyan-900/50 max-w-none md:w-[800px] p-4 ${isSemiTransparent ? 'opacity-10' : 'opacity-100'} w-[90%]`}
+        side="right"
       >
-        <DrawerCloseTrigger bgColor="black" />
-        <DrawerHeader>
-          <DrawerTitle color="black" textTransform="uppercase">
-            System Modification
-          </DrawerTitle>
-        </DrawerHeader>
-        <DrawerBody color="black">
-          <Box mb={4}>
-            <Heading fontSize="lg">Rules</Heading>
-            <Box as="ul" listStylePosition="inside" listStyleType="circle">
-              <li>
-                Modify the <strong>Solidity</strong> code to change the behavior
-                of the projectile. The projectile will be deployed as a smart
-                contract.
-              </li>
-              <li>
-                Projectiles move at a speed of x &quot;pixels&quot; per tick.
-                However, <strong>x can never exceed 10 per tick</strong> (each
-                tile has a resolution of 10x10 pixels).{' '}
-                <strong>There are 28 ticks</strong> when the round results run.
-                The recommended speed is 5 pixels per tick.
-              </li>
-              <li>
-                The size limit of the projectile logic code is{' '}
-                <strong>{sizeLimit.toString()} bytes</strong>.
-              </li>
-            </Box>
-          </Box>
-          <HStack mb={4}>
-            {isMyTower && (
+        <SheetHeader>
+          <SheetTitle className="font-bold text-cyan-400 text-2xl">
+            SYSTEM MODIFICATION
+          </SheetTitle>
+        </SheetHeader>
+        <div className="mt-6 overflow-y-auto">
+          <Dialog aria-describedby={undefined}>
+            <DialogTrigger asChild>
               <Button
-                disabled={isDeploying}
-                onClick={onModifyTowerSystem}
-                variant="surface"
+                className="border-purple-500 hover:text-purple-300 hover:bg-purple-950/50 text-purple-400"
+                variant="outline"
               >
-                {isDeploying ? 'Deploying...' : 'Deploy'}
+                <Scroll className="h-4 mr-2 w-4" />
+                View Rules
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gray-900 border border-cyan-900/50 text-white">
+              <DialogHeader>
+                <DialogTitle className="text-cyan-400 text-xl">
+                  Rules
+                </DialogTitle>
+              </DialogHeader>
+              <ul className="space-y-4 text-gray-300">
+                <li className="flex gap-2">
+                  <span>•</span>
+                  <span>
+                    Modify the <span className="text-cyan-400">Solidity</span>{' '}
+                    code to change the behavior of the projectile. The
+                    projectile will be deployed as a smart contract.
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span>•</span>
+                  <span>
+                    Projectiles move at a speed of x &quot;pixels&quot; per
+                    tick. However,
+                    <span className="font-semibold text-pink-400">
+                      {' '}
+                      x can never exceed 10 per tick{' '}
+                    </span>
+                    (each tile has a resolution of 10x10 pixels).
+                    <span className="font-semibold text-cyan-400">
+                      {' '}
+                      There are 28 ticks{' '}
+                    </span>
+                    when the round results run. The recommended speed is 5
+                    pixels per tick.
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span>•</span>
+                  <span>
+                    The size limit of the projectile logic code is{' '}
+                    <span className="font-semibold text-cyan-400">
+                      1000 bytes
+                    </span>
+                    .
+                  </span>
+                </li>
+              </ul>
+            </DialogContent>
+          </Dialog>
+
+          <div className="flex gap-2 items-center">
+            <h3 className="font-semibold my-4 text-white text-xl">
+              Saved Systems
+            </h3>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6">
+                  <Info className="h-3 w-3" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Basic templates are included in your list of systems</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          {selectedModification && (
+            <SystemsList
+              onSelectSavedModification={onSelectSavedModification}
+              savedModifications={savedModifications}
+              selectedModification={selectedModification}
+            />
+          )}
+
+          <div className="flex flex-col gap-3 mb-6 mt-6 sm:flex-row">
+            <div className="flex gap-3">
+              {isPlayer1 && (
+                <Button
+                  className="bg-cyan-950/30 border-cyan-500 hover:bg-cyan-900/50 hover:text-cyan-300 text-cyan-400"
+                  disabled={isDeploying}
+                  onClick={onModifyTowerSystem}
+                  variant="outline"
+                >
+                  {isDeploying ? (
+                    <Loader2 className="animate-spin h-6 w-6" />
+                  ) : (
+                    <Rocket className="h-4 mr-2 w-4" />
+                  )}
+                  Deploy
+                </Button>
+              )}
+              <Button
+                className="border-purple-500 hover:bg-purple-950/50 hover:text-purple-300 text-purple-400"
+                onMouseEnter={() => setIsSemiTransparent(true)}
+                onMouseLeave={() => setIsSemiTransparent(false)}
+                variant="outline"
+              >
+                View Board
+              </Button>
+            </div>
+            {isPlayer1 && !isSourceCodeAlreadySaved && (
+              <Button
+                className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
+                onClick={() => setShowSaveSystemModal(true)}
+                variant="outline"
+              >
+                <FileText className="h-4 mr-2 w-4" />
+                Save System
               </Button>
             )}
-            <Button
-              border="1px solid black"
-              color="black"
-              onMouseEnter={() => setIsSemiTransparent(true)}
-              onMouseLeave={() => setIsSemiTransparent(false)}
-              variant="plain"
-            >
-              View Board
-            </Button>
-          </HStack>
-          <Box border="1px solid black" position="relative" w="100%">
-            {!isMyTower && (
-              <Box
-                bg="transparent"
-                h="300px"
-                position="absolute"
-                w="100%"
-                zIndex={1}
-              />
+          </div>
+
+          <Dialog
+            open={showSaveSystemModal}
+            onOpenChange={setShowSaveSystemModal}
+          >
+            <DialogContent className="bg-gray-900/95 border border-pink-900/50 text-white">
+              <DialogHeader>
+                <DialogTitle className="font-bold text-pink-400 text-2xl">
+                  Save System
+                </DialogTitle>
+                <DialogDescription className="mt-2 text-gray-300">
+                  Save your custom projectile system for future use.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-white" htmlFor="system-name">
+                    System Name
+                  </Label>
+                  <Input
+                    className="bg-gray-800 border-gray-700 text-white"
+                    disabled={isSaving}
+                    id="system-name"
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Enter a name for your system"
+                    value={name}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white" htmlFor="system-description">
+                    Description
+                  </Label>
+                  <textarea
+                    className="bg-gray-800 border border-gray-700 h-24 p-2 rounded-md text-white text-sm w-full"
+                    disabled={isSaving}
+                    id="system-description"
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder="Describe what your system does"
+                    value={description}
+                  />
+                </div>
+              </div>
+              <DialogFooter className="mt-6">
+                <Button
+                  className="border-gray-700 text-gray-400"
+                  onClick={() => setShowSaveSystemModal(false)}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-pink-800 hover:bg-pink-700 text-white"
+                  onClick={onSaveModification}
+                >
+                  {isSaving ? (
+                    <Loader2 className="animate-spin h-6 w-6" />
+                  ) : (
+                    'Save System'
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <div className="bg-black/50 border border-cyan-900/50 relative rounded-lg">
+            {!isPlayer1 && (
+              <div className="absolute bg-transparent flex h-full w-full z-1" />
             )}
             <Editor
               defaultLanguage="solidity"
               height="300px"
-              onChange={value => setSourceCode(value ?? '')}
-              onMount={() => {
-                const projectile = getComponentValue(
-                  Projectile,
-                  tower.id as Entity,
-                );
+              onChange={value => {
+                if (!value) return;
+                const flattenedSourceCode = value.replace(/\s+/g, ' ').trim();
 
-                if (projectile) {
-                  format(projectile.sourceCode, {
-                    parser: 'solidity-parse',
-                    plugins: [solidityPlugin],
-                  }).then(formattedSourceCode => {
-                    setSizeLimit(projectile.sizeLimit);
-                    setSourceCode(formattedSourceCode.trim());
-                  });
+                const savedModificationMatch = savedModifications
+                  .slice(1)
+                  .find(s => s.sourceCode === flattenedSourceCode);
+
+                if (savedModificationMatch) {
+                  setSelectedModification(savedModificationMatch);
                 } else {
-                  setSourceCode('');
+                  setSelectedModification(savedModifications[0]);
                 }
+                setSourceCode(value ?? '');
               }}
               options={{
                 fontSize: 14,
@@ -273,9 +588,9 @@ export const SystemModificationDrawer: React.FC<
               }}
               value={sourceCode}
             />
-          </Box>
-        </DrawerBody>
-      </DrawerContent>
-    </DrawerRoot>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };

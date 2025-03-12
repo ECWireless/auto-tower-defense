@@ -1,10 +1,11 @@
+import './index.css';
+
 import mudConfig from 'contracts/mud.config';
 import { createRoot } from 'react-dom/client';
 
-import { App } from './App';
-import { Provider } from './components/ui/provider';
-import { setup } from './mud/setup';
-import { MUDProvider } from './MUDContext';
+import { App } from '@/App';
+import { setup } from '@/mud/setup';
+import { MUDProvider } from '@/MUDContext';
 
 const rootElement = document.getElementById('react-root');
 if (!rootElement) throw new Error('React root not found');
@@ -14,9 +15,7 @@ const root = createRoot(rootElement);
 setup().then(async result => {
   root.render(
     <MUDProvider value={result}>
-      <Provider forcedTheme="dark">
-        <App />
-      </Provider>
+      <App />
     </MUDProvider>,
   );
 

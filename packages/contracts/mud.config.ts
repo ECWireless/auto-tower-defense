@@ -2,8 +2,11 @@ import { defineWorld } from "@latticexyz/world";
 
 export default defineWorld({
   namespace: "app",
+  deploy: {
+    upgradeableWorldImplementation: true,
+  },
   enums: {
-    ActionType: ["Install", "Move", "Modify"],
+    ActionType: ["Skip", "Install", "Move", "Modify"],
   },
   tables: {
     Action: {
@@ -17,14 +20,6 @@ export default defineWorld({
         projectile: "bool",
       },
       key: ["id"],
-    },
-    AddressBook: {
-      schema: {
-        game: "address",
-        tower: "address",
-        world: "address",
-      },
-      key: [],
     },
     Castle: "bool",
     Counter: {
@@ -133,6 +128,20 @@ export default defineWorld({
         gameId: "bytes32",
         winner: "address",
         actions: "bytes32[]",
+      },
+      key: ["id"],
+    },
+    SavedModification: {
+      schema: {
+        id: "bytes32", // keccak256(abi.encodePacked(bytecode))
+        author: "address",
+        size: "uint256",
+        timestamp: "uint256",
+        useCount: "uint256",
+        bytecode: "bytes",
+        description: "string",
+        name: "string",
+        sourceCode: "string",
       },
       key: ["id"],
     },

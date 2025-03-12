@@ -33,7 +33,6 @@ import {
   parseEther,
   webSocket,
 } from 'viem';
-import { garnet } from 'viem/chains';
 
 import { getNetworkConfig } from './getNetworkConfig';
 import { world } from './world';
@@ -74,7 +73,8 @@ export async function setupNetwork() {
     .extend(transactionQueue())
     .extend(writeObserver({ onWrite: write => write$.next(write) }));
 
-  if (networkConfig.chain.id === garnet.id) {
+  // If it's Pyrope Testnet (695569)
+  if (networkConfig.chain.id === 695569) {
     const address = burnerAccount.address;
     // eslint-disable-next-line no-console
     console.info('[Dev Faucet]: Player address -> ', address);

@@ -21,5 +21,12 @@ interface ITowerSystem {
     string memory sourceCode
   ) external returns (address projectileLogicAddress);
 
+  function app__saveModification(
+    bytes memory bytecode,
+    string memory description,
+    string memory name,
+    string memory sourceCode
+  ) external returns (bytes32 savedModificationId);
+
   function app__getContractSize(bytes memory bytecode) external returns (uint256 size);
 }

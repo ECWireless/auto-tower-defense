@@ -13,8 +13,10 @@ import { MAX_ROUNDS, MAX_TICKS, MAX_TOWER_HEALTH } from "../../constants.sol";
  */
 library ProjectileHelpers {
   function executeRoundResults(bytes32 gameId) public {
-    address player1Address = Game.getPlayer1Address(gameId);
-    address player2Address = Game.getPlayer2Address(gameId);
+    GameData memory game = Game.get(gameId);
+
+    address player1Address = game.player1Address;
+    address player2Address = game.player2Address;
 
     bytes32 localPlayer1Id = EntityHelpers.localAddressToKey(gameId, player1Address);
     bytes32 localPlayer2Id = EntityHelpers.localAddressToKey(gameId, player2Address);
@@ -24,8 +26,8 @@ library ProjectileHelpers {
 
     _simulateTicks(towers);
 
-    GameData memory game = Game.get(gameId);
-    if (game.roundCount > MAX_ROUNDS) {
+    bool isGameOver = Game.getEndTimestamp(gameId) != 0;
+    if (game.roundCount > MAX_ROUNDS && !isGameOver) {
       GameHelpers.endGame(gameId, game.player2Address);
     }
   }
@@ -104,10 +106,7 @@ library ProjectileHelpers {
       // Step 4: update the trajectory
       _updateProjectileTrajectory(towers[i].id, newX, newY);
 
-      // Step 5: handle collisions
-      _handleCollisions(towers, i);
-
-      // Step 6: finalize the projectile movement
+      // Step 5: finalize the projectile movement and collisions
       _handleProjectileMovement(towers, i, newX, newY);
     }
   }
@@ -192,41 +191,6 @@ library ProjectileHelpers {
     ProjectileTrajectory.set(towerId, newX, newY);
   }
 
-  function _handleCollisions(TowerDetails[] memory towers, uint256 towerIndex) internal pure {
-    for (uint256 j = 0; j < towers.length; j++) {
-      if (_checkProjectileCollision(towers, towerIndex, j)) {
-        break;
-      }
-    }
-  }
-
-  function _checkProjectileCollision(
-    TowerDetails[] memory towers,
-    uint256 i,
-    uint256 j
-  )
-    public
-    pure
-    returns (
-      // int16 newProjectileX,
-      // int16 newProjectileY
-      bool
-    )
-  {
-    if (i == j || towers[j].health == 0 || towers[j].projectileAddress == address(0)) {
-      return false;
-    }
-
-    // TODO: Maybe bring this back later
-    // if (newProjectileX == towers[j].projectileX && newProjectileY == towers[j].projectileY) {
-    //   towers[i].projectileAddress = address(0);
-    //   towers[j].projectileAddress = address(0);
-    //   return true;
-    // }
-
-    return false;
-  }
-
   function _handleProjectileMovement(
     TowerDetails[] memory towers,
     uint256 i,
@@ -246,7 +210,12 @@ library ProjectileHelpers {
   }
 
   function _handleCollision(TowerDetails[] memory towers, uint256 i, bytes32 positionEntity) internal {
-    uint8 newHealth = Health.getCurrentHealth(positionEntity) - 1;
+    uint8 entityHealth = Health.getCurrentHealth(positionEntity);
+
+    if (entityHealth == 0) {
+      return;
+    }
+    uint8 newHealth = entityHealth - 1;
 
     if (Castle.get(positionEntity)) {
       Health.setCurrentHealth(positionEntity, newHealth);
@@ -257,7 +226,11 @@ library ProjectileHelpers {
         if (gameId == 0) {
           gameId = CurrentGame.get(positionEntity);
         }
-        GameHelpers.endGame(gameId, Owner.get(towers[i].id));
+
+        // Preference is given to player 1 if both castles are destroyed at the same time
+        if (Game.getEndTimestamp(gameId) == 0) {
+          GameHelpers.endGame(gameId, Owner.get(towers[i].id));
+        }
       }
     } else {
       Health.setCurrentHealth(positionEntity, newHealth);

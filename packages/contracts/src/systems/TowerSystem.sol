@@ -2,7 +2,12 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, TowerCounter } from "../codegen/index.sol";
+import { RESOURCE_SYSTEM } from "@latticexyz/world/src/worldResourceTypes.sol";
+import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
+import { Systems } from "@latticexyz/world/src/codegen/tables/Systems.sol";
+
+import { _gameSystemAddress } from "../utils.sol";
+import { CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, SavedModification, TowerCounter } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
@@ -60,7 +65,8 @@ contract TowerSystem is System {
   ) external returns (address projectileLogicAddress) {
     address playerAddress = _msgSender();
     bytes32 playerGameId = CurrentGame.get(EntityHelpers.globalAddressToKey(playerAddress));
-    address gameSystemAddress = AddressBook.getGame();
+
+    address gameSystemAddress = _gameSystemAddress();
     if (playerAddress == gameSystemAddress) {
       playerGameId = CurrentGame.get(towerId);
     }
@@ -79,7 +85,7 @@ contract TowerSystem is System {
       size := extcodesize(newSystem)
     }
 
-    require(size > 0, "Contract creation failed");
+    require(size > 0, "TowerSystem: contract creation failed");
     require(
       size <= DEFAULT_LOGIC_SIZE_LIMIT,
       string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
@@ -88,12 +94,31 @@ contract TowerSystem is System {
     Game.setActionCount(playerGameId, currentGame.actionCount - 1);
     Projectile.set(towerId, address(newSystem), DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
 
+    TowerHelpers.incrementSavedModificationUseCount(bytecode);
     TowerHelpers.storeModifyTowerAction(playerGameId, playerAddress, towerId, bytecode, newSystem, sourceCode);
-
     return address(newSystem);
   }
 
-  function getContractSize(bytes memory bytecode) external returns (uint256 size) {
+  function saveModification(bytes memory bytecode, string memory description, string memory name, string memory sourceCode) external returns (bytes32 savedModificationId) {
+    address author = _msgSender();
+    uint256 contractSize = getContractSize(bytecode);
+
+    require(contractSize > 0, "TowerSystem: bytecode is invalid");
+    require(
+      contractSize <= DEFAULT_LOGIC_SIZE_LIMIT,
+      string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
+    );
+
+    savedModificationId = keccak256(abi.encodePacked(bytecode));
+
+    bytes memory savedModificationBytecode = SavedModification.getBytecode(savedModificationId);
+    require(keccak256(abi.encodePacked(savedModificationBytecode)) != savedModificationId, "TowerSystem: modification already exists");
+
+    SavedModification.set(savedModificationId, author, contractSize, block.timestamp, 0, bytecode, description, name, sourceCode);
+    return savedModificationId;
+  }
+
+  function getContractSize(bytes memory bytecode) public returns (uint256 size) {
     address newSystem;
     assembly {
       newSystem := create(0, add(bytecode, 0x20), mload(bytecode))

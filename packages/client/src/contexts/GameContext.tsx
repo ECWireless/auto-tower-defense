@@ -7,25 +7,25 @@ import {
   HasValue,
   runQuery,
 } from '@latticexyz/recs';
-import { encodeEntity } from '@latticexyz/store-sync/recs';
+import { decodeEntity, encodeEntity } from '@latticexyz/store-sync/recs';
 import {
   createContext,
   ReactNode,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
+import { toast } from 'sonner';
 import { Address, zeroAddress, zeroHash } from 'viem';
 
-import { toaster } from '../components/ui/toaster';
-import { useMUD } from '../MUDContext';
-import type { Castle, Game, Tower } from '../utils/types';
-
-const MAX_TICKS = 28;
+import { useMUD } from '@/MUDContext';
+import { MAX_TICKS } from '@/utils/constants';
+import type { Castle, Game, Tower } from '@/utils/types';
 
 type GameContextType = {
-  activeTowerId: string;
+  activeTowerId: string | null;
   allowDrop: (e: React.DragEvent) => void;
   enemyCastlePosition: Castle;
   game: Game | null;
@@ -34,12 +34,24 @@ type GameContextType = {
     towerId: string,
     type: 'offense' | 'defense',
   ) => void;
+  handleTowerSelect: (towerId: string, type: 'offense' | 'defense') => void;
   installingPosition: { x: number; y: number } | null;
+  isChangingTurn: boolean;
   isInstallingTower: boolean;
+  isPlayer1: boolean;
   isRefreshing: boolean;
   myCastlePosition: Castle;
-  onInstallTower: (e: React.DragEvent, row: number, col: number) => void;
-  onMoveTower: (e: React.DragEvent, row: number, col: number) => void;
+  onInstallTower: (
+    e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
+    row: number,
+    col: number,
+  ) => void;
+  onMoveTower: (
+    e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
+    row: number,
+    col: number,
+  ) => void;
+  onNextTurn: () => void;
   refreshGame: () => void;
   setTowers: (towers: Tower[]) => void;
   setTriggerAnimation: (value: boolean) => void;
@@ -49,7 +61,7 @@ type GameContextType = {
 };
 
 const GameContext = createContext<GameContextType>({
-  activeTowerId: zeroHash,
+  activeTowerId: null,
   allowDrop: () => {},
   enemyCastlePosition: {
     id: zeroHash as Entity,
@@ -60,8 +72,11 @@ const GameContext = createContext<GameContextType>({
   },
   game: null,
   handleDragStart: () => {},
+  handleTowerSelect: () => {},
+  isChangingTurn: false,
   installingPosition: null,
   isInstallingTower: false,
+  isPlayer1: false,
   isRefreshing: false,
   myCastlePosition: {
     id: zeroHash as Entity,
@@ -72,6 +87,7 @@ const GameContext = createContext<GameContextType>({
   },
   onInstallTower: () => {},
   onMoveTower: () => {},
+  onNextTurn: () => {},
   refreshGame: async () => {},
   setTowers: () => {},
   setTriggerAnimation: () => {},
@@ -103,13 +119,14 @@ export const GameProvider = ({
       Tower,
       Username,
     },
-    systemCalls: { installTower, moveTower },
+    network: { playerEntity },
+    systemCalls: { installTower, moveTower, nextTurn },
   } = useMUD();
 
   const [game, setGame] = useState<Game | null>(null);
   const [isLoadingGame, setIsLoadingGame] = useState(true);
 
-  const [activeTowerId, setActiveTowerId] = useState<string>(zeroHash);
+  const [activeTowerId, setActiveTowerId] = useState<string | null>(null);
   const [isInstallingTower, setIsInstallingTower] = useState(false);
   const [installingPosition, setInstallingPosition] = useState<{
     x: number;
@@ -120,6 +137,8 @@ export const GameProvider = ({
   >('none');
 
   const [towers, setTowers] = useState<Tower[]>([]);
+  const [isChangingTurn, setIsChangingTurn] = useState(false);
+
   const [triggerAnimation, setTriggerAnimation] = useState(false);
   const [tickCount, setTickCount] = useState(0);
 
@@ -248,14 +267,18 @@ export const GameProvider = ({
   }, [fetchGame]);
 
   const onInstallTower = useCallback(
-    async (e: React.DragEvent, row: number, col: number) => {
+    async (
+      e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
+      row: number,
+      col: number,
+    ) => {
       e.preventDefault();
       try {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
 
-        if (activeTowerId !== zeroHash) {
-          throw new Error('Active tower selected. Please move it instead.');
+        if (activeTowerId?.startsWith('0x')) {
+          throw new Error('Installed tower selected. Please move it instead.');
         }
 
         if (!game) {
@@ -275,37 +298,37 @@ export const GameProvider = ({
           throw new Error(error);
         }
 
-        toaster.create({
-          title: 'Tower Installed!',
-          type: 'success',
-        });
+        toast.success('Tower Installed!');
 
         fetchGame();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
-        toaster.create({
+        toast.error('Error Installing Tower', {
           description: (error as Error).message,
-          title: 'Error Installing Tower',
-          type: 'error',
         });
       } finally {
         setIsInstallingTower(false);
         setInstallingPosition(null);
+        setActiveTowerId(null);
       }
     },
     [activePiece, activeTowerId, game, installTower, fetchGame],
   );
 
   const onMoveTower = useCallback(
-    async (e: React.DragEvent, row: number, col: number) => {
+    async (
+      e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
+      row: number,
+      col: number,
+    ) => {
       e.preventDefault();
       try {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
 
-        if (activeTowerId === zeroHash) {
+        if (!activeTowerId?.startsWith('0x')) {
           throw new Error('No active tower selected.');
         }
 
@@ -324,24 +347,20 @@ export const GameProvider = ({
           throw new Error(error);
         }
 
-        toaster.create({
-          title: 'Tower Moved!',
-          type: 'success',
-        });
+        toast.success('Tower Moved!');
 
         fetchGame();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
-        toaster.create({
+        toast.error('Error Moving Tower', {
           description: (error as Error).message,
-          title: 'Error Moving Tower',
-          type: 'error',
         });
       } finally {
         setIsInstallingTower(false);
         setInstallingPosition(null);
+        setActiveTowerId(null);
       }
     },
     [activeTowerId, game, moveTower, fetchGame],
@@ -359,6 +378,80 @@ export const GameProvider = ({
     },
     [],
   );
+
+  const handleTowerSelect = useCallback(
+    (towerId: string, type: 'offense' | 'defense') => {
+      setActiveTowerId(prev => (prev === towerId ? null : towerId));
+      setActivePiece(type);
+    },
+    [],
+  );
+
+  const onNextRound = useCallback(async () => {
+    try {
+      setIsChangingTurn(true);
+
+      if (!game) {
+        throw new Error('Game not found.');
+      }
+
+      if (game.turn === game.player2Address) {
+        throw new Error(`Not player2's turn.`);
+      }
+
+      const { error, success } = await nextTurn(game.id);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast.success('Turn Changed!');
+
+      setTriggerAnimation(true);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Changing Turn', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsChangingTurn(false);
+    }
+  }, [game, nextTurn, setTriggerAnimation]);
+
+  const onNextTurn = useCallback(async () => {
+    try {
+      setIsChangingTurn(true);
+
+      if (!game) {
+        throw new Error('Game not found.');
+      }
+
+      if (game.turn === game.player2Address) {
+        await onNextRound();
+        return;
+      }
+
+      const { error, success } = await nextTurn(game.id);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      fetchGame();
+      await onNextRound();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Changing Turn', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsChangingTurn(false);
+    }
+  }, [fetchGame, game, nextTurn, onNextRound]);
 
   useEffect(() => {
     if (!game) return () => {};
@@ -430,6 +523,18 @@ export const GameProvider = ({
     triggerAnimation,
   ]);
 
+  const isPlayer1 = useMemo(() => {
+    if (!(game && playerEntity)) return false;
+    const playerAddress = decodeEntity(
+      {
+        address: 'address',
+      },
+      playerEntity,
+    ).address;
+
+    return playerAddress === game?.player1Address;
+  }, [game, playerEntity]);
+
   return (
     <GameContext.Provider
       value={{
@@ -438,12 +543,16 @@ export const GameProvider = ({
         enemyCastlePosition,
         game,
         handleDragStart,
+        handleTowerSelect,
         installingPosition,
+        isChangingTurn,
         isInstallingTower,
+        isPlayer1,
         isRefreshing: isLoadingGame,
         myCastlePosition,
         onInstallTower,
         onMoveTower,
+        onNextTurn,
         refreshGame: fetchGame,
         setTowers,
         setTriggerAnimation,

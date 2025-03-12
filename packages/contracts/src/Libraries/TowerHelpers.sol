@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, ActionData, AddressBook, CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedGame, SavedGameData, Tower } from "../codegen/index.sol";
+import { RESOURCE_SYSTEM } from "@latticexyz/world/src/worldResourceTypes.sol";
+import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
+
+import { _gameSystemAddress } from "../utils.sol";
+import { Action, ActionData, CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedGame, SavedGameData, SavedModification, Tower } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
@@ -15,7 +19,8 @@ import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol"
  */
 library TowerHelpers {
   function validateInstallTower(bytes32 potentialGameId, address playerAddress, int16 x, int16 y) public view {
-    address gameSystemAddress = AddressBook.getGame();
+    address gameSystemAddress = _gameSystemAddress();
+
     bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
     bytes32 currentGameId = CurrentGame.get(globalPlayerId);
 
@@ -57,7 +62,8 @@ library TowerHelpers {
     int16 x,
     int16 y
   ) internal view {
-    address gameSystemAddress = AddressBook.getGame();
+    address gameSystemAddress = _gameSystemAddress();
+
     bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
     bytes32 currentGameId = CurrentGame.get(globalPlayerId);
 
@@ -121,7 +127,7 @@ library TowerHelpers {
       Projectile.setLogicAddress(towerId, defaultProjectileLogicLeftAddress);
       Projectile.setSourceCode(
         towerId,
-        "contract DefaultProjectileLogic { function getNextProjectilePosition(int16 x, int16 y) public pure returns (int16, int16) { return (x + 5, y); }}"
+        "contract DefaultProjectileLogic { function getNextProjectilePosition( int16 x, int16 y ) public pure returns (int16, int16) { return (x + 5, y); } }"
       );
       Projectile.setSizeLimit(towerId, DEFAULT_LOGIC_SIZE_LIMIT);
     } else {
@@ -196,6 +202,39 @@ library TowerHelpers {
     require(distance <= 1, "TowerSystem: projectile speed exceeds rules");
   }
 
+  function storeSkipAction(bytes32 gameId, address playerAddress) public {
+    if (playerAddress != _gameSystemAddress()) {
+      bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
+
+      ActionData[] memory actions = new ActionData[](1);
+      actions[0] = ActionData({ actionType: ActionType.Skip, newX: 0, newY: 0, oldX: 0, oldY: 0, projectile: false });
+
+      bytes32[] memory savedGameActionIds = SavedGame.getActions(savedGameId);
+      bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
+
+      for (uint256 i = 0; i < savedGameActionIds.length; i++) {
+        newSavedGameActionIds[i] = savedGameActionIds[i];
+      }
+
+      for (uint256 i = 0; i < actions.length; i++) {
+        newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
+          abi.encodePacked(
+            actions[i].actionType,
+            actions[i].newX,
+            actions[i].newY,
+            actions[i].oldX,
+            actions[i].oldY,
+            actions[i].projectile
+          )
+        );
+        Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
+      }
+
+      SavedGame.setActions(savedGameId, newSavedGameActionIds);
+    }
+  }
+
   function storeInstallTowerAction(
     bytes32 gameId,
     address playerAddress,
@@ -203,8 +242,7 @@ library TowerHelpers {
     int16 newY,
     bool hasProjectile
   ) public {
-    address gameSystemAddress = AddressBook.getGame();
-    if (playerAddress != gameSystemAddress) {
+    if (playerAddress != _gameSystemAddress()) {
       bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
       bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
 
@@ -258,8 +296,7 @@ library TowerHelpers {
     int16 newX,
     int16 newY
   ) public {
-    address gameSystemAddress = AddressBook.getGame();
-    if (playerAddress != gameSystemAddress) {
+    if (playerAddress != _gameSystemAddress()) {
       bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
       bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
 
@@ -308,8 +345,7 @@ library TowerHelpers {
     address systemAddress,
     string memory sourceCode
   ) public {
-    address gameSystemAddress = AddressBook.getGame();
-    if (playerAddress != gameSystemAddress) {
+    if (playerAddress != _gameSystemAddress()) {
       bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
       bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
 
@@ -360,5 +396,15 @@ library TowerHelpers {
     string memory sourceCode
   ) internal {
     Projectile.set(actionId, systemAddress, DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
+  }
+
+  function incrementSavedModificationUseCount(bytes memory bytecode) public {
+    bytes32 savedModificationId = keccak256(abi.encodePacked(bytecode));
+    bytes memory potentialExistingBytecode = SavedModification.getBytecode(savedModificationId);
+
+    if (keccak256(abi.encodePacked(potentialExistingBytecode)) == savedModificationId) {
+      uint256 existingBytecodeUseCount = SavedModification.getUseCount(savedModificationId);
+      SavedModification.setUseCount(savedModificationId, existingBytecodeUseCount + 1);
+    }
   }
 }

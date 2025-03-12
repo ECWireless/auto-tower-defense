@@ -91,7 +91,7 @@ contract GameTest is MudTest {
     vm.stopPrank();
 
     GameData memory game = Game.get(gameId);
-    assertEq(game.actionCount, 1);
+    assertEq(game.actionCount, 2);
     assertEq(game.turn, robAddress);
     assertEq(game.roundCount, 1);
   }
@@ -105,7 +105,7 @@ contract GameTest is MudTest {
     vm.stopPrank();
 
     GameData memory game = Game.get(gameId);
-    assertEq(game.actionCount, 1);
+    assertEq(game.actionCount, 2);
     assertEq(game.turn, aliceAddress);
     assertEq(game.roundCount, 2);
   }
