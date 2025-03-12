@@ -27,7 +27,7 @@ export const HowToPlay: React.FC<HowToPlayProps> = ({
               Overview
             </h2>
             <p className="text-gray-300">
-              Smart Tower Defense builds off of concepts of{' '}
+              Auto Tower Defense builds off of concepts of{' '}
               <span className="text-white font-semibold">
                 Autonomous Worlds
               </span>{' '}
