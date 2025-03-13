@@ -394,11 +394,6 @@ export const GameProvider = ({
       if (!game) {
         throw new Error('Game not found.');
       }
-
-      if (game.turn !== game.player2Address) {
-        throw new Error(`Not player2's turn.`);
-      }
-
       const { error, success } = await nextTurn(game.id);
 
       if (error && !success) {
