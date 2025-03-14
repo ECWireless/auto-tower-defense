@@ -55,7 +55,7 @@ export const SystemModificationDrawer: React.FC<
   SystemModificationDrawerProps
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
-    components: { Projectile, SavedModification, Username },
+    components: { Projectile, SavedMod, Username },
     systemCalls: { getContractSize, modifyTowerSystem, saveModification },
   } = useMUD();
   const { game, isPlayer1 } = useGame();
@@ -78,35 +78,35 @@ export const SystemModificationDrawer: React.FC<
 
   const fetchSavedModifications = useCallback(() => {
     try {
-      const _savedModifications = Array.from(
-        runQuery([Has(SavedModification)]),
-      ).map(entity => {
-        const _savedModification = getComponentValueStrict(
-          SavedModification,
-          entity as Entity,
-        );
-        const authorEntity = encodeEntity(
-          { address: 'address' },
-          { address: _savedModification.author as `0x${string}` },
-        );
-        const authorUsername =
-          getComponentValue(Username, authorEntity)?.value ?? 'Unknown';
+      const _savedModifications = Array.from(runQuery([Has(SavedMod)])).map(
+        entity => {
+          const _savedModification = getComponentValueStrict(
+            SavedMod,
+            entity as Entity,
+          );
+          const authorEntity = encodeEntity(
+            { address: 'address' },
+            { address: _savedModification.author as `0x${string}` },
+          );
+          const authorUsername =
+            getComponentValue(Username, authorEntity)?.value ?? 'Unknown';
 
-        return {
-          id: entity as Entity,
-          author:
-            _savedModification.author === zeroAddress
-              ? 'Template'
-              : authorUsername,
-          bytecode: _savedModification.bytecode,
-          description: _savedModification.description,
-          name: _savedModification.name,
-          size: `${_savedModification.size.toString()} bytes`,
-          sourceCode: _savedModification.sourceCode,
-          timestamp: _savedModification.timestamp,
-          useCount: Number(_savedModification.useCount),
-        } as SavedModification;
-      });
+          return {
+            id: entity as Entity,
+            author:
+              _savedModification.author === zeroAddress
+                ? 'Template'
+                : authorUsername,
+            bytecode: _savedModification.bytecode,
+            description: _savedModification.description,
+            name: _savedModification.name,
+            size: `${_savedModification.size.toString()} bytes`,
+            sourceCode: _savedModification.sourceCode,
+            timestamp: _savedModification.timestamp,
+            useCount: Number(_savedModification.useCount),
+          } as SavedModification;
+        },
+      );
       return _savedModifications.sort(
         (a, b) => Number(b.timestamp) - Number(a.timestamp),
       );
@@ -118,7 +118,7 @@ export const SystemModificationDrawer: React.FC<
       });
       return [];
     }
-  }, [SavedModification, Username]);
+  }, [SavedMod, Username]);
 
   const onRefreshSystemList = useCallback(() => {
     try {

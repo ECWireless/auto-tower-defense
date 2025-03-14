@@ -7,13 +7,12 @@ import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
 import { Systems } from "@latticexyz/world/src/codegen/tables/Systems.sol";
 
 import { _gameSystemAddress } from "../utils.sol";
-import { CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, SavedModification, TowerCounter } from "../codegen/index.sol";
+import { CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, SavedMod, SavedModNameTaken, TowerCounter } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
-import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol";
+import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_MOD_DESCRIPTION_LENGTH, MAX_MOD_NAME_LENGTH, MAX_TOWER_HEALTH } from "../../constants.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { TowerHelpers } from "../Libraries/TowerHelpers.sol";
-import "forge-std/console.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 // TOWER ID
@@ -99,7 +98,12 @@ contract TowerSystem is System {
     return address(newSystem);
   }
 
-  function saveModification(bytes memory bytecode, string memory description, string memory name, string memory sourceCode) external returns (bytes32 savedModificationId) {
+  function saveModification(
+    bytes memory bytecode,
+    string memory description,
+    string memory name,
+    string memory sourceCode
+  ) external returns (bytes32 savedModificationId) {
     address author = _msgSender();
     uint256 contractSize = getContractSize(bytecode);
 
@@ -111,11 +115,85 @@ contract TowerSystem is System {
 
     savedModificationId = keccak256(abi.encodePacked(bytecode));
 
-    bytes memory savedModificationBytecode = SavedModification.getBytecode(savedModificationId);
-    require(keccak256(abi.encodePacked(savedModificationBytecode)) != savedModificationId, "TowerSystem: modification already exists");
+    bytes memory savedModificationBytecode = SavedMod.getBytecode(savedModificationId);
+    require(
+      keccak256(abi.encodePacked(savedModificationBytecode)) != savedModificationId,
+      "TowerSystem: modification already exists"
+    );
 
-    SavedModification.set(savedModificationId, author, contractSize, block.timestamp, 0, bytecode, description, name, sourceCode);
+    _validateModification(savedModificationId, description, name);
+
+    SavedMod.set(
+      savedModificationId,
+      author,
+      contractSize,
+      block.timestamp,
+      0,
+      bytecode,
+      description,
+      name,
+      sourceCode
+    );
     return savedModificationId;
+  }
+
+  function editModification(bytes32 savedModificationId, string memory description, string memory name) external {
+    address author = _msgSender();
+    bytes memory bytecode = SavedMod.getBytecode(savedModificationId);
+    string memory originalName = SavedMod.getName(savedModificationId);
+
+    require(
+      keccak256(abi.encodePacked(originalName)) != keccak256(abi.encodePacked(name)),
+      "TowerSystem: name is the same as original"
+    );
+    require(keccak256(abi.encodePacked(bytecode)) == savedModificationId, "TowerSystem: modification does not exist");
+    require(
+      SavedMod.getAuthor(savedModificationId) == author,
+      "TowerSystem: only the author can edit this modification"
+    );
+
+    _validateModification(savedModificationId, description, name);
+
+    SavedMod.setDescription(savedModificationId, description);
+    SavedMod.setName(savedModificationId, name);
+  }
+
+  function deleteModification(bytes32 savedModificationId) external {
+    address author = _msgSender();
+    bytes memory bytecode = SavedMod.getBytecode(savedModificationId);
+    require(keccak256(abi.encodePacked(bytecode)) == savedModificationId, "TowerSystem: modification does not exist");
+    require(
+      SavedMod.getAuthor(savedModificationId) == author,
+      "TowerSystem: only the author can delete this modification"
+    );
+
+    bytes32 nameHash = keccak256(abi.encodePacked(SavedMod.getName(savedModificationId)));
+    SavedModNameTaken.set(nameHash, bytes32(0));
+    SavedMod.deleteRecord(savedModificationId);
+  }
+
+  function _validateModification(bytes32 savedModificationId, string memory description, string memory name) internal {
+    bytes32 nameHash = keccak256(abi.encodePacked(name));
+    require(SavedModNameTaken.get(nameHash) == bytes32(0), "TowerSystem: name is already taken");
+    require(bytes(name).length > 0, "TowerSystem: name is required");
+    require(bytes(description).length > 0, "TowerSystem: description is required");
+    require(
+      bytes(name).length <= 32,
+      string(
+        abi.encodePacked("TowerSystem: name cannot be longer than ", Strings.toString(MAX_MOD_NAME_LENGTH), " bytes")
+      )
+    );
+    require(
+      bytes(description).length <= 256,
+      string(
+        abi.encodePacked(
+          "TowerSystem: description cannot be longer than ",
+          Strings.toString(MAX_MOD_DESCRIPTION_LENGTH),
+          " bytes"
+        )
+      )
+    );
+    SavedModNameTaken.set(nameHash, savedModificationId);
   }
 
   function getContractSize(bytes memory bytecode) public returns (uint256 size) {
