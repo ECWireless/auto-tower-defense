@@ -11,7 +11,7 @@ import Editor, { loader } from '@monaco-editor/react';
 import { FileText, Info, Loader2, Rocket, Scroll } from 'lucide-react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { zeroAddress, zeroHash } from 'viem';
 
@@ -119,53 +119,6 @@ export const SystemModificationDrawer: React.FC<
       return [];
     }
   }, [SavedModification, Username]);
-
-  useEffect(() => {
-    if (game && isSystemDrawerOpen) {
-      const _savedModifications = fetchSavedModifications();
-      const newModification = {
-        id: zeroHash as Entity,
-        author: game.player1Username,
-        bytecode: zeroHash,
-        description: 'Create a new system!',
-        name: 'New System',
-        size: '0 bytes',
-        sourceCode: '',
-        timestamp: BigInt(Date.now()),
-        useCount: 0,
-      };
-
-      const projectile = getComponentValue(Projectile, tower.id as Entity);
-
-      if (projectile) {
-        format(projectile.sourceCode, {
-          parser: 'solidity-parse',
-          plugins: [solidityPlugin],
-        }).then(formattedSourceCode => {
-          const flattenedSourceCode = formattedSourceCode
-            .replace(/\s+/g, ' ')
-            .trim();
-          newModification.sourceCode = flattenedSourceCode.trim();
-
-          const savedModificationMatch = _savedModifications.find(
-            s => s.sourceCode === flattenedSourceCode,
-          );
-
-          if (savedModificationMatch) {
-            setSelectedModification(savedModificationMatch);
-          } else {
-            setSelectedModification(_savedModifications[0]);
-          }
-          setSizeLimit(projectile.sizeLimit);
-          setSourceCode(formattedSourceCode.trim());
-        });
-      } else {
-        setSourceCode('');
-      }
-
-      setSavedModifications([newModification, ..._savedModifications]);
-    }
-  }, [fetchSavedModifications, game, isSystemDrawerOpen, Projectile, tower.id]);
 
   const onSelectSavedModification = useCallback(
     (modification: SavedModification) => {
@@ -580,6 +533,57 @@ export const SystemModificationDrawer: React.FC<
                   setSelectedModification(savedModifications[0]);
                 }
                 setSourceCode(value ?? '');
+              }}
+              onMount={() => {
+                if (!game) return;
+                const _savedModifications = fetchSavedModifications();
+                const newModification = {
+                  id: zeroHash as Entity,
+                  author: game.player1Username,
+                  bytecode: zeroHash,
+                  description: 'Create a new system!',
+                  name: 'New System',
+                  size: '0 bytes',
+                  sourceCode: '',
+                  timestamp: BigInt(Date.now()),
+                  useCount: 0,
+                };
+
+                const projectile = getComponentValue(
+                  Projectile,
+                  tower.id as Entity,
+                );
+
+                if (projectile) {
+                  format(projectile.sourceCode, {
+                    parser: 'solidity-parse',
+                    plugins: [solidityPlugin],
+                  }).then(formattedSourceCode => {
+                    const flattenedSourceCode = formattedSourceCode
+                      .replace(/\s+/g, ' ')
+                      .trim();
+                    newModification.sourceCode = flattenedSourceCode.trim();
+
+                    const savedModificationMatch = _savedModifications.find(
+                      s => s.sourceCode === flattenedSourceCode,
+                    );
+
+                    if (savedModificationMatch) {
+                      setSelectedModification(savedModificationMatch);
+                    } else {
+                      setSelectedModification(_savedModifications[0]);
+                    }
+                    setSizeLimit(projectile.sizeLimit);
+                    setSourceCode(formattedSourceCode.trim());
+                  });
+                } else {
+                  setSourceCode('');
+                }
+
+                setSavedModifications([
+                  newModification,
+                  ..._savedModifications,
+                ]);
               }}
               options={{
                 fontSize: 14,
