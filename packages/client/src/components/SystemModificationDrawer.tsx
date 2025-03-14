@@ -58,7 +58,7 @@ export const SystemModificationDrawer: React.FC<
     components: { Projectile, SavedModification, Username },
     systemCalls: { getContractSize, modifyTowerSystem, saveModification },
   } = useMUD();
-  const { game, isPlayer1, refreshGame } = useGame();
+  const { game, isPlayer1 } = useGame();
 
   const [savedModifications, setSavedModifications] = useState<
     SavedModification[]
@@ -119,6 +119,60 @@ export const SystemModificationDrawer: React.FC<
       return [];
     }
   }, [SavedModification, Username]);
+
+  const onRefreshSystemList = useCallback(() => {
+    try {
+      if (!game) return;
+      const _savedModifications = fetchSavedModifications();
+      const newModification = {
+        id: zeroHash as Entity,
+        author: game.player1Username,
+        bytecode: zeroHash,
+        description: 'Create a new system!',
+        name: 'New System',
+        size: '0 bytes',
+        sourceCode: '',
+        timestamp: BigInt(Date.now()),
+        useCount: 0,
+      };
+
+      const projectile = getComponentValue(Projectile, tower.id as Entity);
+
+      if (projectile) {
+        format(projectile.sourceCode, {
+          parser: 'solidity-parse',
+          plugins: [solidityPlugin],
+        }).then(formattedSourceCode => {
+          const flattenedSourceCode = formattedSourceCode
+            .replace(/\s+/g, ' ')
+            .trim();
+          newModification.sourceCode = flattenedSourceCode.trim();
+
+          const savedModificationMatch = _savedModifications.find(
+            s => s.sourceCode === flattenedSourceCode,
+          );
+
+          if (savedModificationMatch) {
+            setSelectedModification(savedModificationMatch);
+          } else {
+            setSelectedModification(_savedModifications[0]);
+          }
+          setSizeLimit(projectile.sizeLimit);
+          setSourceCode(formattedSourceCode.trim());
+        });
+      } else {
+        setSourceCode('');
+      }
+
+      setSavedModifications([newModification, ..._savedModifications]);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error refreshing system list:', error);
+      toast.error('Error Refreshing System List', {
+        description: (error as Error).message,
+      });
+    }
+  }, [fetchSavedModifications, game, Projectile, tower.id]);
 
   const onSelectSavedModification = useCallback(
     (modification: SavedModification) => {
@@ -197,7 +251,6 @@ export const SystemModificationDrawer: React.FC<
       toast.success('System Deployed!');
 
       setIsSystemDrawerOpen(false);
-      refreshGame();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -212,7 +265,6 @@ export const SystemModificationDrawer: React.FC<
     getContractSize,
     modifyTowerSystem,
     onCompileCode,
-    refreshGame,
     setIsSystemDrawerOpen,
     sizeLimit,
     sourceCode,
@@ -255,8 +307,15 @@ export const SystemModificationDrawer: React.FC<
       setShowSaveSystemModal(false);
       setName('');
       setDescription('');
-      setIsSystemDrawerOpen(false);
-      refreshGame();
+      const _savedModifications = fetchSavedModifications();
+      onRefreshSystemList();
+
+      const matchingModification = _savedModifications.find(
+        s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
+      );
+      if (matchingModification) {
+        onSelectSavedModification(matchingModification);
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -269,11 +328,12 @@ export const SystemModificationDrawer: React.FC<
     }
   }, [
     description,
+    fetchSavedModifications,
     getContractSize,
     onCompileCode,
-    refreshGame,
     name,
-    setIsSystemDrawerOpen,
+    onRefreshSystemList,
+    onSelectSavedModification,
     saveModification,
     sizeLimit,
     sourceCode,
@@ -534,57 +594,7 @@ export const SystemModificationDrawer: React.FC<
                 }
                 setSourceCode(value ?? '');
               }}
-              onMount={() => {
-                if (!game) return;
-                const _savedModifications = fetchSavedModifications();
-                const newModification = {
-                  id: zeroHash as Entity,
-                  author: game.player1Username,
-                  bytecode: zeroHash,
-                  description: 'Create a new system!',
-                  name: 'New System',
-                  size: '0 bytes',
-                  sourceCode: '',
-                  timestamp: BigInt(Date.now()),
-                  useCount: 0,
-                };
-
-                const projectile = getComponentValue(
-                  Projectile,
-                  tower.id as Entity,
-                );
-
-                if (projectile) {
-                  format(projectile.sourceCode, {
-                    parser: 'solidity-parse',
-                    plugins: [solidityPlugin],
-                  }).then(formattedSourceCode => {
-                    const flattenedSourceCode = formattedSourceCode
-                      .replace(/\s+/g, ' ')
-                      .trim();
-                    newModification.sourceCode = flattenedSourceCode.trim();
-
-                    const savedModificationMatch = _savedModifications.find(
-                      s => s.sourceCode === flattenedSourceCode,
-                    );
-
-                    if (savedModificationMatch) {
-                      setSelectedModification(savedModificationMatch);
-                    } else {
-                      setSelectedModification(_savedModifications[0]);
-                    }
-                    setSizeLimit(projectile.sizeLimit);
-                    setSourceCode(formattedSourceCode.trim());
-                  });
-                } else {
-                  setSourceCode('');
-                }
-
-                setSavedModifications([
-                  newModification,
-                  ..._savedModifications,
-                ]);
-              }}
+              onMount={onRefreshSystemList}
               options={{
                 fontSize: 14,
                 minimap: { enabled: false },
