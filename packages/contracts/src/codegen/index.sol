@@ -21,7 +21,7 @@ import { Position } from "./tables/Position.sol";
 import { Projectile, ProjectileData } from "./tables/Projectile.sol";
 import { ProjectileTrajectory } from "./tables/ProjectileTrajectory.sol";
 import { SavedGame, SavedGameData } from "./tables/SavedGame.sol";
-import { SavedMod, SavedModData } from "./tables/SavedMod.sol";
+import { SavedModification, SavedModificationData } from "./tables/SavedModification.sol";
 import { SavedModNameTaken } from "./tables/SavedModNameTaken.sol";
 import { TopLevel } from "./tables/TopLevel.sol";
 import { Tower } from "./tables/Tower.sol";

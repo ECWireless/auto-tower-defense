@@ -131,7 +131,7 @@ export default defineWorld({
       },
       key: ["id"],
     },
-    SavedMod: {
+    SavedModification: {
       schema: {
         id: "bytes32", // keccak256(abi.encodePacked(bytecode))
         author: "address",

@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
-import { DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedMod, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedModification, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { ActionType } from "../src/codegen/common.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";
@@ -72,21 +72,21 @@ contract PostDeploy is Script {
     string
       memory sourceCode = "contract DefaultProjectileLogic { function getNextProjectilePosition( int16 x, int16 y ) public pure returns (int16, int16) { return (x + 5, y); } }";
     IWorld(worldAddress).app__saveModification(bytecode, description, name, sourceCode);
-    SavedMod.setAuthor(keccak256(abi.encodePacked(bytecode)), address(0));
+    SavedModification.setAuthor(keccak256(abi.encodePacked(bytecode)), address(0));
 
     bytecode = hex"6080604052348015600e575f5ffd5b506101ef8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063cae93eb91461002d575b5f5ffd5b610047600480360381019061004291906100bf565b61005e565b60405161005592919061010c565b60405180910390f35b5f5f60058461006d9190610160565b60028461007a9190610160565b915091509250929050565b5f5ffd5b5f8160010b9050919050565b61009e81610089565b81146100a8575f5ffd5b50565b5f813590506100b981610095565b92915050565b5f5f604083850312156100d5576100d4610085565b5b5f6100e2858286016100ab565b92505060206100f3858286016100ab565b9150509250929050565b61010681610089565b82525050565b5f60408201905061011f5f8301856100fd565b61012c60208301846100fd565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61016a82610089565b915061017583610089565b925082820190507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008112617fff821317156101b3576101b2610133565b5b9291505056fea2646970667358221220b6537f6bf1ca7ac4afafd7133c251d6b0b155b45a5576490f217e48fef76c3fe64736f6c634300081c0033";
     description = "Shoots projectile downward at a 45 degree angle.";
     name = "45 Degrees Down";
     sourceCode = "contract DefaultProjectileLogic { function getNextProjectilePosition( int16 x, int16 y ) public pure returns (int16, int16) { return (x + 5, y + 2); } }";
     IWorld(worldAddress).app__saveModification(bytecode, description, name, sourceCode);
-    SavedMod.setAuthor(keccak256(abi.encodePacked(bytecode)), address(0));
+    SavedModification.setAuthor(keccak256(abi.encodePacked(bytecode)), address(0));
 
     bytecode = hex"6080604052348015600e575f5ffd5b506102488061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063cae93eb91461002d575b5f5ffd5b610047600480360381019061004291906100bf565b61005e565b60405161005592919061010c565b60405180910390f35b5f5f60058461006d9190610160565b60028461007a91906101b9565b915091509250929050565b5f5ffd5b5f8160010b9050919050565b61009e81610089565b81146100a8575f5ffd5b50565b5f813590506100b981610095565b92915050565b5f5f604083850312156100d5576100d4610085565b5b5f6100e2858286016100ab565b92505060206100f3858286016100ab565b9150509250929050565b61010681610089565b82525050565b5f60408201905061011f5f8301856100fd565b61012c60208301846100fd565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61016a82610089565b915061017583610089565b925082820190507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008112617fff821317156101b3576101b2610133565b5b92915050565b5f6101c382610089565b91506101ce83610089565b92508282039050617fff81137fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008212171561020c5761020b610133565b5b9291505056fea2646970667358221220e5b96872045af8ac8d475424eb012cf02946159593bf18bc8ecb18d6704b137264736f6c634300081c0033";
     description = "Shoots projectile upward at a 45 degree angle.";
     name = "45 Degrees Up";
     sourceCode = "contract DefaultProjectileLogic { function getNextProjectilePosition( int16 x, int16 y ) public pure returns (int16, int16) { return (x + 5, y - 2); } }";
     IWorld(worldAddress).app__saveModification(bytecode, description, name, sourceCode);
-    SavedMod.setAuthor(keccak256(abi.encodePacked(bytecode)), address(0));
+    SavedModification.setAuthor(keccak256(abi.encodePacked(bytecode)), address(0));
 
     Username.set(globalPlayerId, "ROB");
     bytes32 usernameKey = keccak256(abi.encodePacked("ROB"));

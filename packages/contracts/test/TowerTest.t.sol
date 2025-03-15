@@ -7,7 +7,7 @@ import { getKeysWithValue } from "@latticexyz/world-modules/src/modules/keyswith
 
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 import { Counter } from "../src/codegen/index.sol";
-import { CurrentGame, EntityAtPosition, Health, Position, Projectile, SavedMod, SavedModData, Tower, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { CurrentGame, EntityAtPosition, Health, Position, Projectile, SavedModification, SavedModificationData, Tower, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 
 contract TowerTest is MudTest {
@@ -219,7 +219,7 @@ contract TowerTest is MudTest {
     string memory sourceCode = "Test source code";
     bytes32 savedModificationId = IWorld(worldAddress).app__saveModification(BYTECODE, description, name, sourceCode);
 
-    SavedModData memory savedModification = SavedMod.get(savedModificationId);
+    SavedModificationData memory savedModification = SavedModification.get(savedModificationId);
     assertEq(savedModification.bytecode, BYTECODE);
     assertEq(savedModification.description, description);
     assertEq(savedModification.name, name);
@@ -260,7 +260,7 @@ contract TowerTest is MudTest {
     IWorld(worldAddress).app__modifyTowerSystem(towerId, STRAIGHT_LINE_BYTECODE, "");
 
     bytes32 savedModificationId = keccak256(abi.encodePacked(STRAIGHT_LINE_BYTECODE));
-    SavedModData memory savedModification = SavedMod.get(savedModificationId);
+    SavedModificationData memory savedModification = SavedModification.get(savedModificationId);
     assertEq(savedModification.useCount, 2);
   }
 
@@ -328,7 +328,7 @@ contract TowerTest is MudTest {
 
     IWorld(worldAddress).app__editModification(savedModificationId, newDescription, newName);
 
-    SavedModData memory savedModification = SavedMod.get(savedModificationId);
+    SavedModificationData memory savedModification = SavedModification.get(savedModificationId);
     assertEq(savedModification.description, newDescription);
     assertEq(savedModification.name, newName);
   }
@@ -465,7 +465,7 @@ contract TowerTest is MudTest {
 
     IWorld(worldAddress).app__deleteModification(savedModificationId);
 
-    SavedModData memory savedModification = SavedMod.get(savedModificationId);
+    SavedModificationData memory savedModification = SavedModification.get(savedModificationId);
     assertEq(savedModification.bytecode, bytes(""));
     assertEq(savedModification.description, "");
     assertEq(savedModification.name, "");
