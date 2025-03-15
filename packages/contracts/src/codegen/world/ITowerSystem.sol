@@ -28,5 +28,9 @@ interface ITowerSystem {
     string memory sourceCode
   ) external returns (bytes32 savedModificationId);
 
+  function app__editModification(bytes32 savedModificationId, string memory description, string memory name) external;
+
+  function app__deleteModification(bytes32 savedModificationId) external;
+
   function app__getContractSize(bytes memory bytecode) external returns (uint256 size);
 }

@@ -25,6 +25,42 @@
   },
   {
     "type": "function",
+    "name": "app__deleteModification",
+    "inputs": [
+      {
+        "name": "savedModificationId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__editModification",
+    "inputs": [
+      {
+        "name": "savedModificationId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__getContractSize",
     "inputs": [
       {
