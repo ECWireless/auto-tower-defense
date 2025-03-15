@@ -364,17 +364,17 @@ contract TowerTest is MudTest {
     vm.stopPrank();
   }
 
-  function testRevertEditModificationSameName() public {
+  function testRevertEditModificationSameDetails() public {
     vm.startPrank(alice);
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
     bytes32 savedModificationId = IWorld(worldAddress).app__saveModification(BYTECODE, description, name, sourceCode);
 
-    string memory newDescription = "New description";
+    string memory newDescription = "Test description";
     string memory newName = "Test name";
 
-    vm.expectRevert(bytes("TowerSystem: name is the same as original"));
+    vm.expectRevert(bytes("TowerSystem: name and description are the same as original"));
     IWorld(worldAddress).app__editModification(savedModificationId, newDescription, newName);
     vm.stopPrank();
   }

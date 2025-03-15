@@ -142,10 +142,11 @@ contract TowerSystem is System {
     bytes memory bytecode = SavedMod.getBytecode(savedModificationId);
     string memory originalName = SavedMod.getName(savedModificationId);
 
-    require(
-      keccak256(abi.encodePacked(originalName)) != keccak256(abi.encodePacked(name)),
-      "TowerSystem: name is the same as original"
-    );
+    bool nameHasChanged = keccak256(abi.encodePacked(originalName)) != keccak256(abi.encodePacked(name));
+    bool descriptionHasChanged = keccak256(abi.encodePacked(SavedMod.getDescription(savedModificationId))) !=
+      keccak256(abi.encodePacked(description));
+
+    require(nameHasChanged || descriptionHasChanged, "TowerSystem: name and description are the same as original");
     require(keccak256(abi.encodePacked(bytecode)) == savedModificationId, "TowerSystem: modification does not exist");
     require(
       SavedMod.getAuthor(savedModificationId) == author,

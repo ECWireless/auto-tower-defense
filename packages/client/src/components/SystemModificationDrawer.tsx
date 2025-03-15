@@ -8,10 +8,10 @@ import {
 import { encodeEntity } from '@latticexyz/store-sync/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
-import { FileText, Info, Loader2, Rocket, Scroll } from 'lucide-react';
+import { FileText, Info, Loader2, Pencil, Rocket, Scroll } from 'lucide-react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { zeroAddress, zeroHash } from 'viem';
 
@@ -33,6 +33,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
@@ -56,7 +57,12 @@ export const SystemModificationDrawer: React.FC<
 > = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
   const {
     components: { Projectile, SavedMod, Username },
-    systemCalls: { getContractSize, modifyTowerSystem, saveModification },
+    systemCalls: {
+      editModification,
+      getContractSize,
+      modifyTowerSystem,
+      saveModification,
+    },
   } = useMUD();
   const { game, isPlayer1 } = useGame();
 
@@ -75,6 +81,12 @@ export const SystemModificationDrawer: React.FC<
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<
+    {
+      field: string;
+      message: string;
+    }[]
+  >([]);
 
   const fetchSavedModifications = useCallback(() => {
     try {
@@ -271,9 +283,72 @@ export const SystemModificationDrawer: React.FC<
     tower,
   ]);
 
+  const getHasError = useCallback(() => {
+    if (!name) {
+      setFormErrors(prev => [
+        ...(prev || []),
+        { field: 'system-name', message: 'Name is required' },
+      ]);
+      return true;
+    }
+
+    if (!description) {
+      setFormErrors(prev => [
+        ...prev,
+        { field: 'system-description', message: 'Description is required' },
+      ]);
+      return true;
+    }
+
+    if (name.length > 32) {
+      setFormErrors(prev => [
+        ...(prev || []),
+        {
+          field: 'system-name',
+          message: 'Name must be 32 characters or less',
+        },
+      ]);
+      return true;
+    }
+
+    if (description.length > 256) {
+      setFormErrors(prev => [
+        ...prev,
+        {
+          field: 'system-description',
+          message: 'Description must be 256 characters or less',
+        },
+      ]);
+      return true;
+    }
+
+    if (
+      savedModifications.some(s => s.name === name) &&
+      selectedModification?.name !== name
+    ) {
+      setFormErrors(prev => [
+        ...(prev || []),
+        { field: 'system-name', message: 'Name already exists' },
+      ]);
+      return true;
+    }
+
+    return false;
+  }, [
+    description,
+    name,
+    savedModifications,
+    selectedModification,
+    setFormErrors,
+  ]);
+
   const onSaveModification = useCallback(async () => {
     try {
       setIsSaving(true);
+
+      const hasError = getHasError();
+      if (hasError) return;
+
       const bytecode = await onCompileCode();
       if (!bytecode) {
         setIsSaving(false);
@@ -330,6 +405,7 @@ export const SystemModificationDrawer: React.FC<
     description,
     fetchSavedModifications,
     getContractSize,
+    getHasError,
     onCompileCode,
     name,
     onRefreshSystemList,
@@ -339,7 +415,73 @@ export const SystemModificationDrawer: React.FC<
     sourceCode,
   ]);
 
-  const isSourceCodeAlreadySaved = useMemo(() => {
+  const onEditModification = useCallback(async () => {
+    try {
+      setIsSaving(true);
+
+      const hasError = getHasError();
+      if (hasError) return;
+
+      if (
+        name === selectedModification?.name &&
+        description === selectedModification?.description
+      ) {
+        throw new Error('No changes made to the system');
+      }
+
+      if (!selectedModification) {
+        throw new Error('No modification selected');
+      }
+
+      const { error, success } = await editModification(
+        selectedModification.id,
+        description,
+        name,
+      );
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast.success('System Saved!');
+
+      setShowSaveSystemModal(false);
+      const _savedModifications = fetchSavedModifications();
+      onRefreshSystemList();
+
+      const matchingModification = _savedModifications.find(
+        s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
+      );
+      if (matchingModification) {
+        onSelectSavedModification(matchingModification);
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Editing System', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    description,
+    editModification,
+    fetchSavedModifications,
+    getHasError,
+    name,
+    onRefreshSystemList,
+    onSelectSavedModification,
+    selectedModification,
+    sourceCode,
+  ]);
+
+  useEffect(() => {
+    setFormErrors([]);
+  }, [description, name]);
+
+  const isSystemSaved = useMemo(() => {
     if (!sourceCode) return false;
     const flattenedSourceCode = sourceCode.replace(/\s+/g, ' ').trim();
 
@@ -347,6 +489,13 @@ export const SystemModificationDrawer: React.FC<
       .slice(1)
       .some(s => s.sourceCode === flattenedSourceCode);
   }, [savedModifications, sourceCode]);
+
+  const canEditSystem = useMemo(() => {
+    if (!(game && selectedModification)) return false;
+    if (selectedModification.bytecode === zeroHash) return false;
+    if (selectedModification.author === 'Template') return false;
+    return selectedModification?.author === game.player1Username;
+  }, [game, selectedModification]);
 
   // Configure Solidity language
   loader.init().then(monacoInstance => {
@@ -497,14 +646,25 @@ export const SystemModificationDrawer: React.FC<
                 View Board
               </Button>
             </div>
-            {isPlayer1 && !isSourceCodeAlreadySaved && (
+            {isPlayer1 && (!isSystemSaved || canEditSystem) && (
               <Button
                 className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
-                onClick={() => setShowSaveSystemModal(true)}
+                onClick={() => {
+                  setShowSaveSystemModal(true);
+
+                  if (canEditSystem && selectedModification) {
+                    setName(selectedModification.name);
+                    setDescription(selectedModification.description);
+                  }
+                }}
                 variant="outline"
               >
-                <FileText className="h-4 mr-2 w-4" />
-                Save System
+                {isSystemSaved ? (
+                  <Pencil className="h-4 mr-2 w-4" />
+                ) : (
+                  <FileText className="h-4 mr-2 w-4" />
+                )}
+                {isSystemSaved ? 'Edit' : 'Save'} System
               </Button>
             )}
           </div>
@@ -516,10 +676,12 @@ export const SystemModificationDrawer: React.FC<
             <DialogContent className="bg-gray-900/95 border border-pink-900/50 text-white">
               <DialogHeader>
                 <DialogTitle className="font-bold text-pink-400 text-2xl">
-                  Save System
+                  {canEditSystem ? 'Edit' : 'Save'} System
                 </DialogTitle>
                 <DialogDescription className="mt-2 text-gray-300">
-                  Save your custom projectile system for future use.
+                  {canEditSystem
+                    ? 'Edit your custom projectile system.'
+                    : 'Save your custom projectile system for future use.'}
                 </DialogDescription>
               </DialogHeader>
               <div className="mt-4 space-y-4">
@@ -533,14 +695,23 @@ export const SystemModificationDrawer: React.FC<
                     id="system-name"
                     onChange={e => setName(e.target.value)}
                     placeholder="Enter a name for your system"
+                    type="text"
                     value={name}
                   />
+                  {formErrors?.find(e => e.field === 'system-name') && (
+                    <p className="text-red-500 text-sm">
+                      {
+                        formErrors?.find(e => e.field === 'system-name')
+                          ?.message
+                      }
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label className="text-white" htmlFor="system-description">
                     Description
                   </Label>
-                  <textarea
+                  <Textarea
                     className="bg-gray-800 border border-gray-700 h-24 p-2 rounded-md text-white text-sm w-full"
                     disabled={isSaving}
                     id="system-description"
@@ -548,11 +719,20 @@ export const SystemModificationDrawer: React.FC<
                     placeholder="Describe what your system does"
                     value={description}
                   />
+                  {formErrors?.find(e => e.field === 'system-description') && (
+                    <p className="text-red-500 text-sm">
+                      {
+                        formErrors?.find(e => e.field === 'system-description')
+                          ?.message
+                      }
+                    </p>
+                  )}
                 </div>
               </div>
               <DialogFooter className="mt-6">
                 <Button
                   className="border-gray-700 text-gray-400"
+                  disabled={isSaving}
                   onClick={() => setShowSaveSystemModal(false)}
                   variant="outline"
                 >
@@ -560,10 +740,14 @@ export const SystemModificationDrawer: React.FC<
                 </Button>
                 <Button
                   className="bg-pink-800 hover:bg-pink-700 text-white"
-                  onClick={onSaveModification}
+                  onClick={
+                    canEditSystem ? onEditModification : onSaveModification
+                  }
                 >
                   {isSaving ? (
                     <Loader2 className="animate-spin h-6 w-6" />
+                  ) : canEditSystem ? (
+                    'Save Changes'
                   ) : (
                     'Save System'
                   )}
