@@ -8,7 +8,15 @@ import {
 import { encodeEntity } from '@latticexyz/store-sync/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
-import { FileText, Info, Loader2, Pencil, Rocket, Scroll } from 'lucide-react';
+import {
+  FileText,
+  Info,
+  Loader2,
+  Pencil,
+  Rocket,
+  Scroll,
+  Trash2,
+} from 'lucide-react';
 import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -58,6 +66,7 @@ export const SystemModificationDrawer: React.FC<
   const {
     components: { Projectile, SavedMod, Username },
     systemCalls: {
+      deleteModification,
       editModification,
       getContractSize,
       modifyTowerSystem,
@@ -87,6 +96,9 @@ export const SystemModificationDrawer: React.FC<
       message: string;
     }[]
   >([]);
+
+  const [showDeleteSystemModal, setShowDeleteSystemModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchSavedModifications = useCallback(() => {
     try {
@@ -132,9 +144,9 @@ export const SystemModificationDrawer: React.FC<
     }
   }, [SavedMod, Username]);
 
-  const onRefreshSystemList = useCallback(() => {
+  const onRefreshSystemList = useCallback((): SavedModification[] => {
     try {
-      if (!game) return;
+      if (!game) return [];
       const _savedModifications = fetchSavedModifications();
       const newModification = {
         id: zeroHash as Entity,
@@ -167,7 +179,7 @@ export const SystemModificationDrawer: React.FC<
           if (savedModificationMatch) {
             setSelectedModification(savedModificationMatch);
           } else {
-            setSelectedModification(_savedModifications[0]);
+            setSelectedModification(newModification);
           }
           setSizeLimit(projectile.sizeLimit);
           setSourceCode(formattedSourceCode.trim());
@@ -176,13 +188,16 @@ export const SystemModificationDrawer: React.FC<
         setSourceCode('');
       }
 
-      setSavedModifications([newModification, ..._savedModifications]);
+      const savedModWithDummy = [newModification, ..._savedModifications];
+      setSavedModifications(savedModWithDummy);
+      return savedModWithDummy;
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error refreshing system list:', error);
       toast.error('Error Refreshing System List', {
         description: (error as Error).message,
       });
+      return [];
     }
   }, [fetchSavedModifications, game, Projectile, tower.id]);
 
@@ -382,8 +397,7 @@ export const SystemModificationDrawer: React.FC<
       setShowSaveSystemModal(false);
       setName('');
       setDescription('');
-      const _savedModifications = fetchSavedModifications();
-      onRefreshSystemList();
+      const _savedModifications = onRefreshSystemList();
 
       const matchingModification = _savedModifications.find(
         s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
@@ -403,7 +417,6 @@ export const SystemModificationDrawer: React.FC<
     }
   }, [
     description,
-    fetchSavedModifications,
     getContractSize,
     getHasError,
     onCompileCode,
@@ -446,8 +459,7 @@ export const SystemModificationDrawer: React.FC<
       toast.success('System Saved!');
 
       setShowSaveSystemModal(false);
-      const _savedModifications = fetchSavedModifications();
-      onRefreshSystemList();
+      const _savedModifications = onRefreshSystemList();
 
       const matchingModification = _savedModifications.find(
         s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
@@ -468,13 +480,51 @@ export const SystemModificationDrawer: React.FC<
   }, [
     description,
     editModification,
-    fetchSavedModifications,
     getHasError,
     name,
     onRefreshSystemList,
     onSelectSavedModification,
     selectedModification,
     sourceCode,
+  ]);
+
+  const onDeleteModification = useCallback(async () => {
+    try {
+      setIsDeleting(true);
+
+      if (!selectedModification) {
+        throw new Error('No modification selected');
+      }
+
+      const { error, success } = await deleteModification(
+        selectedModification.id,
+      );
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast.success('System Deleted!');
+
+      setShowDeleteSystemModal(false);
+      const _savedModifications = onRefreshSystemList();
+
+      onSelectSavedModification(_savedModifications[0]);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Deleting System', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [
+    deleteModification,
+    onRefreshSystemList,
+    onSelectSavedModification,
+    selectedModification,
   ]);
 
   useEffect(() => {
@@ -647,28 +697,40 @@ export const SystemModificationDrawer: React.FC<
               </Button>
             </div>
             {isPlayer1 && (!isSystemSaved || canEditSystem) && (
-              <Button
-                className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
-                onClick={() => {
-                  setShowSaveSystemModal(true);
+              <div className="flex gap-3">
+                <Button
+                  className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
+                  onClick={() => {
+                    setShowSaveSystemModal(true);
 
-                  if (canEditSystem && selectedModification) {
-                    setName(selectedModification.name);
-                    setDescription(selectedModification.description);
-                  }
-                }}
-                variant="outline"
-              >
-                {isSystemSaved ? (
-                  <Pencil className="h-4 mr-2 w-4" />
-                ) : (
-                  <FileText className="h-4 mr-2 w-4" />
+                    if (canEditSystem && selectedModification) {
+                      setName(selectedModification.name);
+                      setDescription(selectedModification.description);
+                    }
+                  }}
+                  variant="outline"
+                >
+                  {isSystemSaved ? (
+                    <Pencil className="h-4 mr-2 w-4" />
+                  ) : (
+                    <FileText className="h-4 mr-2 w-4" />
+                  )}
+                  {isSystemSaved ? 'Edit' : 'Save'} System
+                </Button>
+                {canEditSystem && (
+                  <Button
+                    className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
+                    onClick={() => setShowDeleteSystemModal(true)}
+                    variant="outline"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 )}
-                {isSystemSaved ? 'Edit' : 'Save'} System
-              </Button>
+              </div>
             )}
           </div>
 
+          {/* SAVE AND EDIT DIALOG */}
           <Dialog
             open={showSaveSystemModal}
             onOpenChange={setShowSaveSystemModal}
@@ -750,6 +812,47 @@ export const SystemModificationDrawer: React.FC<
                     'Save Changes'
                   ) : (
                     'Save System'
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* DELETE DIALOG */}
+          <Dialog
+            open={showDeleteSystemModal}
+            onOpenChange={setShowDeleteSystemModal}
+          >
+            <DialogContent
+              aria-describedby={undefined}
+              className="bg-gray-900/95 border border-pink-900/50 text-white"
+            >
+              <DialogHeader>
+                <DialogTitle className="font-bold text-pink-400 text-2xl">
+                  Delete System
+                </DialogTitle>
+              </DialogHeader>
+              <DialogDescription className="mt-2 text-gray-300">
+                Are you sure you want to delete this system?{' '}
+                <strong>This action cannot be undone.</strong>
+              </DialogDescription>
+              <DialogFooter className="mt-6">
+                <Button
+                  className="border-gray-700 text-gray-400"
+                  disabled={isDeleting}
+                  onClick={() => setShowSaveSystemModal(false)}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-pink-800 hover:bg-pink-700 text-white"
+                  onClick={onDeleteModification}
+                >
+                  {isDeleting ? (
+                    <Loader2 className="animate-spin h-6 w-6" />
+                  ) : (
+                    'Delete System'
                   )}
                 </Button>
               </DialogFooter>
