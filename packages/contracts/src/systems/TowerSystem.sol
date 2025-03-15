@@ -7,7 +7,7 @@ import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
 import { Systems } from "@latticexyz/world/src/codegen/tables/Systems.sol";
 
 import { _gameSystemAddress } from "../utils.sol";
-import { CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, SavedMod, SavedModNameTaken, TowerCounter } from "../codegen/index.sol";
+import { CurrentGame, EntityAtPosition, Game, GameData, Position, Projectile, SavedModification, SavedModNameTaken, TowerCounter } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_MOD_DESCRIPTION_LENGTH, MAX_MOD_NAME_LENGTH, MAX_TOWER_HEALTH } from "../../constants.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
@@ -115,7 +115,7 @@ contract TowerSystem is System {
 
     savedModificationId = keccak256(abi.encodePacked(bytecode));
 
-    bytes memory savedModificationBytecode = SavedMod.getBytecode(savedModificationId);
+    bytes memory savedModificationBytecode = SavedModification.getBytecode(savedModificationId);
     require(
       keccak256(abi.encodePacked(savedModificationBytecode)) != savedModificationId,
       "TowerSystem: modification already exists"
@@ -123,7 +123,7 @@ contract TowerSystem is System {
 
     _validateModification(savedModificationId, description, name);
 
-    SavedMod.set(
+    SavedModification.set(
       savedModificationId,
       author,
       contractSize,
@@ -139,38 +139,38 @@ contract TowerSystem is System {
 
   function editModification(bytes32 savedModificationId, string memory description, string memory name) external {
     address author = _msgSender();
-    bytes memory bytecode = SavedMod.getBytecode(savedModificationId);
-    string memory originalName = SavedMod.getName(savedModificationId);
+    bytes memory bytecode = SavedModification.getBytecode(savedModificationId);
+    string memory originalName = SavedModification.getName(savedModificationId);
 
     bool nameHasChanged = keccak256(abi.encodePacked(originalName)) != keccak256(abi.encodePacked(name));
-    bool descriptionHasChanged = keccak256(abi.encodePacked(SavedMod.getDescription(savedModificationId))) !=
+    bool descriptionHasChanged = keccak256(abi.encodePacked(SavedModification.getDescription(savedModificationId))) !=
       keccak256(abi.encodePacked(description));
 
     require(nameHasChanged || descriptionHasChanged, "TowerSystem: name and description are the same as original");
     require(keccak256(abi.encodePacked(bytecode)) == savedModificationId, "TowerSystem: modification does not exist");
     require(
-      SavedMod.getAuthor(savedModificationId) == author,
+      SavedModification.getAuthor(savedModificationId) == author,
       "TowerSystem: only the author can edit this modification"
     );
 
     _validateModification(savedModificationId, description, name);
 
-    SavedMod.setDescription(savedModificationId, description);
-    SavedMod.setName(savedModificationId, name);
+    SavedModification.setDescription(savedModificationId, description);
+    SavedModification.setName(savedModificationId, name);
   }
 
   function deleteModification(bytes32 savedModificationId) external {
     address author = _msgSender();
-    bytes memory bytecode = SavedMod.getBytecode(savedModificationId);
+    bytes memory bytecode = SavedModification.getBytecode(savedModificationId);
     require(keccak256(abi.encodePacked(bytecode)) == savedModificationId, "TowerSystem: modification does not exist");
     require(
-      SavedMod.getAuthor(savedModificationId) == author,
+      SavedModification.getAuthor(savedModificationId) == author,
       "TowerSystem: only the author can delete this modification"
     );
 
-    bytes32 nameHash = keccak256(abi.encodePacked(SavedMod.getName(savedModificationId)));
+    bytes32 nameHash = keccak256(abi.encodePacked(SavedModification.getName(savedModificationId)));
     SavedModNameTaken.set(nameHash, bytes32(0));
-    SavedMod.deleteRecord(savedModificationId);
+    SavedModification.deleteRecord(savedModificationId);
   }
 
   function _validateModification(bytes32 savedModificationId, string memory description, string memory name) internal {

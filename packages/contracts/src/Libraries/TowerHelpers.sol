@@ -5,7 +5,7 @@ import { RESOURCE_SYSTEM } from "@latticexyz/world/src/worldResourceTypes.sol";
 import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
 
 import { _gameSystemAddress } from "../utils.sol";
-import { Action, ActionData, CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedGame, SavedGameData, SavedMod, Tower } from "../codegen/index.sol";
+import { Action, ActionData, CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedGame, SavedGameData, SavedModification, Tower } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
@@ -400,11 +400,11 @@ library TowerHelpers {
 
   function incrementSavedModificationUseCount(bytes memory bytecode) public {
     bytes32 savedModificationId = keccak256(abi.encodePacked(bytecode));
-    bytes memory potentialExistingBytecode = SavedMod.getBytecode(savedModificationId);
+    bytes memory potentialExistingBytecode = SavedModification.getBytecode(savedModificationId);
 
     if (keccak256(abi.encodePacked(potentialExistingBytecode)) == savedModificationId) {
-      uint256 existingBytecodeUseCount = SavedMod.getUseCount(savedModificationId);
-      SavedMod.setUseCount(savedModificationId, existingBytecodeUseCount + 1);
+      uint256 existingBytecodeUseCount = SavedModification.getUseCount(savedModificationId);
+      SavedModification.setUseCount(savedModificationId, existingBytecodeUseCount + 1);
     }
   }
 }
