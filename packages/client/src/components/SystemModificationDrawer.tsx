@@ -73,7 +73,7 @@ export const SystemModificationDrawer: React.FC<
       saveModification,
     },
   } = useMUD();
-  const { game, isPlayer1 } = useGame();
+  const { game, isPlayer1, refreshGame } = useGame();
 
   const [savedModifications, setSavedModifications] = useState<
     SavedModification[]
@@ -277,6 +277,7 @@ export const SystemModificationDrawer: React.FC<
 
       toast.success('System Deployed!');
 
+      refreshGame();
       setIsSystemDrawerOpen(false);
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -292,6 +293,7 @@ export const SystemModificationDrawer: React.FC<
     getContractSize,
     modifyTowerSystem,
     onCompileCode,
+    refreshGame,
     setIsSystemDrawerOpen,
     sizeLimit,
     sourceCode,
@@ -718,13 +720,23 @@ export const SystemModificationDrawer: React.FC<
                   {isSystemSaved ? 'Edit' : 'Save'} System
                 </Button>
                 {canEditSystem && (
-                  <Button
-                    className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
-                    onClick={() => setShowDeleteSystemModal(true)}
-                    variant="outline"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Button
+                          aria-label="Delete System"
+                          className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
+                          onClick={() => setShowDeleteSystemModal(true)}
+                          variant="outline"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Delete System</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
             )}
