@@ -97,7 +97,7 @@ export const GameBoard: React.FC = () => {
   if (!game) return null;
 
   return (
-    <div className="bg-gray-900 overflow-x-auto w-full">
+    <div className="bg-gray-900 overflow-x-auto w-full sm:overflow-hidden">
       <div className="gap-1 grid grid-rows-[20px_repeat(7,minmax(0,1fr))] min-w-full p-1 relative w-max">
         {/* Center divider line */}
         <div

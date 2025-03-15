@@ -16,7 +16,7 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
-struct SavedModificationData {
+struct SavedModData {
   address author;
   uint256 size;
   uint256 timestamp;
@@ -27,9 +27,9 @@ struct SavedModificationData {
   string sourceCode;
 }
 
-library SavedModification {
-  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "SavedModificatio", typeId: RESOURCE_TABLE });`
-  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000053617665644d6f64696669636174696f);
+library SavedMod {
+  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "SavedMod", typeId: RESOURCE_TABLE });`
+  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000053617665644d6f640000000000000000);
 
   FieldLayout constant _fieldLayout =
     FieldLayout.wrap(0x0074040414202020000000000000000000000000000000000000000000000000);
@@ -897,7 +897,7 @@ library SavedModification {
   /**
    * @notice Get the full data.
    */
-  function get(bytes32 id) internal view returns (SavedModificationData memory _table) {
+  function get(bytes32 id) internal view returns (SavedModData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -912,7 +912,7 @@ library SavedModification {
   /**
    * @notice Get the full data.
    */
-  function _get(bytes32 id) internal view returns (SavedModificationData memory _table) {
+  function _get(bytes32 id) internal view returns (SavedModData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -977,7 +977,7 @@ library SavedModification {
   /**
    * @notice Set the full data using the data struct.
    */
-  function set(bytes32 id, SavedModificationData memory _table) internal {
+  function set(bytes32 id, SavedModData memory _table) internal {
     bytes memory _staticData = encodeStatic(_table.author, _table.size, _table.timestamp, _table.useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.bytecode, _table.description, _table.name, _table.sourceCode);
@@ -992,7 +992,7 @@ library SavedModification {
   /**
    * @notice Set the full data using the data struct.
    */
-  function _set(bytes32 id, SavedModificationData memory _table) internal {
+  function _set(bytes32 id, SavedModData memory _table) internal {
     bytes memory _staticData = encodeStatic(_table.author, _table.size, _table.timestamp, _table.useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.bytecode, _table.description, _table.name, _table.sourceCode);
@@ -1066,7 +1066,7 @@ library SavedModification {
     bytes memory _staticData,
     EncodedLengths _encodedLengths,
     bytes memory _dynamicData
-  ) internal pure returns (SavedModificationData memory _table) {
+  ) internal pure returns (SavedModData memory _table) {
     (_table.author, _table.size, _table.timestamp, _table.useCount) = decodeStatic(_staticData);
 
     (_table.bytecode, _table.description, _table.name, _table.sourceCode) = decodeDynamic(

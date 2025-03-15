@@ -68,6 +68,56 @@ export function createSystemCalls(
     }
   };
 
+  const deleteModification = async (savedModificationId: string) => {
+    try {
+      const tx = await worldContract.write.app__deleteModification([
+        savedModificationId as `0x${string}`,
+      ]);
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to delete system.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
+  const editModification = async (
+    savedModificationId: string,
+    description: string,
+    name: string,
+  ) => {
+    try {
+      const tx = await worldContract.write.app__editModification([
+        savedModificationId as `0x${string}`,
+        description,
+        name,
+      ]);
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to edit system.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const getContractSize = async (bytecode: string) => {
     try {
       const simulatedTx = await publicClient.simulateContract({
@@ -226,6 +276,8 @@ export function createSystemCalls(
 
   return {
     createGame,
+    deleteModification,
+    editModification,
     getContractSize,
     installTower,
     modifyTowerSystem,
