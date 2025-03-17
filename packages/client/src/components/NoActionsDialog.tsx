@@ -11,16 +11,13 @@ import { useGame } from '@/contexts/GameContext';
 
 import { Button } from './ui/button';
 
-type NoActionsDialogProps = {
-  isNoActionsDialogOpen: boolean;
-  setIsNoActionsDialogOpen: (isOpen: boolean) => void;
-};
-
-export const NoActionsDialog: React.FC<NoActionsDialogProps> = ({
-  isNoActionsDialogOpen,
-  setIsNoActionsDialogOpen,
-}) => {
-  const { isChangingTurn, onNextTurn } = useGame();
+export const NoActionsDialog: React.FC = () => {
+  const {
+    isChangingTurn,
+    isNoActionsDialogOpen,
+    onNextTurn,
+    setIsNoActionsDialogOpen,
+  } = useGame();
 
   return (
     <Dialog

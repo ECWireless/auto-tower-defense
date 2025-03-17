@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { zeroAddress } from 'viem';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
+import { CastleHitDialog } from '@/components/CastleHitDialog';
 import { GameBoard, INSTALLABLE_TOWERS } from '@/components/GameBoard';
 import { GameControlButtons } from '@/components/GameControlButtons';
 import { GameStatusBar } from '@/components/GameStatusBar';
@@ -44,11 +45,9 @@ export const InnerGamePage = (): JSX.Element => {
     handleDragStart,
     handleTowerSelect,
     isChangingTurn,
-    isNoActionsDialogOpen,
     isPlayer1,
     isRefreshing,
     onNextTurn,
-    setIsNoActionsDialogOpen,
   } = useGame();
 
   // Add game ID to tab title
@@ -189,10 +188,8 @@ export const InnerGamePage = (): JSX.Element => {
         isGameOverDialogOpen={isGameOverDialogOpen}
         setIsGameOverDialogOpen={setIsGameOverDialogOpen}
       />
-      <NoActionsDialog
-        isNoActionsDialogOpen={isNoActionsDialogOpen}
-        setIsNoActionsDialogOpen={setIsNoActionsDialogOpen}
-      />
+      <NoActionsDialog />
+      <CastleHitDialog />
     </div>
   );
 };

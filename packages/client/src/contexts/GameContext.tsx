@@ -38,8 +38,10 @@ type GameContextType = {
   ) => void;
   handleTowerSelect: (towerId: string, type: 'offense' | 'defense') => void;
   installingPosition: { x: number; y: number } | null;
+  isCastleHitDialogOpen: boolean;
   isChangingTurn: boolean;
   isInstallingTower: boolean;
+  isMyCastleHit: boolean;
   isNoActionsDialogOpen: boolean;
   isPlayer1: boolean;
   isRefreshing: boolean;
@@ -56,6 +58,7 @@ type GameContextType = {
   ) => void;
   onNextTurn: () => Promise<void>;
   refreshGame: () => void;
+  setIsCastleHitDialogOpen: (isOpen: boolean) => void;
   setIsNoActionsDialogOpen: (isOpen: boolean) => void;
   setTowers: (towers: Tower[]) => void;
   setTriggerAnimation: (value: boolean) => void;
@@ -77,9 +80,11 @@ const GameContext = createContext<GameContextType>({
   game: null,
   handleDragStart: () => {},
   handleTowerSelect: () => {},
-  isChangingTurn: false,
   installingPosition: null,
+  isCastleHitDialogOpen: false,
+  isChangingTurn: false,
   isInstallingTower: false,
+  isMyCastleHit: false,
   isNoActionsDialogOpen: false,
   isPlayer1: false,
   isRefreshing: false,
@@ -94,6 +99,7 @@ const GameContext = createContext<GameContextType>({
   onMoveTower: () => {},
   onNextTurn: async () => {},
   refreshGame: async () => {},
+  setIsCastleHitDialogOpen: () => {},
   setIsNoActionsDialogOpen: () => {},
   setTowers: () => {},
   setTriggerAnimation: () => {},
@@ -141,7 +147,10 @@ export const GameProvider = ({
   const [activePiece, setActivePiece] = useState<
     'offense' | 'defense' | 'none'
   >('none');
+
   const [isNoActionsDialogOpen, setIsNoActionsDialogOpen] = useState(false);
+  const [isCastleHitDialogOpen, setIsCastleHitDialogOpen] = useState(false);
+  const [isMyCastleHit, setIsMyCastleHit] = useState(false);
 
   const [towers, setTowers] = useState<Tower[]>([]);
   const [isChangingTurn, setIsChangingTurn] = useState(false);
@@ -404,6 +413,9 @@ export const GameProvider = ({
 
   const onNextRound = useCallback(async () => {
     try {
+      const originalPlayer1Castle = myCastlePosition;
+      const originalPlayer2Castle = enemyCastlePosition;
+
       setIsChangingTurn(true);
 
       if (!game) {
@@ -418,6 +430,38 @@ export const GameProvider = ({
       toast.success('Turn Changed!');
 
       setTriggerAnimation(true);
+
+      const newPlayer1CastleHealth = getComponentValueStrict(
+        Health,
+        originalPlayer1Castle.id,
+      );
+      const newPlayer2CastleHealth = getComponentValueStrict(
+        Health,
+        originalPlayer2Castle.id,
+      );
+
+      if (
+        newPlayer1CastleHealth.currentHealth <= 0 ||
+        newPlayer2CastleHealth.currentHealth <= 0
+      ) {
+        return;
+      }
+
+      if (
+        newPlayer1CastleHealth.currentHealth <
+        originalPlayer1Castle.currentHealth
+      ) {
+        setIsCastleHitDialogOpen(true);
+        setIsMyCastleHit(true);
+        return;
+      }
+      if (
+        newPlayer2CastleHealth.currentHealth <
+        originalPlayer2Castle.currentHealth
+      ) {
+        setIsCastleHitDialogOpen(true);
+        setIsMyCastleHit(false);
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -428,7 +472,14 @@ export const GameProvider = ({
     } finally {
       setIsChangingTurn(false);
     }
-  }, [game, nextTurn, setTriggerAnimation]);
+  }, [
+    enemyCastlePosition,
+    game,
+    Health,
+    myCastlePosition,
+    nextTurn,
+    setTriggerAnimation,
+  ]);
 
   const onNextTurn = useCallback(async () => {
     try {
@@ -555,8 +606,10 @@ export const GameProvider = ({
         handleDragStart,
         handleTowerSelect,
         installingPosition,
+        isCastleHitDialogOpen,
         isChangingTurn,
         isInstallingTower,
+        isMyCastleHit,
         isNoActionsDialogOpen,
         isPlayer1,
         isRefreshing: isLoadingGame,
@@ -565,6 +618,7 @@ export const GameProvider = ({
         onMoveTower,
         onNextTurn,
         refreshGame: fetchGame,
+        setIsCastleHitDialogOpen,
         setIsNoActionsDialogOpen,
         setTowers,
         setTriggerAnimation,
