@@ -24,6 +24,8 @@ import { useMUD } from '@/MUDContext';
 import { MAX_TICKS } from '@/utils/constants';
 import type { Castle, Game, Tower } from '@/utils/types';
 
+export const NO_ACTIONS_ERROR = 'TowerSystem: player has no actions remaining';
+
 type GameContextType = {
   activeTowerId: string | null;
   allowDrop: (e: React.DragEvent) => void;
@@ -38,6 +40,7 @@ type GameContextType = {
   installingPosition: { x: number; y: number } | null;
   isChangingTurn: boolean;
   isInstallingTower: boolean;
+  isNoActionsDialogOpen: boolean;
   isPlayer1: boolean;
   isRefreshing: boolean;
   myCastlePosition: Castle;
@@ -51,8 +54,9 @@ type GameContextType = {
     row: number,
     col: number,
   ) => void;
-  onNextTurn: () => void;
+  onNextTurn: () => Promise<void>;
   refreshGame: () => void;
+  setIsNoActionsDialogOpen: (isOpen: boolean) => void;
   setTowers: (towers: Tower[]) => void;
   setTriggerAnimation: (value: boolean) => void;
   tickCount: number;
@@ -76,6 +80,7 @@ const GameContext = createContext<GameContextType>({
   isChangingTurn: false,
   installingPosition: null,
   isInstallingTower: false,
+  isNoActionsDialogOpen: false,
   isPlayer1: false,
   isRefreshing: false,
   myCastlePosition: {
@@ -87,8 +92,9 @@ const GameContext = createContext<GameContextType>({
   },
   onInstallTower: () => {},
   onMoveTower: () => {},
-  onNextTurn: () => {},
+  onNextTurn: async () => {},
   refreshGame: async () => {},
+  setIsNoActionsDialogOpen: () => {},
   setTowers: () => {},
   setTriggerAnimation: () => {},
   tickCount: 0,
@@ -135,6 +141,7 @@ export const GameProvider = ({
   const [activePiece, setActivePiece] = useState<
     'offense' | 'defense' | 'none'
   >('none');
+  const [isNoActionsDialogOpen, setIsNoActionsDialogOpen] = useState(false);
 
   const [towers, setTowers] = useState<Tower[]>([]);
   const [isChangingTurn, setIsChangingTurn] = useState(false);
@@ -305,9 +312,13 @@ export const GameProvider = ({
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
-        toast.error('Error Installing Tower', {
-          description: (error as Error).message,
-        });
+        if (error instanceof Error && error.message === NO_ACTIONS_ERROR) {
+          setIsNoActionsDialogOpen(true);
+        } else {
+          toast.error('Error Installing Tower', {
+            description: (error as Error).message,
+          });
+        }
       } finally {
         setIsInstallingTower(false);
         setInstallingPosition(null);
@@ -354,9 +365,13 @@ export const GameProvider = ({
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
-        toast.error('Error Moving Tower', {
-          description: (error as Error).message,
-        });
+        if (error instanceof Error && error.message === NO_ACTIONS_ERROR) {
+          setIsNoActionsDialogOpen(true);
+        } else {
+          toast.error('Error Moving Tower', {
+            description: (error as Error).message,
+          });
+        }
       } finally {
         setIsInstallingTower(false);
         setInstallingPosition(null);
@@ -542,6 +557,7 @@ export const GameProvider = ({
         installingPosition,
         isChangingTurn,
         isInstallingTower,
+        isNoActionsDialogOpen,
         isPlayer1,
         isRefreshing: isLoadingGame,
         myCastlePosition,
@@ -549,6 +565,7 @@ export const GameProvider = ({
         onMoveTower,
         onNextTurn,
         refreshGame: fetchGame,
+        setIsNoActionsDialogOpen,
         setTowers,
         setTriggerAnimation,
         tickCount,

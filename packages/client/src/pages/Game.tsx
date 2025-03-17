@@ -10,6 +10,7 @@ import { GameControlButtons } from '@/components/GameControlButtons';
 import { GameStatusBar } from '@/components/GameStatusBar';
 import { HowToPlay } from '@/components/HowToPlay';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { NoActionsDialog } from '@/components/NoActionsDialog';
 import { NoGameScreen } from '@/components/NoGameScreen';
 import { PlayAgainDialog } from '@/components/PlayAgainDialog';
 import { Button } from '@/components/ui/button';
@@ -43,9 +44,11 @@ export const InnerGamePage = (): JSX.Element => {
     handleDragStart,
     handleTowerSelect,
     isChangingTurn,
+    isNoActionsDialogOpen,
     isPlayer1,
     isRefreshing,
     onNextTurn,
+    setIsNoActionsDialogOpen,
   } = useGame();
 
   // Add game ID to tab title
@@ -185,6 +188,10 @@ export const InnerGamePage = (): JSX.Element => {
       <PlayAgainDialog
         isGameOverDialogOpen={isGameOverDialogOpen}
         setIsGameOverDialogOpen={setIsGameOverDialogOpen}
+      />
+      <NoActionsDialog
+        isNoActionsDialogOpen={isNoActionsDialogOpen}
+        setIsNoActionsDialogOpen={setIsNoActionsDialogOpen}
       />
     </div>
   );

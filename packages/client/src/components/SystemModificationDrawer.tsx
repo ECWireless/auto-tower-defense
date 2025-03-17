@@ -48,7 +48,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useGame } from '@/contexts/GameContext';
+import { NO_ACTIONS_ERROR, useGame } from '@/contexts/GameContext';
 import { useMUD } from '@/MUDContext';
 import type { SavedModification, Tower } from '@/utils/types';
 
@@ -73,7 +73,7 @@ export const SystemModificationDrawer: React.FC<
       saveModification,
     },
   } = useMUD();
-  const { game, isPlayer1, refreshGame } = useGame();
+  const { game, isPlayer1, refreshGame, setIsNoActionsDialogOpen } = useGame();
 
   const [savedModifications, setSavedModifications] = useState<
     SavedModification[]
@@ -283,9 +283,14 @@ export const SystemModificationDrawer: React.FC<
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toast.error('Error Deploying System', {
-        description: (error as Error).message,
-      });
+      if (error instanceof Error && error.message === NO_ACTIONS_ERROR) {
+        setIsSystemDrawerOpen(false);
+        setIsNoActionsDialogOpen(true);
+      } else {
+        toast.error('Error Deploying System', {
+          description: (error as Error).message,
+        });
+      }
     } finally {
       setIsDeploying(false);
     }
@@ -294,6 +299,7 @@ export const SystemModificationDrawer: React.FC<
     modifyTowerSystem,
     onCompileCode,
     refreshGame,
+    setIsNoActionsDialogOpen,
     setIsSystemDrawerOpen,
     sizeLimit,
     sourceCode,
