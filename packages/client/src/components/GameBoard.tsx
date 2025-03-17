@@ -140,7 +140,6 @@ export const GameBoard: React.FC = () => {
 
             {/* Grid cells */}
             {[...Array(GRID_COLS)].map((_, colIndex) => {
-              // Add game pieces for specific positions
               const isBlueBase = rowIndex === 3 && colIndex === 0;
               const isOrangeBase = rowIndex === 3 && colIndex === 13;
               const isLeftSide = colIndex <= 6;
