@@ -596,7 +596,7 @@ export const SystemModificationDrawer: React.FC<
             SYSTEM MODIFICATION
           </SheetTitle>
         </SheetHeader>
-        <div className="mt-6 overflow-y-auto">
+        <div className="mt-6 overflow-y-auto pb-[100px]">
           <Dialog aria-describedby={undefined}>
             <DialogTrigger asChild>
               <Button
