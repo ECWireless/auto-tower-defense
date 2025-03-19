@@ -9,7 +9,7 @@ import { CastleHitDialog } from '@/components/CastleHitDialog';
 import { GameBoard, INSTALLABLE_TOWERS } from '@/components/GameBoard';
 import { GameControlButtons } from '@/components/GameControlButtons';
 import { GameStatusBar } from '@/components/GameStatusBar';
-import { HowToPlay } from '@/components/HowToPlay';
+import { HowToPlayDialog } from '@/components/HowToPlayDialog';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { NoActionsDialog } from '@/components/NoActionsDialog';
 import { NoGameScreen } from '@/components/NoGameScreen';
@@ -180,7 +180,7 @@ export const InnerGamePage = (): JSX.Element => {
         </div>
       </div>
 
-      <HowToPlay
+      <HowToPlayDialog
         onChangeHowToDialog={onChangeHowToDialog}
         isHelpDialogOpen={isHelpDialogOpen}
       />
