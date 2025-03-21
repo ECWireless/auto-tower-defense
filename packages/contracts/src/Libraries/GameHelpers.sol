@@ -1,4 +1,4 @@
-import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileData, SavedGame, SavedGameData, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
+import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, LastGameWonInRun, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileData, SavedGame, SavedGameData, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { MAX_ACTIONS, MAX_CASTLE_HEALTH } from "../../constants.sol";
@@ -216,29 +216,54 @@ library GameHelpers {
 
     if (loserAddress == game.player1Address) {
       bytes32 globalLoserId = EntityHelpers.globalAddressToKey(loserAddress);
+
+      bytes32 savedGameId = LastGameWonInRun.get(globalLoserId);
+      uint256 winStreak = WinStreak.get(globalLoserId);
+
+      if (savedGameId != bytes32(0) && winStreak > 0) {
+        bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
+
+        bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
+        for (uint256 i = 0; i < gamesByLevel.length; i++) {
+          updatedGamesByLevel[i] = gamesByLevel[i];
+
+          if (gamesByLevel[i] == savedGameId) {
+            return;
+          }
+        }
+        updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
+        GamesByLevel.set(winStreak, updatedGamesByLevel);
+
+        LastGameWonInRun.set(globalLoserId, bytes32(0));
+      }
+      
       WinStreak.set(globalLoserId, 0);
     } else {
       bytes32 globalWinnerId = EntityHelpers.globalAddressToKey(winner);
       uint256 winStreak = WinStreak.get(globalWinnerId) + 1;
       WinStreak.set(globalWinnerId, winStreak);
 
-      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalWinnerId));
       bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
+      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalWinnerId));
 
       if (gamesByLevel.length == 0) {
         TopLevel.set(winStreak);
-      }
 
-      bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
-      for (uint256 i = 0; i < gamesByLevel.length; i++) {
-        updatedGamesByLevel[i] = gamesByLevel[i];
+        bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
+        for (uint256 i = 0; i < gamesByLevel.length; i++) {
+          updatedGamesByLevel[i] = gamesByLevel[i];
 
-        if (gamesByLevel[i] == savedGameId) {
-          return;
+          if (gamesByLevel[i] == savedGameId) {
+            return;
+          }
         }
+        updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
+        GamesByLevel.set(winStreak, updatedGamesByLevel);
+
+        LastGameWonInRun.set(globalWinnerId, bytes32(0));
+      } else {
+        LastGameWonInRun.set(globalWinnerId, savedGameId);
       }
-      updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
-      GamesByLevel.set(winStreak, updatedGamesByLevel);
     }
   }
 }

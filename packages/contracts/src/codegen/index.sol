@@ -12,6 +12,7 @@ import { EntityAtPosition } from "./tables/EntityAtPosition.sol";
 import { Game, GameData } from "./tables/Game.sol";
 import { GamesByLevel } from "./tables/GamesByLevel.sol";
 import { Health } from "./tables/Health.sol";
+import { LastGameWonInRun } from "./tables/LastGameWonInRun.sol";
 import { Level } from "./tables/Level.sol";
 import { LogicSystemAddress } from "./tables/LogicSystemAddress.sol";
 import { MapConfig } from "./tables/MapConfig.sol";
