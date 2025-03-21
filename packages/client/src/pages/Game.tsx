@@ -9,7 +9,7 @@ import { CastleHitDialog } from '@/components/CastleHitDialog';
 import { GameBoard, INSTALLABLE_TOWERS } from '@/components/GameBoard';
 import { GameControlButtons } from '@/components/GameControlButtons';
 import { GameStatusBar } from '@/components/GameStatusBar';
-import { HowToPlay } from '@/components/HowToPlay';
+import { HowToPlayDialog } from '@/components/HowToPlayDialog';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { NoActionsDialog } from '@/components/NoActionsDialog';
 import { NoGameScreen } from '@/components/NoGameScreen';
@@ -155,10 +155,13 @@ export const InnerGamePage = (): JSX.Element => {
               {INSTALLABLE_TOWERS.map(tower => (
                 <div
                   key={tower.id}
-                  onClick={() => handleTowerSelect(tower.id, tower.type)}
                   className={`tower-card ${activeTowerId === tower.id ? 'selected' : ''} bg-gradient-to-b ${tower.color} cursor-pointer flex flex-col items-center min-w-[60px] p-2 rounded`}
                   draggable={isPlayer1}
-                  onDragStart={e => handleDragStart(e, tower.id, tower.type)}
+                  onClick={() => handleTowerSelect(tower.id, tower.type)}
+                  onPointerDown={e => handleDragStart(e, tower.id, tower.type)}
+                  style={{
+                    touchAction: 'none',
+                  }}
                 >
                   <div className="flex h-8 items-center justify-center">
                     {tower.icon}
@@ -180,7 +183,7 @@ export const InnerGamePage = (): JSX.Element => {
         </div>
       </div>
 
-      <HowToPlay
+      <HowToPlayDialog
         onChangeHowToDialog={onChangeHowToDialog}
         isHelpDialogOpen={isHelpDialogOpen}
       />

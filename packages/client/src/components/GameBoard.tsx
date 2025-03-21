@@ -61,6 +61,7 @@ export const GameBoard: React.FC = () => {
 
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
+  const [tooltipSelection, setTooltipSelection] = useState<string | null>(null);
 
   const onViewTower = useCallback(
     (tower: Tower) => {
@@ -240,7 +241,7 @@ export const GameBoard: React.FC = () => {
                       className="flex h-[100%] items-center justify-center"
                       draggable={isLeftSide && isPlayer1}
                       onClick={() => onViewTower(towerOnTile)}
-                      onDragStart={e =>
+                      onPointerDown={e =>
                         handleDragStart(
                           e,
                           towerOnTile.id,
@@ -250,6 +251,7 @@ export const GameBoard: React.FC = () => {
                         )
                       }
                       style={{
+                        touchAction: 'none',
                         transform:
                           towerOnTile.owner === game.player2Address
                             ? 'rotateY(180deg)'
@@ -257,8 +259,17 @@ export const GameBoard: React.FC = () => {
                       }}
                     >
                       <TooltipProvider>
-                        <Tooltip delayDuration={200}>
-                          <TooltipTrigger>
+                        <Tooltip
+                          delayDuration={200}
+                          open={tooltipSelection === towerOnTile.id}
+                        >
+                          <TooltipTrigger
+                            onClick={() => setTooltipSelection(towerOnTile.id)}
+                            onMouseEnter={() =>
+                              setTooltipSelection(towerOnTile.id)
+                            }
+                            onMouseLeave={() => setTooltipSelection(null)}
+                          >
                             {towerOnTile.projectileLogicAddress !==
                             zeroAddress ? (
                               <GiCannon
@@ -297,8 +308,15 @@ export const GameBoard: React.FC = () => {
 
                   {isBlueBase && (
                     <TooltipProvider>
-                      <Tooltip delayDuration={200}>
-                        <TooltipTrigger>
+                      <Tooltip
+                        delayDuration={200}
+                        open={tooltipSelection === 'myCastle'}
+                      >
+                        <TooltipTrigger
+                          onClick={() => setTooltipSelection('myCastle')}
+                          onMouseEnter={() => setTooltipSelection('myCastle')}
+                          onMouseLeave={() => setTooltipSelection(null)}
+                        >
                           <GiCastle className="text-blue-400" size={24} />
                         </TooltipTrigger>
                         <TooltipContent>
@@ -313,8 +331,17 @@ export const GameBoard: React.FC = () => {
                   )}
                   {isOrangeBase && (
                     <TooltipProvider>
-                      <Tooltip delayDuration={200}>
-                        <TooltipTrigger>
+                      <Tooltip
+                        delayDuration={200}
+                        open={tooltipSelection === 'enemyCastle'}
+                      >
+                        <TooltipTrigger
+                          onClick={() => setTooltipSelection('enemyCastle')}
+                          onMouseEnter={() =>
+                            setTooltipSelection('enemyCastle')
+                          }
+                          onMouseLeave={() => setTooltipSelection(null)}
+                        >
                           <GiCastle className="text-pink-400" size={24} />
                         </TooltipTrigger>
                         <TooltipContent>

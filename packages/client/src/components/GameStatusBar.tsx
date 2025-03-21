@@ -27,7 +27,7 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({ game }) => {
       </div>
 
       {/* Game Info - Desktop */}
-      <div className="col-span-3 hidden justify-around sm:flex">
+      <div className="col-span-3 hidden justify-around pl-[20px] sm:flex">
         <div>
           <div className="text-cyan-300 text-xs">LEVEL</div>
           <div className="font-medium text-cyan-400 text-lg">
@@ -49,7 +49,7 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({ game }) => {
       </div>
 
       {/* Game Info - Mobile */}
-      <div className="col-span-3 flex justify-around sm:hidden">
+      <div className="col-span-3 flex justify-around pl-[20px] sm:hidden">
         <div>
           <div className="text-[8px] text-cyan-300">LVL</div>
           <div className="font-medium text-cyan-400 text-xs">
@@ -57,13 +57,13 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({ game }) => {
           </div>
         </div>
         <div className="flex flex-col items-center">
-          <div className="text-[8px] text-cyan-300">RND</div>
+          <div className="text-[8px] text-cyan-300">ROUND</div>
           <div className="font-medium text-cyan-400 text-xs">
             {game.roundCount}
           </div>
         </div>
         <div>
-          <div className="text-[8px] text-cyan-300">ACT</div>
+          <div className="text-[8px] text-cyan-300">ACTIONS</div>
           <div className="font-medium text-cyan-400 text-xs">
             {game.actionCount}
           </div>
