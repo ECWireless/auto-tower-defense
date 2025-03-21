@@ -71,6 +71,7 @@ export default defineWorld({
         dataStruct: false,
       },
     },
+    LastGameWonInRun: "bytes32", // ID is global player ID; value is savedGameId
     Level: "uint256",
     LogicSystemAddress: {
       schema: {

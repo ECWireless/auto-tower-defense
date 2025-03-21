@@ -123,13 +123,13 @@ contract GameTest is MudTest {
   }
 
   function testNextLevel() public {
-    vm.prank(aliceAddress);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    endGame(aliceAddress, gameId);
-
     vm.prank(bobAddress);
-    gameId = IWorld(worldAddress).app__createGame("Bob", true);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Bob", true);
     endGame(bobAddress, gameId);
+
+    vm.prank(aliceAddress);
+    gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    endGame(aliceAddress, gameId);
     
     vm.prank(aliceAddress);
     gameId = IWorld(worldAddress).app__createGame("Alice", false);
@@ -142,13 +142,13 @@ contract GameTest is MudTest {
   }
 
   function testWinSecondGame() public {
-    vm.prank(aliceAddress);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    endGame(aliceAddress, gameId);
-
-    vm.prank(bobAddress);
-    gameId = IWorld(worldAddress).app__createGame("Bob", true);
+      vm.prank(bobAddress);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Bob", true);
     endGame(bobAddress, gameId);
+
+    vm.prank(aliceAddress);
+    gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    endGame(aliceAddress, gameId);
 
     vm.startPrank(aliceAddress);
     gameId = IWorld(worldAddress).app__createGame("Alice", false);
@@ -179,13 +179,13 @@ contract GameTest is MudTest {
   }
 
   function testLoseSecondGame() public {
-    vm.prank(aliceAddress);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    endGame(aliceAddress, gameId);
-
     vm.prank(bobAddress);
-    gameId = IWorld(worldAddress).app__createGame("Bob", true);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Bob", true);
     endGame(bobAddress, gameId);
+
+    vm.prank(aliceAddress);
+    gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    endGame(aliceAddress, gameId);
 
     vm.startPrank(aliceAddress);
     gameId = IWorld(worldAddress).app__createGame("Alice", false);
