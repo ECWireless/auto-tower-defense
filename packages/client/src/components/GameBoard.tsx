@@ -241,7 +241,7 @@ export const GameBoard: React.FC = () => {
                       className="flex h-[100%] items-center justify-center"
                       draggable={isLeftSide && isPlayer1}
                       onClick={() => onViewTower(towerOnTile)}
-                      onPointerDown={e =>
+                      onDragStart={e =>
                         handleDragStart(
                           e,
                           towerOnTile.id,
