@@ -241,7 +241,7 @@ export const GameBoard: React.FC = () => {
                       className="flex h-[100%] items-center justify-center"
                       draggable={isLeftSide && isPlayer1}
                       onClick={() => onViewTower(towerOnTile)}
-                      onDragStart={e =>
+                      onPointerDown={e =>
                         handleDragStart(
                           e,
                           towerOnTile.id,
@@ -251,6 +251,7 @@ export const GameBoard: React.FC = () => {
                         )
                       }
                       style={{
+                        touchAction: 'none',
                         transform:
                           towerOnTile.owner === game.player2Address
                             ? 'rotateY(180deg)'

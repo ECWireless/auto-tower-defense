@@ -32,7 +32,7 @@ type GameContextType = {
   enemyCastlePosition: Castle;
   game: Game | null;
   handleDragStart: (
-    e: React.DragEvent,
+    e: React.PointerEvent<HTMLDivElement>,
     towerId: string,
     type: 'offense' | 'defense',
   ) => void;
@@ -395,10 +395,14 @@ export const GameProvider = ({
   }, []);
 
   const handleDragStart = useCallback(
-    (e: React.DragEvent, towerId: string, type: 'offense' | 'defense') => {
+    (
+      e: React.PointerEvent<HTMLDivElement>,
+      towerId: string,
+      type: 'offense' | 'defense',
+    ) => {
       setActiveTowerId(towerId);
       setActivePiece(type);
-      e.dataTransfer.setData('text/plain', 'piece'); // Arbitrary data to identify the piece
+      // e.dataTransfer.setData('text/plain', 'piece'); // Arbitrary data to identify the piece
     },
     [],
   );
