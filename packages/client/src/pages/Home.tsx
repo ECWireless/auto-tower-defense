@@ -29,6 +29,11 @@ export const Home = (): JSX.Element => {
   const [usernameSaved, setUsernameSaved] = useState(false);
   const [isCreatingGame, setIsCreatingGame] = useState(false);
 
+  // Ensure home page title is always "Auto Tower Defense"
+  useEffect(() => {
+    document.title = `Auto Tower Defense`;
+  }, []);
+
   const onCreateGame = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();

@@ -80,6 +80,7 @@ export const SystemModificationDrawer: React.FC<
   >([]);
   const [selectedModification, setSelectedModification] =
     useState<SavedModification | null>(null);
+  const [tooltipSelection, setTooltipSelection] = useState<string | null>(null);
 
   const [isSemiTransparent, setIsSemiTransparent] = useState<boolean>(false);
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
@@ -596,7 +597,7 @@ export const SystemModificationDrawer: React.FC<
             SYSTEM MODIFICATION
           </SheetTitle>
         </SheetHeader>
-        <div className="mt-6 overflow-y-auto">
+        <div className="mt-6 overflow-y-auto pb-[100px]">
           <Dialog aria-describedby={undefined}>
             <DialogTrigger asChild>
               <Button
@@ -659,8 +660,13 @@ export const SystemModificationDrawer: React.FC<
               Saved Systems
             </h3>
             <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6">
+              <Tooltip open={tooltipSelection === 'systemsTooltip'}>
+                <TooltipTrigger
+                  className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
+                  onClick={() => setTooltipSelection('systemsTooltip')}
+                  onMouseEnter={() => setTooltipSelection('systemsTooltip')}
+                  onMouseLeave={() => setTooltipSelection(null)}
+                >
                   <Info className="h-3 w-3" />
                 </TooltipTrigger>
                 <TooltipContent>
