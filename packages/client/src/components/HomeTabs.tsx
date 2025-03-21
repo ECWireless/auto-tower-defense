@@ -39,7 +39,6 @@ import { GAMES_PATH } from '@/Routes';
 import {
   formatDateFromTimestamp,
   formatTimeFromTimestamp,
-  getElapsedTime,
   shortenAddress,
 } from '@/utils/helpers';
 import { type Game } from '@/utils/types';
@@ -71,12 +70,8 @@ const ActiveGameCard = ({
           <div className="flex gap-1 items-center">
             <Clock className="h-3 mr-1 text-gray-400 w-3" />
             <span className="text-sm text-white">
-              {formatTimeFromTimestamp(game.startTimestamp)} •{' '}
-              {getElapsedTime(
-                game.startTimestamp,
-                BigInt(BigInt(Math.floor(Date.now() / 1000))),
-              )}{' '}
-              elapsed
+              {formatTimeFromTimestamp(game.startTimestamp)} • Level{' '}
+              {game.level.toString()}
             </span>
           </div>
         </div>
@@ -141,8 +136,8 @@ const CompletedGameCard = ({
           <div className="flex  gap-1 items-center">
             <Clock className="h-3 mr-1 text-gray-400 w-3" />
             <span className="text-sm text-white">
-              {formatTimeFromTimestamp(game.startTimestamp)} •{' '}
-              {getElapsedTime(game.startTimestamp, game.endTimestamp)}
+              {formatTimeFromTimestamp(game.startTimestamp)} • Level{' '}
+              {game.level.toString()}
             </span>
           </div>
         </div>
@@ -171,7 +166,7 @@ export const HomeTabs: React.FC = () => {
   const navigate = useNavigate();
   const { copiedText, copyToClipboard } = useCopy();
   const {
-    components: { Game, GamesByLevel, SavedGame, Username },
+    components: { Game, GamesByLevel, Level, SavedGame, Username },
   } = useMUD();
 
   const games = useEntityQuery([Has(Game)]).map(entity => {
@@ -194,10 +189,14 @@ export const HomeTabs: React.FC = () => {
       player2Entity,
     ).value;
 
+    const _level =
+      getComponentValueStrict(Level, entity as Entity)?.value ?? BigInt(0);
+
     return {
       id: entity,
       actionCount: _game.actionCount,
       endTimestamp: _game.endTimestamp,
+      level: _level,
       player1Address: _game.player1Address as Address,
       player1Username: _player1Username,
       player2Address: _game.player2Address as Address,
@@ -406,7 +405,7 @@ export const HomeTabs: React.FC = () => {
                 <TableRow className="border-gray-800">
                   <TableHead className="text-white">Date</TableHead>
                   <TableHead className="text-white">Start Time</TableHead>
-                  <TableHead className="text-white">Elapsed</TableHead>
+                  <TableHead className="text-white">Level</TableHead>
                   <TableHead className="text-white">Players</TableHead>
                   <TableHead className="text-white">Round</TableHead>
                   <TableHead className="text-white w-10" />
@@ -423,17 +422,14 @@ export const HomeTabs: React.FC = () => {
                       {formatDateFromTimestamp(game.startTimestamp)}
                     </TableCell>
                     <TableCell>
-                      {formatTimeFromTimestamp(game.startTimestamp)}
+                      <div className="flex gap-1 items-center">
+                        <Clock className="h-3 mr-1 text-gray-400 w-3" />
+                        {formatTimeFromTimestamp(game.startTimestamp)}
+                      </div>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <div className="flex gap-1 items-center">
-                        <Clock className="h-3 text-gray-400 w-3" />
-                        <span>
-                          {getElapsedTime(
-                            game.startTimestamp,
-                            BigInt(Math.floor(Date.now() / 1000)),
-                          )}
-                        </span>
+                        {game.level.toString()}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -493,7 +489,7 @@ export const HomeTabs: React.FC = () => {
                 <TableRow className="border-gray-800">
                   <TableHead className="text-white">Date</TableHead>
                   <TableHead className="text-white">Start Time</TableHead>
-                  <TableHead className="text-white">Duration</TableHead>
+                  <TableHead className="text-white">Level</TableHead>
                   <TableHead className="text-white">Players</TableHead>
                   <TableHead className="text-white">Winner</TableHead>
                   <TableHead className="text-white w-10" />
@@ -510,17 +506,14 @@ export const HomeTabs: React.FC = () => {
                       {formatDateFromTimestamp(game.startTimestamp)}
                     </TableCell>
                     <TableCell>
-                      {formatTimeFromTimestamp(game.startTimestamp)}
+                      <div className="flex gap-1 items-center">
+                        <Clock className="h-3 mr-1 text-gray-400 w-3" />
+                        {formatTimeFromTimestamp(game.startTimestamp)}
+                      </div>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <div className="flex gap-1 items-center">
-                        <Clock className="h-3 text-gray-400 w-3" />
-                        <span>
-                          {getElapsedTime(
-                            game.startTimestamp,
-                            game.endTimestamp,
-                          )}
-                        </span>
+                        {game.level.toString()}
                       </div>
                     </TableCell>
                     <TableCell>
