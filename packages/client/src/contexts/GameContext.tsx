@@ -32,7 +32,7 @@ type GameContextType = {
   enemyCastlePosition: Castle;
   game: Game | null;
   handleDragStart: (
-    e: React.DragEvent<HTMLDivElement>,
+    e: React.PointerEvent<HTMLDivElement>,
     towerId: string,
     type: 'offense' | 'defense',
   ) => void;
@@ -396,7 +396,7 @@ export const GameProvider = ({
 
   const handleDragStart = useCallback(
     (
-      e: React.DragEvent<HTMLDivElement>,
+      e: React.PointerEvent<HTMLDivElement>,
       towerId: string,
       type: 'offense' | 'defense',
     ) => {
