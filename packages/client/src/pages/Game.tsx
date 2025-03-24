@@ -158,7 +158,7 @@ export const InnerGamePage = (): JSX.Element => {
                   className={`tower-card ${activeTowerId === tower.id ? 'selected' : ''} bg-gradient-to-b ${tower.color} cursor-pointer flex flex-col items-center min-w-[60px] p-2 rounded`}
                   draggable={isPlayer1}
                   onClick={() => handleTowerSelect(tower.id, tower.type)}
-                  onPointerDown={e => handleDragStart(e, tower.id, tower.type)}
+                  onDragStart={e => handleDragStart(e, tower.id, tower.type)}
                 >
                   <div className="flex h-8 items-center justify-center">
                     {tower.icon}
