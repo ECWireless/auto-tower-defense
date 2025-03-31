@@ -7,20 +7,27 @@ import {
 } from 'react';
 
 import { useAudioLoop } from '@/hooks/useAudioLoop';
+import { useSFX } from '@/hooks/useSFX';
 import { AudioSettings } from '@/utils/types';
 
 type SettingsContextType = {
-  isPlaying: boolean;
-  setVolume: (v: number) => void;
-  toggle: () => void;
-  volume: number;
+  isMusicPlaying: boolean;
+  musicVolume: number;
+  playSfx: (name: string) => void;
+  setMusicVolume: (v: number) => void;
+  setSfxMuted: (muted: boolean) => void;
+  setSfxVolume: (v: number) => void;
+  toggleMusic: () => void;
 };
 
 const SettingsContext = createContext<SettingsContextType>({
-  isPlaying: false,
-  setVolume: () => undefined,
-  toggle: () => undefined,
-  volume: 0,
+  isMusicPlaying: false,
+  musicVolume: 0,
+  playSfx: () => undefined,
+  setMusicVolume: () => undefined,
+  setSfxMuted: () => undefined,
+  setSfxVolume: () => undefined,
+  toggleMusic: () => undefined,
 });
 
 export type SettingsProviderProps = {
@@ -30,10 +37,21 @@ export type SettingsProviderProps = {
 export const SettingsProvider = ({
   children,
 }: SettingsProviderProps): JSX.Element => {
-  const { isPlaying, play, setIsPlaying, setVolume, toggle, volume } =
-    useAudioLoop('/assets/sounds/bg-music.mp3', {
-      initialVolume: 0.5,
-    });
+  const {
+    isPlaying: isMusicPlaying,
+    play: playMusic,
+    setIsPlaying,
+    setVolume: setMusicVolume,
+    toggle: toggleMusic,
+    volume: musicVolume,
+  } = useAudioLoop('/assets/sounds/bg-music.mp3', {
+    initialVolume: 0.5,
+  });
+  const {
+    play: playSfx,
+    setMuted: setSfxMuted,
+    setVolume: setSfxVolume,
+  } = useSFX();
 
   const [userInteracted, setUserInteracted] = useState(false);
 
@@ -46,7 +64,7 @@ export const SettingsProvider = ({
           musicEnabled: true,
           musicVolume: 50,
           sfxEnabled: true,
-          sfxVolume: 50,
+          sfxVolume: 80,
         };
         localStorage.setItem('audioSettings', JSON.stringify(defaultSettings));
         savedSettings = localStorage.getItem('audioSettings');
@@ -61,8 +79,8 @@ export const SettingsProvider = ({
           setUserInteracted(true);
 
           if (_isPlaying) {
-            setVolume(settings.musicVolume / 100);
-            play(); // auto-play if music is enabled
+            setMusicVolume(settings.musicVolume / 100);
+            playMusic(); // auto-play if music is enabled
           }
           document.removeEventListener('click', handleUserInteraction);
           document.removeEventListener('keydown', handleUserInteraction);
@@ -80,15 +98,18 @@ export const SettingsProvider = ({
       document.removeEventListener('click', handleUserInteraction);
       document.removeEventListener('keydown', handleUserInteraction);
     };
-  }, [play, setIsPlaying, setVolume, userInteracted]);
+  }, [playMusic, setIsPlaying, setMusicVolume, userInteracted]);
 
   return (
     <SettingsContext.Provider
       value={{
-        isPlaying,
-        setVolume,
-        toggle,
-        volume,
+        isMusicPlaying,
+        playSfx,
+        setMusicVolume,
+        setSfxMuted,
+        setSfxVolume,
+        toggleMusic,
+        musicVolume,
       }}
     >
       {children}

@@ -14,7 +14,7 @@ import { HomeTabs } from '@/components/HomeTabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useSFX } from '@/hooks/useSFX';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/MUDContext';
 import { GAMES_PATH } from '@/Routes';
 
@@ -25,7 +25,7 @@ export const Home = (): JSX.Element => {
     network: { playerEntity },
     systemCalls: { createGame },
   } = useMUD();
-  const { play: playSound } = useSFX();
+  const { playSfx } = useSettings();
 
   const [username, setUsername] = useState('');
   const [usernameSaved, setUsernameSaved] = useState(false);
@@ -41,7 +41,7 @@ export const Home = (): JSX.Element => {
       e.preventDefault();
       try {
         setIsCreatingGame(true);
-        playSound('click1');
+        playSfx('click1');
 
         let currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
         if (currentGame) {
@@ -78,15 +78,7 @@ export const Home = (): JSX.Element => {
         setIsCreatingGame(false);
       }
     },
-    [
-      createGame,
-      CurrentGame,
-      Game,
-      navigate,
-      playerEntity,
-      playSound,
-      username,
-    ],
+    [createGame, CurrentGame, Game, navigate, playerEntity, playSfx, username],
   );
 
   useEffect(() => {

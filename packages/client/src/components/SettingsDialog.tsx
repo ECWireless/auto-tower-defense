@@ -15,13 +15,14 @@ import { useSettings } from '@/contexts/SettingsContext';
 import type { AudioSettings } from '@/utils/types';
 
 export const SettingsDialog: React.FC = () => {
-  const { setVolume, toggle } = useSettings();
+  const { setMusicVolume, setSfxMuted, setSfxVolume, toggleMusic } =
+    useSettings();
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<AudioSettings>({
     musicEnabled: true,
     musicVolume: 50,
     sfxEnabled: true,
-    sfxVolume: 50,
+    sfxVolume: 80,
   });
 
   // Load settings from localStorage on component mount
@@ -44,21 +45,24 @@ export const SettingsDialog: React.FC = () => {
 
   const handleMusicToggle = (enabled: boolean) => {
     setSettings(prev => ({ ...prev, musicEnabled: enabled }));
-    toggle();
+    toggleMusic();
   };
 
   const handleSfxToggle = (enabled: boolean) => {
     setSettings(prev => ({ ...prev, sfxEnabled: enabled }));
+    setSfxMuted(!enabled);
   };
 
   const handleMusicVolumeChange = (value: number[]) => {
     setSettings(prev => ({ ...prev, musicVolume: value[0] }));
     const volumeAsDecimal = value[0] / 100; // Convert percentage to decimal
-    setVolume(volumeAsDecimal);
+    setMusicVolume(volumeAsDecimal);
   };
 
   const handleSfxVolumeChange = (value: number[]) => {
     setSettings(prev => ({ ...prev, sfxVolume: value[0] }));
+    const volumeAsDecimal = value[0] / 100; // Convert percentage to decimal
+    setSfxVolume(volumeAsDecimal);
   };
 
   return (
