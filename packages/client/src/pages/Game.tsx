@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/tooltip';
 import { GameProvider, useGame } from '@/contexts/GameContext';
 import useCopy from '@/hooks/useCopy';
+import { useSFX } from '@/hooks/useSFX';
 import { shortenAddress } from '@/utils/helpers';
 
 const HOW_TO_SEEN_KEY = 'how-to-seen';
@@ -49,6 +50,7 @@ export const InnerGamePage = (): JSX.Element => {
     isRefreshing,
     onNextTurn,
   } = useGame();
+  const { play: playSound } = useSFX();
 
   // Add game ID to tab title
   useEffect(() => {
@@ -64,8 +66,11 @@ export const InnerGamePage = (): JSX.Element => {
     if (!game) return;
     if (game.winner === zeroAddress && game.endTimestamp === BigInt(0)) return;
 
+    if (game.winner === game.player1Address) {
+      playSound('powerUp');
+    }
     setIsGameOverDialogOpen(true);
-  }, [game]);
+  }, [game, playSound]);
 
   // Open How To info dialog if this is the first time the user is playing a game.
   useEffect(() => {

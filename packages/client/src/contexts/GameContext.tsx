@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { Address, zeroAddress, zeroHash } from 'viem';
 
+import { useSFX } from '@/hooks/useSFX';
 import { useMUD } from '@/MUDContext';
 import { MAX_TICKS } from '@/utils/constants';
 import type { Castle, Game, Tower } from '@/utils/types';
@@ -134,6 +135,7 @@ export const GameProvider = ({
     network: { playerEntity },
     systemCalls: { installTower, moveTower, nextTurn },
   } = useMUD();
+  const { play: playSound } = useSFX();
 
   const [game, setGame] = useState<Game | null>(null);
   const [isLoadingGame, setIsLoadingGame] = useState(true);
@@ -292,6 +294,7 @@ export const GameProvider = ({
       try {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
+        playSound('click');
 
         if (activeTowerId?.startsWith('0x')) {
           throw new Error('Installed tower selected. Please move it instead.');
@@ -334,7 +337,7 @@ export const GameProvider = ({
         setActiveTowerId(null);
       }
     },
-    [activePiece, activeTowerId, game, installTower, fetchGame],
+    [activePiece, activeTowerId, fetchGame, game, installTower, playSound],
   );
 
   const onMoveTower = useCallback(
@@ -347,6 +350,7 @@ export const GameProvider = ({
       try {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
+        playSound('click');
 
         if (!activeTowerId?.startsWith('0x')) {
           throw new Error('No active tower selected.');
@@ -387,7 +391,7 @@ export const GameProvider = ({
         setActiveTowerId(null);
       }
     },
-    [activeTowerId, game, moveTower, fetchGame],
+    [activeTowerId, fetchGame, game, moveTower, playSound],
   );
 
   const allowDrop = useCallback((e: React.DragEvent) => {
@@ -400,19 +404,21 @@ export const GameProvider = ({
       towerId: string,
       type: 'offense' | 'defense',
     ) => {
+      playSound('click');
       setActiveTowerId(towerId);
       setActivePiece(type);
       // e.dataTransfer.setData('text/plain', 'piece'); // Arbitrary data to identify the piece
     },
-    [],
+    [playSound],
   );
 
   const handleTowerSelect = useCallback(
     (towerId: string, type: 'offense' | 'defense') => {
+      playSound('click');
       setActiveTowerId(prev => (prev === towerId ? null : towerId));
       setActivePiece(type);
     },
-    [],
+    [playSound],
   );
 
   const onNextRound = useCallback(async () => {
@@ -434,6 +440,7 @@ export const GameProvider = ({
       toast.success('Turn Changed!');
 
       setTriggerAnimation(true);
+      playSound('laserShoot');
 
       const newPlayer1CastleHealth = getComponentValueStrict(
         Health,
@@ -482,6 +489,7 @@ export const GameProvider = ({
     Health,
     myCastlePosition,
     nextTurn,
+    playSound,
     setTriggerAnimation,
   ]);
 

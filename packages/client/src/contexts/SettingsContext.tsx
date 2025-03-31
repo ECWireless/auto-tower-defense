@@ -31,7 +31,7 @@ export const SettingsProvider = ({
   children,
 }: SettingsProviderProps): JSX.Element => {
   const { isPlaying, play, setIsPlaying, setVolume, toggle, volume } =
-    useAudioLoop('/assets/bg-music.mp3', {
+    useAudioLoop('/assets/sounds/bg-music.mp3', {
       initialVolume: 0.5,
     });
 
