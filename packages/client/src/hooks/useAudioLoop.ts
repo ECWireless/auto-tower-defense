@@ -10,6 +10,7 @@ export const useAudioLoop = (
 ): {
   isPlaying: boolean;
   play: () => void;
+  setIsPlaying: (isPlaying: boolean) => void;
   setVolume: (v: number) => void;
   toggle: () => void;
   volume: number;
@@ -104,6 +105,7 @@ export const useAudioLoop = (
   return {
     isPlaying,
     play: initAndStart,
+    setIsPlaying: setIsPlaying,
     setVolume: setVolumeSafe,
     toggle,
     volume,

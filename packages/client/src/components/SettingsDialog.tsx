@@ -11,15 +11,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-
-interface AudioSettings {
-  musicEnabled: boolean;
-  sfxEnabled: boolean;
-  musicVolume: number;
-  sfxVolume: number;
-}
+import { useSettings } from '@/contexts/SettingsContext';
+import type { AudioSettings } from '@/utils/types';
 
 export const SettingsDialog: React.FC = () => {
+  const { setVolume, toggle } = useSettings();
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<AudioSettings>({
     musicEnabled: true,
@@ -48,6 +44,7 @@ export const SettingsDialog: React.FC = () => {
 
   const handleMusicToggle = (enabled: boolean) => {
     setSettings(prev => ({ ...prev, musicEnabled: enabled }));
+    toggle();
   };
 
   const handleSfxToggle = (enabled: boolean) => {
@@ -56,6 +53,8 @@ export const SettingsDialog: React.FC = () => {
 
   const handleMusicVolumeChange = (value: number[]) => {
     setSettings(prev => ({ ...prev, musicVolume: value[0] }));
+    const volumeAsDecimal = value[0] / 100; // Convert percentage to decimal
+    setVolume(volumeAsDecimal);
   };
 
   const handleSfxVolumeChange = (value: number[]) => {
