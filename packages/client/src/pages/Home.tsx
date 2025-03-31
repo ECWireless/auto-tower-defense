@@ -41,7 +41,7 @@ export const Home = (): JSX.Element => {
       e.preventDefault();
       try {
         setIsCreatingGame(true);
-        playSound('click');
+        playSound('click1');
 
         let currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
         if (currentGame) {

@@ -294,7 +294,7 @@ export const GameProvider = ({
       try {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
-        playSound('click');
+        playSound('click2');
 
         if (activeTowerId?.startsWith('0x')) {
           throw new Error('Installed tower selected. Please move it instead.');
@@ -350,7 +350,7 @@ export const GameProvider = ({
       try {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
-        playSound('click');
+        playSound('click2');
 
         if (!activeTowerId?.startsWith('0x')) {
           throw new Error('No active tower selected.');
@@ -404,7 +404,7 @@ export const GameProvider = ({
       towerId: string,
       type: 'offense' | 'defense',
     ) => {
-      playSound('click');
+      playSound('click3');
       setActiveTowerId(towerId);
       setActivePiece(type);
       // e.dataTransfer.setData('text/plain', 'piece'); // Arbitrary data to identify the piece
@@ -414,7 +414,7 @@ export const GameProvider = ({
 
   const handleTowerSelect = useCallback(
     (towerId: string, type: 'offense' | 'defense') => {
-      playSound('click');
+      playSound('click3');
       setActiveTowerId(prev => (prev === towerId ? null : towerId));
       setActivePiece(type);
     },
@@ -440,7 +440,10 @@ export const GameProvider = ({
       toast.success('Turn Changed!');
 
       setTriggerAnimation(true);
-      playSound('laserShoot');
+
+      if (towers.some(tower => tower.projectileLogicAddress !== zeroAddress)) {
+        playSound('laserShoot');
+      }
 
       const newPlayer1CastleHealth = getComponentValueStrict(
         Health,
@@ -491,11 +494,13 @@ export const GameProvider = ({
     nextTurn,
     playSound,
     setTriggerAnimation,
+    towers,
   ]);
 
   const onNextTurn = useCallback(async () => {
     try {
       setIsChangingTurn(true);
+      playSound('click3');
 
       if (!game) {
         throw new Error('Game not found.');
@@ -524,7 +529,7 @@ export const GameProvider = ({
     } finally {
       setIsChangingTurn(false);
     }
-  }, [fetchGame, game, nextTurn, onNextRound]);
+  }, [fetchGame, game, nextTurn, onNextRound, playSound]);
 
   useEffect(() => {
     if (!game) return () => {};

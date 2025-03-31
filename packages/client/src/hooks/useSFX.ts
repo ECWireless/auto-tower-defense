@@ -14,10 +14,13 @@ export function useSFX(): {
     sfxRef.current = sfx;
 
     // Load your sounds here
-    sfx.load('click', '/assets/sounds/click.wav');
-    sfx.load('laserShoot', '/assets/sounds/laserShoot.wav');
-    sfx.load('explosion', '/assets/sounds/explosion.wav');
-    sfx.load('powerUp', '/assets/sounds/powerUp.wav');
+    sfx.load('click1', '/assets/sounds/click1.mp3');
+    sfx.load('click2', '/assets/sounds/click2.mp3');
+    sfx.load('click3', '/assets/sounds/click3.mp3');
+    sfx.load('click4', '/assets/sounds/click4.wav');
+    sfx.load('laserShoot', '/assets/sounds/laserShoot.mp3');
+    sfx.load('explosion', '/assets/sounds/explosion.mp3');
+    sfx.load('win', '/assets/sounds/win.mp3');
 
     return () => {
       // No teardown needed unless you want to manually close the context

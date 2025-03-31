@@ -49,6 +49,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { NO_ACTIONS_ERROR, useGame } from '@/contexts/GameContext';
+import { useSFX } from '@/hooks/useSFX';
 import { useMUD } from '@/MUDContext';
 import type { SavedModification, Tower } from '@/utils/types';
 
@@ -74,6 +75,7 @@ export const SystemModificationDrawer: React.FC<
     },
   } = useMUD();
   const { game, isPlayer1, refreshGame, setIsNoActionsDialogOpen } = useGame();
+  const { play: playSound } = useSFX();
 
   const [savedModifications, setSavedModifications] = useState<
     SavedModification[]
@@ -249,6 +251,7 @@ export const SystemModificationDrawer: React.FC<
   const onModifyTowerSystem = useCallback(async () => {
     try {
       setIsDeploying(true);
+      playSound('click3');
       const bytecode = await onCompileCode();
       if (!bytecode) {
         setIsDeploying(false);
@@ -299,6 +302,7 @@ export const SystemModificationDrawer: React.FC<
     getContractSize,
     modifyTowerSystem,
     onCompileCode,
+    playSound,
     refreshGame,
     setIsNoActionsDialogOpen,
     setIsSystemDrawerOpen,

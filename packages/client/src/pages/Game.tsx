@@ -67,7 +67,7 @@ export const InnerGamePage = (): JSX.Element => {
     if (game.winner === zeroAddress && game.endTimestamp === BigInt(0)) return;
 
     if (game.winner === game.player1Address) {
-      playSound('powerUp');
+      playSound('win');
     }
     setIsGameOverDialogOpen(true);
   }, [game, playSound]);
