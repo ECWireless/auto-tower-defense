@@ -22,6 +22,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { GameProvider, useGame } from '@/contexts/GameContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import useCopy from '@/hooks/useCopy';
 import { shortenAddress } from '@/utils/helpers';
 
@@ -49,6 +50,7 @@ export const InnerGamePage = (): JSX.Element => {
     isRefreshing,
     onNextTurn,
   } = useGame();
+  const { playSfx } = useSettings();
 
   // Add game ID to tab title
   useEffect(() => {
@@ -64,8 +66,11 @@ export const InnerGamePage = (): JSX.Element => {
     if (!game) return;
     if (game.winner === zeroAddress && game.endTimestamp === BigInt(0)) return;
 
+    if (game.winner === game.player1Address) {
+      playSfx('win');
+    }
     setIsGameOverDialogOpen(true);
-  }, [game]);
+  }, [game, playSfx]);
 
   // Open How To info dialog if this is the first time the user is playing a game.
   useEffect(() => {

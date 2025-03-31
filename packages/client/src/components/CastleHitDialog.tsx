@@ -25,11 +25,13 @@ export const CastleHitDialog: React.FC = () => {
   if (isMyCastleHit) {
     return (
       <Dialog
-        aria-describedby={undefined}
         open={isCastleHitDialogOpen}
         onOpenChange={open => setIsCastleHitDialogOpen(open)}
       >
-        <DialogContent className="bg-gray-900 border border-pink-900/50 text-white">
+        <DialogContent
+          aria-describedby={undefined}
+          className="bg-gray-900 border border-pink-900/50 text-white"
+        >
           <DialogHeader>
             <DialogTitle className="text-pink-400 text-xl">
               Your Castle Was Hit!
@@ -53,11 +55,13 @@ export const CastleHitDialog: React.FC = () => {
 
   return (
     <Dialog
-      aria-describedby={undefined}
       open={isCastleHitDialogOpen}
       onOpenChange={open => setIsCastleHitDialogOpen(open)}
     >
-      <DialogContent className="bg-gray-900 border border-cyan-900/50 text-white">
+      <DialogContent
+        aria-describedby={undefined}
+        className="bg-gray-900 border border-cyan-900/50 text-white"
+      >
         <DialogHeader>
           <DialogTitle className="text-cyan-400 text-xl">
             You Hit {game.player2Username}&apos;s Castle!

@@ -153,11 +153,13 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   if (topLevel === winStreak && topLevelGamesICanPlay.length === 0) {
     return (
       <Dialog
-        aria-describedby={undefined}
         open={isGameOverDialogOpen}
         onOpenChange={open => setIsGameOverDialogOpen(open)}
       >
-        <DialogContent className="bg-gray-900 border border-cyan-900/50 text-white">
+        <DialogContent
+          aria-describedby={undefined}
+          className="bg-gray-900 border border-cyan-900/50 text-white"
+        >
           <DialogHeader>
             <DialogTitle className="text-cyan-400 text-xl">
               Game Won
@@ -197,11 +199,13 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   if (game.winner === game.player1Address) {
     return (
       <Dialog
-        aria-describedby={undefined}
         open={isGameOverDialogOpen}
         onOpenChange={open => setIsGameOverDialogOpen(open)}
       >
-        <DialogContent className="bg-gray-900 border border-cyan-900/50 text-white">
+        <DialogContent
+          aria-describedby={undefined}
+          className="bg-gray-900 border border-cyan-900/50 text-white"
+        >
           <DialogHeader>
             <DialogTitle className="text-cyan-400 text-xl">
               Game Won
@@ -232,11 +236,13 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
 
   return (
     <Dialog
-      aria-describedby={undefined}
       open={isGameOverDialogOpen}
       onOpenChange={open => setIsGameOverDialogOpen(open)}
     >
-      <DialogContent className="bg-gray-900 border border-pink-900/50 text-white">
+      <DialogContent
+        aria-describedby={undefined}
+        className="bg-gray-900 border border-pink-900/50 text-white"
+      >
         <DialogHeader>
           <DialogTitle className="text-pink-400 text-xl">Game Over</DialogTitle>
         </DialogHeader>

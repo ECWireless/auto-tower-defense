@@ -1,6 +1,13 @@
 import { Entity } from '@latticexyz/recs';
 import { Address } from 'viem';
 
+export type AudioSettings = {
+  musicEnabled: boolean;
+  musicVolume: number;
+  sfxEnabled: boolean;
+  sfxVolume: number;
+};
+
 export type Castle = {
   id: Entity;
   currentHealth: number;
