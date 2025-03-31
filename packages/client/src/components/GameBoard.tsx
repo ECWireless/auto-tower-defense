@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useGame } from '@/contexts/GameContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { type Tower } from '@/utils/types';
 
 export const INSTALLABLE_TOWERS = [
@@ -58,6 +59,7 @@ export const GameBoard: React.FC = () => {
     towers,
     triggerAnimation,
   } = useGame();
+  const { playSfx } = useSettings();
 
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
@@ -428,6 +430,7 @@ export const GameBoard: React.FC = () => {
                 }
 
                 if (collisionEntity) {
+                  playSfx('explosion');
                   return (
                     <div
                       id={`projectile-${tower.id}`}
