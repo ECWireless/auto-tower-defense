@@ -133,7 +133,7 @@ export const SystemsList: React.FC<SystemsListProps> = ({
                     {system.name}
                   </h3>
                   <span className="flex-shrink-0 ml-2 text-gray-400 text-xs">
-                    {system.size}
+                    {system.useCount} uses
                   </span>
                 </div>
                 <div className="flex items-center justify-between mt-0.5">
