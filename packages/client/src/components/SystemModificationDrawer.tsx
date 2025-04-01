@@ -135,7 +135,7 @@ export const SystemModificationDrawer: React.FC<
         } as SavedModification;
       });
       return _savedModifications.sort(
-        (a, b) => Number(b.timestamp) - Number(a.timestamp),
+        (a, b) => Number(b.useCount) - Number(a.useCount),
       );
     } catch (error) {
       // eslint-disable-next-line no-console
