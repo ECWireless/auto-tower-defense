@@ -11,7 +11,7 @@ function Switch({
     <SwitchPrimitive.Root
       data-slot="switch"
       className={cn(
-        'peer cursor-pointer data-[state=checked]:bg-cyan-600 data-[state=unchecked]:bg-gray-700 focus-visible:border-ring focus-visible:ring-ring/50 inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
+        'peer cursor-pointer data-[state=checked]:bg-cyan-600 data-[state=unchecked]:bg-gray-700 focus-visible:border-ring focus-visible:ring-ring/50 inline-flex h-[1.15rem] w-[34px] shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       {...props}
@@ -23,7 +23,7 @@ function Switch({
         )}
         style={{
           transform: props.checked
-            ? 'translateX(calc(100% + 2px))' // Move thumb to the right when checked
+            ? 'translateX(18px)' // Move thumb to the right when checked
             : 'translateX(0)', // Move thumb to the left when unchecked
         }}
       />
