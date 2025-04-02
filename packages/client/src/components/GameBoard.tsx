@@ -322,7 +322,7 @@ export const GameBoard: React.FC = () => {
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>
-                            Your Castle - Health:
+                            Your Castle - Health:{' '}
                             {myCastlePosition?.currentHealth}/
                             {myCastlePosition?.maxHealth}
                           </p>

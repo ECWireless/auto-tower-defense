@@ -100,7 +100,7 @@ export const SettingsDialog: React.FC = () => {
                 <Switch
                   id="music-toggle"
                   checked={settings.musicEnabled}
-                  className="data-[state=checked]:translate-x-[200px] data-[state=checked]:bg-purple-600"
+                  className="data-[state=checked]:bg-purple-600"
                   onCheckedChange={handleMusicToggle}
                 />
               </div>
