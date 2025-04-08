@@ -29,14 +29,9 @@ export const NO_ACTIONS_ERROR = 'TowerSystem: player has no actions remaining';
 
 type GameContextType = {
   activeTowerId: string | null;
-  allowDrop: (e: React.DragEvent) => void;
   enemyCastlePosition: Castle;
   game: Game | null;
-  handleDragStart: (
-    e: React.DragEvent<HTMLDivElement>,
-    towerId: string,
-    type: 'offense' | 'defense',
-  ) => void;
+  handleDragStart: (towerId: string, type: 'offense' | 'defense') => void;
   handleTowerSelect: (towerId: string, type: 'offense' | 'defense') => void;
   installingPosition: { x: number; y: number } | null;
   isCastleHitDialogOpen: boolean;
@@ -47,16 +42,8 @@ type GameContextType = {
   isPlayer1: boolean;
   isRefreshing: boolean;
   myCastlePosition: Castle;
-  onInstallTower: (
-    e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
-    row: number,
-    col: number,
-  ) => void;
-  onMoveTower: (
-    e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
-    row: number,
-    col: number,
-  ) => void;
+  onInstallTower: (row: number, col: number) => void;
+  onMoveTower: (row: number, col: number) => void;
   onNextTurn: () => Promise<void>;
   refreshGame: () => void;
   setIsCastleHitDialogOpen: (isOpen: boolean) => void;
@@ -70,7 +57,6 @@ type GameContextType = {
 
 const GameContext = createContext<GameContextType>({
   activeTowerId: null,
-  allowDrop: () => {},
   enemyCastlePosition: {
     id: zeroHash as Entity,
     currentHealth: 0,
@@ -285,12 +271,7 @@ export const GameProvider = ({
   }, [fetchGame]);
 
   const onInstallTower = useCallback(
-    async (
-      e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
-      row: number,
-      col: number,
-    ) => {
-      e.preventDefault();
+    async (row: number, col: number) => {
       try {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
@@ -341,12 +322,7 @@ export const GameProvider = ({
   );
 
   const onMoveTower = useCallback(
-    async (
-      e: React.DragEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
-      row: number,
-      col: number,
-    ) => {
-      e.preventDefault();
+    async (row: number, col: number) => {
       try {
         setIsInstallingTower(true);
         setInstallingPosition({ x: col, y: row });
@@ -394,16 +370,8 @@ export const GameProvider = ({
     [activeTowerId, fetchGame, game, moveTower, playSfx],
   );
 
-  const allowDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-  }, []);
-
   const handleDragStart = useCallback(
-    (
-      e: React.DragEvent<HTMLDivElement>,
-      towerId: string,
-      type: 'offense' | 'defense',
-    ) => {
+    (towerId: string, type: 'offense' | 'defense') => {
       playSfx('click3');
       setActiveTowerId(towerId);
       setActivePiece(type);
@@ -617,7 +585,6 @@ export const GameProvider = ({
     <GameContext.Provider
       value={{
         activeTowerId,
-        allowDrop,
         enemyCastlePosition,
         game,
         handleDragStart,

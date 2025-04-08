@@ -78,7 +78,10 @@ export const SettingsDialog: React.FC = () => {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="bg-gray-900/95 border border-cyan-900/50 text-white">
+        <DialogContent
+          aria-describedby={undefined}
+          className="bg-gray-900/95 border border-cyan-900/50 text-white"
+        >
           <DialogHeader>
             <DialogTitle className="font-bold text-2xl text-cyan-400">
               SETTINGS

@@ -21,11 +21,13 @@ export const NoActionsDialog: React.FC = () => {
 
   return (
     <Dialog
-      aria-describedby={undefined}
       open={isNoActionsDialogOpen}
       onOpenChange={open => setIsNoActionsDialogOpen(open)}
     >
-      <DialogContent className="bg-gray-900 border border-pink-900/50 text-white">
+      <DialogContent
+        aria-describedby={undefined}
+        className="bg-gray-900 border border-pink-900/50 text-white"
+      >
         <DialogHeader>
           <DialogTitle className="text-pink-400 text-xl">
             No Actions Remaining
