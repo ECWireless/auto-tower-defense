@@ -42,12 +42,14 @@ export const InnerGamePage = (): JSX.Element => {
   const navigate = useNavigate();
   const {
     activeTowerId,
+    enemyCastlePosition,
     game,
     handleDragStart,
     handleTowerSelect,
     isChangingTurn,
     isPlayer1,
     isRefreshing,
+    myCastlePosition,
     onNextTurn,
   } = useGame();
   const { playSfx } = useSettings();
@@ -140,7 +142,11 @@ export const InnerGamePage = (): JSX.Element => {
       {/* Game Container */}
       <div className="flex justify-center items-center flex-1 p-4 pt-16 z-1">
         <div className="w-full max-w-3xl">
-          <GameStatusBar game={game} />
+          <GameStatusBar
+            enemyCastlePosition={enemyCastlePosition}
+            game={game}
+            myCastlePosition={myCastlePosition}
+          />
 
           {/* Control Buttons - Desktop */}
           <div className="hidden justify-center mb-1 sm:flex space-x-2">

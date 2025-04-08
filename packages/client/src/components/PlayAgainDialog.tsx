@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useGame } from '@/contexts/GameContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/MUDContext';
 import { GAMES_PATH } from '@/Routes';
 import { MAX_ROUNDS } from '@/utils/constants';
@@ -46,6 +47,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     network: { playerEntity },
     systemCalls: { createGame },
   } = useMUD();
+  const { playSfx } = useSettings();
   const { game } = useGame();
 
   const [isCreatingGame, setIsCreatingGame] = useState(false);
@@ -78,6 +80,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   const onCreateGame = useCallback(async () => {
     try {
       setIsCreatingGame(true);
+      playSfx('click2');
 
       if (!game) {
         throw new Error('Game not found.');
@@ -121,6 +124,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     game,
     navigate,
     playerEntity,
+    playSfx,
     setIsGameOverDialogOpen,
     topLevel,
     topLevelGamesICanPlay,
