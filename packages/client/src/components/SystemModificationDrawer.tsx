@@ -544,6 +544,12 @@ export const SystemModificationDrawer: React.FC<
     setFormErrors([]);
   }, [description, name]);
 
+  const isMyTower = useMemo(() => {
+    if (!isPlayer1) return false;
+    if (!game) return false;
+    return game.player1Address === tower.owner;
+  }, [game, isPlayer1, tower.owner]);
+
   const isSystemSaved = useMemo(() => {
     if (!sourceCode) return false;
     const flattenedSourceCode = sourceCode.replace(/\s+/g, ' ').trim();
@@ -690,7 +696,7 @@ export const SystemModificationDrawer: React.FC<
 
           <div className="flex flex-col gap-3 mb-6 mt-6 sm:flex-row">
             <div className="flex gap-3">
-              {isPlayer1 && (
+              {isMyTower && (
                 <Button
                   className="bg-cyan-950/30 border-cyan-500 hover:bg-cyan-900/50 hover:text-cyan-300 text-cyan-400"
                   disabled={isDeploying}
@@ -714,7 +720,7 @@ export const SystemModificationDrawer: React.FC<
                 View Board
               </Button>
             </div>
-            {isPlayer1 && (!isSystemSaved || canEditSystem) && (
+            {isMyTower && (!isSystemSaved || canEditSystem) && (
               <div className="flex gap-3">
                 <Button
                   className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
@@ -888,7 +894,7 @@ export const SystemModificationDrawer: React.FC<
           </Dialog>
 
           <div className="bg-black/50 border border-cyan-900/50 relative rounded-lg">
-            {!isPlayer1 && (
+            {!isMyTower && (
               <div className="absolute bg-transparent flex h-full w-full z-1" />
             )}
             <Editor

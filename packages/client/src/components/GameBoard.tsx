@@ -1,3 +1,4 @@
+import { useDndContext } from '@dnd-kit/core';
 import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -8,6 +9,8 @@ import {
 } from 'react-icons/gi';
 import { zeroAddress } from 'viem';
 
+import { Draggable } from '@/components/Draggable';
+import { Droppable } from '@/components/Droppable';
 import { SystemModificationDrawer } from '@/components/SystemModificationDrawer';
 import {
   Tooltip,
@@ -43,10 +46,8 @@ const GRID_COLS = 14;
 export const GameBoard: React.FC = () => {
   const {
     activeTowerId,
-    allowDrop,
     enemyCastlePosition,
     game,
-    handleDragStart,
     handleTowerSelect,
     installingPosition,
     isInstallingTower,
@@ -60,6 +61,7 @@ export const GameBoard: React.FC = () => {
     triggerAnimation,
   } = useGame();
   const { playSfx } = useSettings();
+  const { over: draggingOver, active: draggingActive } = useDndContext();
 
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
@@ -189,11 +191,12 @@ export const GameBoard: React.FC = () => {
                 : 'border-pink-900/20';
 
               const isTowerSelected = activeTowerId === towerOnTile?.id;
+              const tileId = `${rowIndex}-${colIndex}`;
 
               return (
-                <div
-                  key={`${rowIndex}-${colIndex}`}
-                  className={`aspect-square relative ${isLeftSide ? 'left' : ''} ${isTowerSelected ? 'selected' : ''}
+                <Droppable key={tileId} disabled={!canInstall} id={tileId}>
+                  <div
+                    className={`aspect-square relative ${draggingOver?.id === tileId ? 'hover' : ''} ${isLeftSide ? 'left' : ''} ${isTowerSelected ? 'selected' : ''} 
                         ${
                           isBlueBase
                             ? 'base-blue flex game-cell items-center justify-center'
@@ -201,96 +204,95 @@ export const GameBoard: React.FC = () => {
                               ? 'base-orange flex game-cell items-center justify-center'
                               : `game-cell ${playerSideClass}`
                         }`}
-                  onClick={e => {
-                    if (!isLeftSide) return;
-                    if (towerOnTile) {
-                      handleTowerSelect(
-                        towerOnTile.id,
-                        towerOnTile.projectileLogicAddress !== zeroAddress
-                          ? 'offense'
-                          : 'defense',
-                      );
-                    } else if (
-                      canInstall &&
-                      activeTowerId &&
-                      INSTALLABLE_TOWERS.map(tower => tower.id).includes(
-                        activeTowerId,
-                      )
-                    ) {
-                      onInstallTower(e, rowIndex, colIndex);
-                    } else if (canInstall && activeTowerId) {
-                      onMoveTower(e, rowIndex, colIndex);
-                    }
-                  }}
-                  onDrop={e =>
-                    activeTowerId &&
-                    INSTALLABLE_TOWERS.map(tower => tower.id).includes(
-                      activeTowerId,
-                    )
-                      ? onInstallTower(e, rowIndex, colIndex)
-                      : onMoveTower(e, rowIndex, colIndex)
-                  }
-                  onDragOver={canInstall ? allowDrop : undefined}
-                >
-                  {isInstalling && (
-                    <div className="flex h-[100%] items-center justify-center">
-                      <Loader2 className="animate-spin h-6 text-cyan-400 w-6" />
-                    </div>
-                  )}
+                    onClick={() => {
+                      if (
+                        !towerOnTile?.id ||
+                        towerOnTile.id === tooltipSelection
+                      ) {
+                        setTooltipSelection(null);
+                      } else {
+                        setTooltipSelection(towerOnTile.id);
+                      }
 
-                  {!!towerOnTile && (
-                    <div
-                      className="flex h-[100%] items-center justify-center"
-                      draggable={isLeftSide && isPlayer1}
-                      onClick={() => onViewTower(towerOnTile)}
-                      onDragStart={e =>
-                        handleDragStart(
-                          e,
+                      if (!(isLeftSide && isPlayer1)) return;
+
+                      if (towerOnTile) {
+                        handleTowerSelect(
                           towerOnTile.id,
                           towerOnTile.projectileLogicAddress !== zeroAddress
                             ? 'offense'
                             : 'defense',
+                        );
+                      } else if (
+                        canInstall &&
+                        activeTowerId &&
+                        INSTALLABLE_TOWERS.map(tower => tower.id).includes(
+                          activeTowerId,
                         )
+                      ) {
+                        onInstallTower(rowIndex, colIndex);
+                      } else if (canInstall && activeTowerId) {
+                        onMoveTower(rowIndex, colIndex);
                       }
-                      style={{
-                        transform:
-                          towerOnTile.owner === game.player2Address
-                            ? 'rotateY(180deg)'
-                            : 'none',
-                      }}
-                    >
+                    }}
+                  >
+                    {isInstalling && (
+                      <div className="flex h-[100%] items-center justify-center">
+                        <Loader2 className="animate-spin h-6 text-cyan-400 w-6" />
+                      </div>
+                    )}
+
+                    {!!towerOnTile && (
                       <TooltipProvider>
-                        <Tooltip
-                          delayDuration={200}
-                          open={tooltipSelection === towerOnTile.id}
-                        >
+                        <Tooltip open={tooltipSelection === towerOnTile.id}>
                           <TooltipTrigger
-                            onClick={() => setTooltipSelection(towerOnTile.id)}
-                            onMouseEnter={() =>
-                              setTooltipSelection(towerOnTile.id)
-                            }
-                            onMouseLeave={() => setTooltipSelection(null)}
+                            asChild
+                            className="flex items-center h-full justify-center"
                           >
-                            {towerOnTile.projectileLogicAddress !==
-                            zeroAddress ? (
-                              <GiCannon
-                                className={
-                                  isLeftSide
-                                    ? 'text-cyan-400 hover:cursor-pointer'
-                                    : 'text-pink-400'
-                                }
-                                size={28}
-                              />
-                            ) : (
-                              <GiDefensiveWall
-                                className={
-                                  isLeftSide
-                                    ? 'text-cyan-400 hover:cursor-pointer'
-                                    : 'text-pink-400'
-                                }
-                                size={24}
-                              />
-                            )}
+                            <div>
+                              <Draggable
+                                id={towerOnTile.id}
+                                disabled={!(isLeftSide && isPlayer1)}
+                              >
+                                <div
+                                  onDoubleClick={() => onViewTower(towerOnTile)}
+                                  style={{
+                                    transform:
+                                      towerOnTile.owner === game.player2Address
+                                        ? 'rotateY(180deg)'
+                                        : 'none',
+                                    touchAction: 'none',
+                                    cursor: isLeftSide
+                                      ? activeTowerId === towerOnTile?.id &&
+                                        !!draggingActive
+                                        ? 'grabbing'
+                                        : 'grab'
+                                      : 'pointer',
+                                  }}
+                                >
+                                  {towerOnTile.projectileLogicAddress !==
+                                  zeroAddress ? (
+                                    <GiCannon
+                                      className={
+                                        isLeftSide
+                                          ? 'text-cyan-400'
+                                          : 'text-pink-400'
+                                      }
+                                      size={28}
+                                    />
+                                  ) : (
+                                    <GiDefensiveWall
+                                      className={
+                                        isLeftSide
+                                          ? 'text-cyan-400'
+                                          : 'text-pink-400'
+                                      }
+                                      size={24}
+                                    />
+                                  )}
+                                </div>
+                              </Draggable>
+                            </div>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>
@@ -304,58 +306,58 @@ export const GameBoard: React.FC = () => {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    </div>
-                  )}
+                    )}
 
-                  {isBlueBase && (
-                    <TooltipProvider>
-                      <Tooltip
-                        delayDuration={200}
-                        open={tooltipSelection === 'myCastle'}
-                      >
-                        <TooltipTrigger
-                          onClick={() => setTooltipSelection('myCastle')}
-                          onMouseEnter={() => setTooltipSelection('myCastle')}
-                          onMouseLeave={() => setTooltipSelection(null)}
+                    {isBlueBase && (
+                      <TooltipProvider>
+                        <Tooltip
+                          delayDuration={200}
+                          open={tooltipSelection === 'myCastle'}
                         >
-                          <GiCastle className="text-blue-400" size={24} />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            Your Castle - Health:{' '}
-                            {myCastlePosition?.currentHealth}/
-                            {myCastlePosition?.maxHealth}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                  {isOrangeBase && (
-                    <TooltipProvider>
-                      <Tooltip
-                        delayDuration={200}
-                        open={tooltipSelection === 'enemyCastle'}
-                      >
-                        <TooltipTrigger
-                          onClick={() => setTooltipSelection('enemyCastle')}
-                          onMouseEnter={() =>
-                            setTooltipSelection('enemyCastle')
-                          }
-                          onMouseLeave={() => setTooltipSelection(null)}
+                          <TooltipTrigger
+                            onClick={() => setTooltipSelection('myCastle')}
+                            onMouseEnter={() => setTooltipSelection('myCastle')}
+                            onMouseLeave={() => setTooltipSelection(null)}
+                          >
+                            <GiCastle className="text-blue-400" size={24} />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              Your Castle - Health:{' '}
+                              {myCastlePosition?.currentHealth}/
+                              {myCastlePosition?.maxHealth}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    {isOrangeBase && (
+                      <TooltipProvider>
+                        <Tooltip
+                          delayDuration={200}
+                          open={tooltipSelection === 'enemyCastle'}
                         >
-                          <GiCastle className="text-pink-400" size={24} />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            Enemy Castle - Health:{' '}
-                            {enemyCastlePosition?.currentHealth}/
-                            {enemyCastlePosition?.maxHealth}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
+                          <TooltipTrigger
+                            onClick={() => setTooltipSelection('enemyCastle')}
+                            onMouseEnter={() =>
+                              setTooltipSelection('enemyCastle')
+                            }
+                            onMouseLeave={() => setTooltipSelection(null)}
+                          >
+                            <GiCastle className="text-pink-400" size={24} />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              Enemy Castle - Health:{' '}
+                              {enemyCastlePosition?.currentHealth}/
+                              {enemyCastlePosition?.maxHealth}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                </Droppable>
               );
             })}
 

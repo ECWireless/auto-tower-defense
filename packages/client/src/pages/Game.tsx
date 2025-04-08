@@ -1,3 +1,12 @@
+import {
+  DndContext,
+  DragEndEvent,
+  DragStartEvent,
+  PointerSensor,
+  useDndContext,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import { Entity } from '@latticexyz/recs';
 import { Check, Copy, Home } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -6,6 +15,7 @@ import { zeroAddress } from 'viem';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { CastleHitDialog } from '@/components/CastleHitDialog';
+import { Draggable } from '@/components/Draggable';
 import { GameBoard, INSTALLABLE_TOWERS } from '@/components/GameBoard';
 import { GameControlButtons } from '@/components/GameControlButtons';
 import { GameStatusBar } from '@/components/GameStatusBar';
@@ -50,9 +60,19 @@ export const InnerGamePage = (): JSX.Element => {
     isPlayer1,
     isRefreshing,
     myCastlePosition,
+    onInstallTower,
+    onMoveTower,
     onNextTurn,
+    towers,
   } = useGame();
   const { playSfx } = useSettings();
+  const { active: draggingActive } = useDndContext();
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 5,
+    },
+  });
+  const sensors = useSensors(pointerSensor);
 
   // Add game ID to tab title
   useEffect(() => {
@@ -90,6 +110,52 @@ export const InnerGamePage = (): JSX.Element => {
     }
   }, []);
 
+  const onDragStart = (event: DragStartEvent) => {
+    if (!isPlayer1) return;
+
+    const { active } = event;
+    const activeTower = {
+      id: '',
+      type: 'offense' as 'offense' | 'defense',
+    };
+
+    const installableTower = INSTALLABLE_TOWERS.find(
+      tower => tower.id === active.id,
+    );
+
+    if (installableTower) {
+      activeTower.id = installableTower.id;
+      activeTower.type = installableTower.type;
+    } else {
+      const tower = towers.find(tower => tower.id === active.id);
+      if (tower) {
+        activeTower.id = tower.id;
+        activeTower.type =
+          tower.projectileLogicAddress === zeroAddress ? 'defense' : 'offense';
+
+        const isLeftSide = tower.x <= 60;
+        if (!isLeftSide) return;
+      }
+    }
+
+    if (activeTower.id) {
+      handleDragStart(activeTower.id, activeTower.type);
+    }
+  };
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { over } = event;
+    if (!over) return;
+
+    const [row, col] = over.id.toString().split('-').map(Number);
+
+    if (INSTALLABLE_TOWERS.some(tower => tower.id === activeTowerId)) {
+      onInstallTower(row, col);
+    } else {
+      onMoveTower(row, col);
+    }
+  };
+
   if (isRefreshing) {
     return <LoadingScreen width={100} />;
   }
@@ -99,108 +165,126 @@ export const InnerGamePage = (): JSX.Element => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white relative">
-      <BackgroundAnimation />
+    <DndContext
+      onDragEnd={onDragEnd}
+      onDragStart={onDragStart}
+      sensors={sensors}
+    >
+      <div className="flex flex-col min-h-screen bg-black text-white relative">
+        <BackgroundAnimation />
 
-      {/* Top Navigation */}
-      <div className="fixed left-4 top-4 z-10">
-        <Button
-          className="border-purple-500 hover:bg-purple-950/50 hover:text-purple-300 text-purple-400"
-          onClick={() => {
-            navigate('/');
-          }}
-          size="sm"
-          variant="outline"
-        >
-          <Home className="h-4 mr-1 w-4" />
-          Home
-        </Button>
-      </div>
-      <div className="fixed right-4 text-cyan-400 text-sm top-4 z-10">
-        <div className="flex items-center space-x-2">
-          <span>Game ID: {shortenAddress(game.id)}</span>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
-                onClick={() => copyToClipboard(game.id)}
-              >
-                {copiedText === game.id ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{copiedText === game.id ? 'Copied!' : 'Copy address'}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        {/* Top Navigation */}
+        <div className="fixed left-4 top-4 z-10">
+          <Button
+            className="border-purple-500 hover:bg-purple-950/50 hover:text-purple-300 text-purple-400"
+            onClick={() => {
+              navigate('/');
+            }}
+            size="sm"
+            variant="outline"
+          >
+            <Home className="h-4 mr-1 w-4" />
+            Home
+          </Button>
         </div>
-      </div>
-
-      {/* Game Container */}
-      <div className="flex justify-center items-center flex-1 p-4 pt-16 z-1">
-        <div className="w-full max-w-3xl">
-          <GameStatusBar
-            enemyCastlePosition={enemyCastlePosition}
-            game={game}
-            myCastlePosition={myCastlePosition}
-          />
-
-          {/* Control Buttons - Desktop */}
-          <div className="hidden justify-center mb-1 sm:flex space-x-2">
-            <GameControlButtons
-              isChangingTurn={isChangingTurn}
-              onNextTurn={onNextTurn}
-              setIsHelpDialogOpen={setIsHelpDialogOpen}
-            />
-          </div>
-
-          <GameBoard />
-
-          {/* Tower Selection Row */}
-          <div className="bg-gray-900 border border-cyan-900/50 mt-1 p-2 overflow-x-auto rounded-b-md">
-            <div className="mb-1 px-1 text-cyan-400 text-xs">TOWERS</div>
-            <div className="flex min-w-[600px] sm:min-w-0 space-x-2">
-              {INSTALLABLE_TOWERS.map(tower => (
-                <div
-                  key={tower.id}
-                  className={`tower-card ${activeTowerId === tower.id ? 'selected' : ''} bg-gradient-to-b ${tower.color} cursor-pointer flex flex-col items-center min-w-[60px] p-2 rounded`}
-                  draggable={isPlayer1}
-                  onClick={() => handleTowerSelect(tower.id, tower.type)}
-                  onDragStart={e => handleDragStart(e, tower.id, tower.type)}
+        <div className="fixed right-4 text-cyan-400 text-sm top-4 z-10">
+          <div className="flex items-center space-x-2">
+            <span>Game ID: {shortenAddress(game.id)}</span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
+                  onClick={() => copyToClipboard(game.id)}
                 >
-                  <div className="flex h-8 items-center justify-center">
-                    {tower.icon}
-                  </div>
-                  <span className="mt-1 text-white text-xs">{tower.name}</span>
-                </div>
-              ))}
+                  {copiedText === game.id ? (
+                    <Check className="h-3 w-3" />
+                  ) : (
+                    <Copy className="h-3 w-3" />
+                  )}
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{copiedText === game.id ? 'Copied!' : 'Copy address'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+
+        {/* Game Container */}
+        <div className="flex justify-center items-center flex-1 p-4 pt-16 z-1">
+          <div className="w-full max-w-3xl">
+            <GameStatusBar
+              enemyCastlePosition={enemyCastlePosition}
+              game={game}
+              myCastlePosition={myCastlePosition}
+            />
+
+            {/* Control Buttons - Desktop */}
+            <div className="hidden justify-center mb-1 sm:flex space-x-2">
+              <GameControlButtons
+                isChangingTurn={isChangingTurn}
+                onNextTurn={onNextTurn}
+                setIsHelpDialogOpen={setIsHelpDialogOpen}
+              />
+            </div>
+
+            <GameBoard />
+
+            {/* Tower Selection Row */}
+            <div className="bg-gray-900 border border-cyan-900/50 mt-1 p-2 rounded-b-md">
+              <div className="mb-1 px-1 text-cyan-400 text-xs">TOWERS</div>
+              <div className="flex min-w-[300px] sm:min-w-0 space-x-2">
+                {INSTALLABLE_TOWERS.map(tower => (
+                  <Draggable
+                    key={tower.id}
+                    disabled={!isPlayer1}
+                    id={tower.id}
+                    onClick={() => handleTowerSelect(tower.id, tower.type)}
+                  >
+                    <div
+                      style={{
+                        cursor:
+                          activeTowerId === tower.id && !!draggingActive
+                            ? 'grabbing'
+                            : 'grab',
+                        touchAction: 'none',
+                      }}
+                      className={`bg-gradient-to-b ${tower.color} flex flex-col items-center min-w-[60px] p-2 rounded tower-card ${activeTowerId === tower.id ? 'selected' : ''}`}
+                    >
+                      <div className="flex h-8 items-center justify-center">
+                        {tower.icon}
+                      </div>
+                      <span className="mt-1 text-white text-xs">
+                        {tower.name}
+                      </span>
+                    </div>
+                  </Draggable>
+                ))}
+              </div>
+            </div>
+
+            {/* Control Buttons - Mobile */}
+            <div className="flex justify-center mt-4 sm:hidden space-x-2">
+              <GameControlButtons
+                isChangingTurn={isChangingTurn}
+                onNextTurn={onNextTurn}
+                setIsHelpDialogOpen={setIsHelpDialogOpen}
+              />
             </div>
           </div>
-
-          {/* Control Buttons - Mobile */}
-          <div className="flex justify-center mt-4 sm:hidden space-x-2">
-            <GameControlButtons
-              isChangingTurn={isChangingTurn}
-              onNextTurn={onNextTurn}
-              setIsHelpDialogOpen={setIsHelpDialogOpen}
-            />
-          </div>
         </div>
-      </div>
 
-      <HowToPlayDialog
-        onChangeHowToDialog={onChangeHowToDialog}
-        isHelpDialogOpen={isHelpDialogOpen}
-      />
-      <PlayAgainDialog
-        isGameOverDialogOpen={isGameOverDialogOpen}
-        setIsGameOverDialogOpen={setIsGameOverDialogOpen}
-      />
-      <NoActionsDialog />
-      <CastleHitDialog />
-    </div>
+        <HowToPlayDialog
+          onChangeHowToDialog={onChangeHowToDialog}
+          isHelpDialogOpen={isHelpDialogOpen}
+        />
+        <PlayAgainDialog
+          isGameOverDialogOpen={isGameOverDialogOpen}
+          setIsGameOverDialogOpen={setIsGameOverDialogOpen}
+        />
+        <NoActionsDialog />
+        <CastleHitDialog />
+      </div>
+    </DndContext>
   );
 };

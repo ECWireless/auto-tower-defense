@@ -191,6 +191,11 @@
   border: 1px solid hsl(var(--neon-cyan) / 0.5);
 }
 
+.game-cell.hover {
+  background: #2a2a4e;
+  cursor: pointer;
+}
+
 .game-cell.left:hover {
   background: #2a2a4e;
   cursor: pointer;
