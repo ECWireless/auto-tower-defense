@@ -64,10 +64,12 @@ library ProjectileHelpers {
       bytes32 towerId = allTowers[i];
       int16 x = Position.getX(towerId);
       int16 y = Position.getY(towerId);
+      address owner = Owner.get(towerId);
 
       towers[i] = TowerDetails({
         id: towerId,
         health: Health.getCurrentHealth(towerId),
+        owner: owner,
         projectileAddress: Projectile.getLogicAddress(towerId),
         projectileX: x,
         projectileY: y,
@@ -200,8 +202,9 @@ library ProjectileHelpers {
     bytes32 gameId = CurrentGame.get(towers[i].id);
     (int16 actualX, int16 actualY) = getActualCoordinates(newProjectileX, newProjectileY);
     bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, actualX, actualY));
+    address entityOwner = Owner.get(positionEntity);
 
-    if (positionEntity != 0 && towers[i].id != positionEntity) {
+    if (positionEntity != 0 && towers[i].id != positionEntity && entityOwner != towers[i].owner) {
       _handleCollision(towers, i, positionEntity);
     } else {
       towers[i].projectileX = newProjectileX;
