@@ -390,7 +390,8 @@ export const GameBoard: React.FC = () => {
                     ) <= 5 &&
                     Math.abs(
                       _tower.y - tower.projectileTrajectory[tickCount].y,
-                    ) <= 5,
+                    ) <= 5 &&
+                    _tower.owner !== tower.owner,
                 );
 
                 const enemyCastleCollision =
