@@ -20,7 +20,7 @@ contract GameTest is MudTest {
 
   function endGame(address player, bytes32 gameId) public {
     vm.startPrank(player);
-    IWorld(worldAddress).app__installTower(gameId, true, 35, 35);
+    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
 
     // Need to go through 8 turns to end the game
     IWorld(worldAddress).app__nextTurn(gameId);
@@ -127,12 +127,11 @@ contract GameTest is MudTest {
     bytes32 gameId = IWorld(worldAddress).app__createGame("Bob", true);
     endGame(bobAddress, gameId);
 
-    vm.prank(aliceAddress);
+    vm.startPrank(aliceAddress);
     gameId = IWorld(worldAddress).app__createGame("Alice", true);
     endGame(aliceAddress, gameId);
-    
-    vm.prank(aliceAddress);
     gameId = IWorld(worldAddress).app__createGame("Alice", false);
+    vm.stopPrank();
 
     uint256 winStreak = WinStreak.get(EntityHelpers.globalAddressToKey(aliceAddress));
     assertEq(winStreak, 1);
@@ -142,7 +141,7 @@ contract GameTest is MudTest {
   }
 
   function testWinSecondGame() public {
-      vm.prank(bobAddress);
+    vm.prank(bobAddress);
     bytes32 gameId = IWorld(worldAddress).app__createGame("Bob", true);
     endGame(bobAddress, gameId);
 
@@ -152,16 +151,16 @@ contract GameTest is MudTest {
 
     vm.startPrank(aliceAddress);
     gameId = IWorld(worldAddress).app__createGame("Alice", false);
-    
-    IWorld(worldAddress).app__installTower(gameId, false, 35, 35);
+
+    IWorld(worldAddress).app__playerInstallTower(false, 35, 35);
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
 
-    bytes32 towerId = IWorld(worldAddress).app__installTower(gameId, true, 65, 5);
+    bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 65, 5);
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
 
-    IWorld(worldAddress).app__modifyTowerSystem(towerId, BYTECODE, "");
+    IWorld(worldAddress).app__playerModifyTowerSystem(towerId, BYTECODE, "");
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);

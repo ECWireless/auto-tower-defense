@@ -206,12 +206,12 @@ export const GameBoard: React.FC = () => {
                         }`}
                     onClick={() => {
                       if (
-                        !towerOnTile?.id ||
-                        towerOnTile.id === tooltipSelection
+                        towerOnTile?.id &&
+                        towerOnTile.id !== tooltipSelection
                       ) {
-                        setTooltipSelection(null);
-                      } else {
                         setTooltipSelection(towerOnTile.id);
+                      } else {
+                        setTooltipSelection(null);
                       }
 
                       if (!(isLeftSide && isPlayer1)) return;
