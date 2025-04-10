@@ -5,83 +5,132 @@ import { RESOURCE_SYSTEM } from "@latticexyz/world/src/worldResourceTypes.sol";
 import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
 
 import { _gameSystemAddress } from "../utils.sol";
-import { Action, ActionData, CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedGame, SavedGameData, SavedModification, Tower } from "../codegen/index.sol";
+import { CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedModification, Tower, TowerCounter } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { GameHelpers } from "./GameHelpers.sol";
 import { ProjectileHelpers } from "./ProjectileHelpers.sol";
+import { ActionStorageHelpers } from "./ActionStorageHelpers.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title TowerHelpers
  * @notice This library contains helper functions for TowerSystem
  */
 library TowerHelpers {
-  function validateInstallTower(bytes32 potentialGameId, address playerAddress, int16 x, int16 y) public view {
+  function installTower(
+    address playerAddress,
+    bytes32 gameId,
+    bool projectile,
+    int16 x,
+    int16 y
+  ) external returns (bytes32) {
+    (x, y) = ProjectileHelpers.getActualCoordinates(x, y);
+    _validateInstallTower(gameId, playerAddress, x, y);
+
+    uint256 towerCounter = TowerCounter.get();
+    bytes32 towerId = keccak256(abi.encodePacked(gameId, playerAddress, towerCounter));
+    _initializeTower(towerId, gameId, playerAddress, x, y, projectile);
+    ActionStorageHelpers.storeInstallTowerAction(gameId, playerAddress, x, y, projectile);
+    TowerCounter.set(towerCounter + 1);
+
+    return towerId;
+  }
+
+  function moveTower(
+    address playerAddress,
+    bytes32 gameId,
+    bytes32 towerId,
+    int16 x,
+    int16 y
+  ) external returns (bytes32) {
+    _validateMoveTower(gameId, playerAddress, towerId, x, y);
+
+    (int16 oldX, int16 oldY) = Position.get(towerId);
+
+    (int16 actualX, int16 actualY) = ProjectileHelpers.getActualCoordinates(x, y);
+    EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, oldX, oldY), 0);
+
+    Position.set(towerId, actualX, actualY);
+    EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, actualX, actualY), towerId);
+
+    _decrementActionCount(gameId);
+    ActionStorageHelpers.storeMoveTowerAction(gameId, playerAddress, towerId, oldX, oldY, actualX, actualY);
+
+    return towerId;
+  }
+
+  function modifyTowerSystem(
+    address playerAddress,
+    bytes32 towerId,
+    bytes memory bytecode,
+    string memory sourceCode
+  ) external returns (address projectileLogicAddress) {
+    bytes32 playerGameId = CurrentGame.get(EntityHelpers.globalAddressToKey(playerAddress));
+
     address gameSystemAddress = _gameSystemAddress();
-
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
-    bytes32 currentGameId = CurrentGame.get(globalPlayerId);
-
     if (playerAddress == gameSystemAddress) {
-      currentGameId = potentialGameId;
+      playerGameId = CurrentGame.get(towerId);
     }
 
-    require(currentGameId != 0, "TowerSystem: player has no ongoing game");
-    require(currentGameId == potentialGameId, "TowerSystem: game does not match player's ongoing game");
+    GameData memory currentGame = Game.get(playerGameId);
 
-    GameData memory currentGame = Game.get(currentGameId);
+    _validModifySystem(playerGameId, gameSystemAddress, towerId, playerAddress);
+
+    address newSystem;
+    assembly {
+      newSystem := create(0, add(bytecode, 0x20), mload(bytecode))
+    }
+
+    uint256 size;
+    assembly {
+      size := extcodesize(newSystem)
+    }
+
+    require(size > 0, "TowerSystem: contract creation failed");
+    require(
+      size <= DEFAULT_LOGIC_SIZE_LIMIT,
+      string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
+    );
+
+    Game.setActionCount(playerGameId, currentGame.actionCount - 1);
+    Projectile.set(towerId, address(newSystem), DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
+
+    _incrementSavedModificationUseCount(bytecode);
+    ActionStorageHelpers.storeModifyTowerAction(playerGameId, playerAddress, towerId, bytecode, newSystem, sourceCode);
+    return address(newSystem);
+  }
+
+  function _validateInstallTower(bytes32 gameId, address playerAddress, int16 x, int16 y) public view {
+    require(gameId != 0, "TowerSystem: player has no ongoing game");
+
+    GameData memory currentGame = Game.get(gameId);
     require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
     require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
-
-    if (playerAddress == gameSystemAddress) {
-      require(currentGame.turn == currentGame.player2Address, "TowerSystem: not player's turn");
-    } else {
-      require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
-    }
+    require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
 
     (int16 height, int16 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
     require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
 
-    bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(currentGameId, x, y));
+    bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, x, y));
     require(positionEntity == 0, "TowerSystem: position is occupied");
 
-    if (playerAddress == gameSystemAddress) {
+    if (playerAddress == currentGame.player2Address) {
       require(x > width / 2, "TowerSystem: x position is in enemy territory");
     } else {
       require(x < width / 2, "TowerSystem: x position is in player territory");
     }
   }
 
-  function validateMoveTower(
-    bytes32 potentialGameId,
-    address playerAddress,
-    bytes32 towerId,
-    int16 x,
-    int16 y
-  ) internal view {
-    address gameSystemAddress = _gameSystemAddress();
+  function _validateMoveTower(bytes32 gameId, address playerAddress, bytes32 towerId, int16 x, int16 y) internal view {
+    require(gameId != 0, "TowerSystem: player has no ongoing game");
 
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
-    bytes32 currentGameId = CurrentGame.get(globalPlayerId);
-
-    if (playerAddress == gameSystemAddress) {
-      currentGameId = potentialGameId;
-    }
-
-    require(currentGameId != 0, "TowerSystem: player has no ongoing game");
-    require(currentGameId == potentialGameId, "TowerSystem: game does not match player's ongoing game");
-
-    GameData memory currentGame = Game.get(currentGameId);
+    GameData memory currentGame = Game.get(gameId);
     require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
-
-    if (playerAddress == gameSystemAddress) {
-      require(currentGame.turn == currentGame.player2Address, "TowerSystem: not player's turn");
-    } else {
-      require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
-    }
+    require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
 
     require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
     require(Tower.get(towerId), "TowerSystem: entity is not a tower");
@@ -89,24 +138,19 @@ library TowerHelpers {
     (int16 height, int16 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
     require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
+    require(Owner.get(towerId) == playerAddress, "TowerSystem: player does not own tower");
 
-    if (playerAddress == gameSystemAddress) {
-      require(Owner.get(towerId) == currentGame.player2Address, "TowerSystem: player does not own tower");
-    } else {
-      require(Owner.get(towerId) == playerAddress, "TowerSystem: player does not own tower");
-    }
-
-    bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(currentGameId, x, y));
+    bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, x, y));
     require(positionEntity == 0, "TowerSystem: position is occupied");
 
-    if (playerAddress == gameSystemAddress) {
+    if (playerAddress == currentGame.player2Address) {
       require(x > width / 2, "TowerSystem: x is in enemy territory");
     } else {
       require(x < width / 2, "TowerSystem: x is in player territory");
     }
   }
 
-  function initializeTower(
+  function _initializeTower(
     bytes32 towerId,
     bytes32 gameId,
     address playerAddress,
@@ -136,7 +180,7 @@ library TowerHelpers {
     Position.set(towerId, x, y);
     EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, x, y), towerId);
 
-    decrementActionCount(gameId);
+    _decrementActionCount(gameId);
   }
 
   function _addTowerToPlayer(bytes32 gameId, address playerAddress, bytes32 towerId) internal {
@@ -153,11 +197,16 @@ library TowerHelpers {
     OwnerTowers.set(localPlayerId, updatedTowers);
   }
 
-  function decrementActionCount(bytes32 gameId) public {
+  function _decrementActionCount(bytes32 gameId) public {
     Game.setActionCount(gameId, Game.getActionCount(gameId) - 1);
   }
 
-  function validModifySystem(bytes32 gameId, address gameSystemAddress, bytes32 towerId, address playerAddress) public {
+  function _validModifySystem(
+    bytes32 gameId,
+    address gameSystemAddress,
+    bytes32 towerId,
+    address playerAddress
+  ) public {
     bytes32 towerGameId = CurrentGame.get(towerId);
     GameData memory currentGame = Game.get(gameId);
 
@@ -202,203 +251,7 @@ library TowerHelpers {
     require(distance <= 1, "TowerSystem: projectile speed exceeds rules");
   }
 
-  function storeSkipAction(bytes32 gameId, address playerAddress) public {
-    if (playerAddress != _gameSystemAddress()) {
-      bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
-      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
-
-      ActionData[] memory actions = new ActionData[](1);
-      actions[0] = ActionData({ actionType: ActionType.Skip, newX: 0, newY: 0, oldX: 0, oldY: 0, projectile: false });
-
-      bytes32[] memory savedGameActionIds = SavedGame.getActions(savedGameId);
-      bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
-
-      for (uint256 i = 0; i < savedGameActionIds.length; i++) {
-        newSavedGameActionIds[i] = savedGameActionIds[i];
-      }
-
-      for (uint256 i = 0; i < actions.length; i++) {
-        newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
-          abi.encodePacked(
-            actions[i].actionType,
-            actions[i].newX,
-            actions[i].newY,
-            actions[i].oldX,
-            actions[i].oldY,
-            actions[i].projectile
-          )
-        );
-        Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
-      }
-
-      SavedGame.setActions(savedGameId, newSavedGameActionIds);
-    }
-  }
-
-  function storeInstallTowerAction(
-    bytes32 gameId,
-    address playerAddress,
-    int16 newX,
-    int16 newY,
-    bool hasProjectile
-  ) public {
-    if (playerAddress != _gameSystemAddress()) {
-      bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
-      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
-
-      ActionData[] memory actions = new ActionData[](1);
-      actions[0] = ActionData({
-        actionType: ActionType.Install,
-        newX: newX,
-        newY: newY,
-        oldX: 0,
-        oldY: 0,
-        projectile: hasProjectile
-      });
-
-      bytes32[] memory savedGameActionIds = SavedGame.getActions(savedGameId);
-      bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
-
-      for (uint256 i = 0; i < savedGameActionIds.length; i++) {
-        newSavedGameActionIds[i] = savedGameActionIds[i];
-      }
-
-      for (uint256 i = 0; i < actions.length; i++) {
-        newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
-          abi.encodePacked(
-            actions[i].actionType,
-            actions[i].newX,
-            actions[i].newY,
-            actions[i].oldX,
-            actions[i].oldY,
-            actions[i].projectile
-          )
-        );
-        Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
-      }
-
-      SavedGameData memory savedGame = SavedGameData({
-        gameId: gameId,
-        winner: playerAddress,
-        actions: newSavedGameActionIds
-      });
-
-      SavedGame.set(savedGameId, savedGame);
-    }
-  }
-
-  function storeMoveTowerAction(
-    bytes32 gameId,
-    address playerAddress,
-    bytes32 towerId,
-    int16 oldX,
-    int16 oldY,
-    int16 newX,
-    int16 newY
-  ) public {
-    if (playerAddress != _gameSystemAddress()) {
-      bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
-      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
-
-      bool hasProjectile = Projectile.getLogicAddress(towerId) != address(0);
-
-      ActionData[] memory actions = new ActionData[](1);
-      actions[0] = ActionData({
-        actionType: ActionType.Move,
-        newX: newX,
-        newY: newY,
-        oldX: oldX,
-        oldY: oldY,
-        projectile: hasProjectile
-      });
-
-      bytes32[] memory savedGameActionIds = SavedGame.getActions(savedGameId);
-      bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
-
-      for (uint256 i = 0; i < savedGameActionIds.length; i++) {
-        newSavedGameActionIds[i] = savedGameActionIds[i];
-      }
-
-      for (uint256 i = 0; i < actions.length; i++) {
-        newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
-          abi.encodePacked(
-            actions[i].actionType,
-            actions[i].newX,
-            actions[i].newY,
-            actions[i].oldX,
-            actions[i].oldY,
-            actions[i].projectile
-          )
-        );
-        Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
-      }
-
-      SavedGame.setActions(savedGameId, newSavedGameActionIds);
-    }
-  }
-
-  function storeModifyTowerAction(
-    bytes32 gameId,
-    address playerAddress,
-    bytes32 towerId,
-    bytes memory bytecode,
-    address systemAddress,
-    string memory sourceCode
-  ) public {
-    if (playerAddress != _gameSystemAddress()) {
-      bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
-      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalPlayerId));
-
-      (int16 oldX, int16 oldY) = Position.get(towerId);
-      bool hasProjectile = Projectile.getLogicAddress(towerId) != address(0);
-
-      ActionData[] memory actions = new ActionData[](1);
-      actions[0] = ActionData({
-        actionType: ActionType.Modify,
-        newX: oldX,
-        newY: oldY,
-        oldX: oldX,
-        oldY: oldY,
-        projectile: hasProjectile
-      });
-
-      bytes32[] memory savedGameActionIds = SavedGame.getActions(savedGameId);
-      bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
-
-      for (uint256 i = 0; i < savedGameActionIds.length; i++) {
-        newSavedGameActionIds[i] = savedGameActionIds[i];
-      }
-
-      for (uint256 i = 0; i < actions.length; i++) {
-        newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
-          abi.encodePacked(
-            actions[i].actionType,
-            actions[i].newX,
-            actions[i].newY,
-            actions[i].oldX,
-            actions[i].oldY,
-            actions[i].projectile
-          )
-        );
-        Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
-
-        _setActionProjectile(newSavedGameActionIds[savedGameActionIds.length + i], systemAddress, bytecode, sourceCode);
-      }
-
-      SavedGame.setActions(savedGameId, newSavedGameActionIds);
-    }
-  }
-
-  function _setActionProjectile(
-    bytes32 actionId,
-    address systemAddress,
-    bytes memory bytecode,
-    string memory sourceCode
-  ) internal {
-    Projectile.set(actionId, systemAddress, DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
-  }
-
-  function incrementSavedModificationUseCount(bytes memory bytecode) public {
+  function _incrementSavedModificationUseCount(bytes memory bytecode) public {
     bytes32 savedModificationId = keccak256(abi.encodePacked(bytecode));
     bytes memory potentialExistingBytecode = SavedModification.getBytecode(savedModificationId);
 

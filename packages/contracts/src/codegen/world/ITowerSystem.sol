@@ -9,13 +9,11 @@ pragma solidity >=0.8.24;
  * @dev This interface is automatically generated from the corresponding system contract. Do not edit manually.
  */
 interface ITowerSystem {
-  function app__getTowerSystemAddress() external view returns (address);
+  function app__playerInstallTower(bool projectile, int16 x, int16 y) external returns (bytes32);
 
-  function app__installTower(bytes32 potentialGameId, bool projectile, int16 x, int16 y) external returns (bytes32);
+  function app__playerMoveTower(bytes32 towerId, int16 x, int16 y) external returns (bytes32);
 
-  function app__moveTower(bytes32 potentialGameId, bytes32 towerId, int16 x, int16 y) external returns (bytes32);
-
-  function app__modifyTowerSystem(
+  function app__playerModifyTowerSystem(
     bytes32 towerId,
     bytes memory bytecode,
     string memory sourceCode

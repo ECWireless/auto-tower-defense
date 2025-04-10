@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory } from "../codegen/index.sol";
+import { Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, LastGameWonInRun, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, TopLevel, WinStreak } from "../codegen/index.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
-import { GameHelpers } from "./GameHelpers.sol";
 import { MAX_ROUNDS, MAX_TICKS, MAX_TOWER_HEALTH } from "../../constants.sol";
 
 /**
@@ -28,7 +27,7 @@ library ProjectileHelpers {
 
     bool isGameOver = Game.getEndTimestamp(gameId) != 0;
     if (game.roundCount > MAX_ROUNDS && !isGameOver) {
-      GameHelpers.endGame(gameId, game.player2Address);
+      _endGame(gameId, game.player2Address);
     }
   }
 
@@ -232,7 +231,7 @@ library ProjectileHelpers {
 
         // Preference is given to player 1 if both castles are destroyed at the same time
         if (Game.getEndTimestamp(gameId) == 0) {
-          GameHelpers.endGame(gameId, Owner.get(towers[i].id));
+          _endGame(gameId, Owner.get(towers[i].id));
         }
       }
     } else {
@@ -298,5 +297,79 @@ library ProjectileHelpers {
 
   function _max(uint256 a, uint256 b) internal pure returns (uint256) {
     return a >= b ? a : b;
+  }
+
+  function _endGame(bytes32 gameId, address winner) public {
+    require(Game.getWinner(gameId) == address(0), "GameSystem: game has already ended");
+    require(Game.getEndTimestamp(gameId) == 0, "GameSystem: game has already ended");
+
+    Game.setEndTimestamp(gameId, block.timestamp);
+    Game.setWinner(gameId, winner);
+
+    (int16 mapHeight, int16 mapWidth) = MapConfig.get();
+
+    bytes32 player1CastleId = EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2);
+    bytes32 player2CastleId = EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2);
+
+    bool isWinnerPlayer1 = Game.get(gameId).player1Address == winner;
+    bytes32 loserCastleId = isWinnerPlayer1 ? player2CastleId : player1CastleId;
+
+    uint8 loserCastleHealth = Health.getCurrentHealth(loserCastleId);
+    require(loserCastleHealth == 0, "GameSystem: loser castle health is not zero");
+
+    GameData memory game = Game.get(gameId);
+    address loserAddress = game.player1Address == winner ? game.player2Address : game.player1Address;
+
+    if (loserAddress == game.player1Address) {
+      bytes32 globalLoserId = EntityHelpers.globalAddressToKey(loserAddress);
+
+      bytes32 savedGameId = LastGameWonInRun.get(globalLoserId);
+      uint256 winStreak = WinStreak.get(globalLoserId);
+
+      if (savedGameId != bytes32(0) && winStreak > 0) {
+        bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
+
+        bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
+        for (uint256 i = 0; i < gamesByLevel.length; i++) {
+          updatedGamesByLevel[i] = gamesByLevel[i];
+
+          if (gamesByLevel[i] == savedGameId) {
+            return;
+          }
+        }
+        updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
+        GamesByLevel.set(winStreak, updatedGamesByLevel);
+
+        LastGameWonInRun.set(globalLoserId, bytes32(0));
+      }
+
+      WinStreak.set(globalLoserId, 0);
+    } else {
+      bytes32 globalWinnerId = EntityHelpers.globalAddressToKey(winner);
+      uint256 winStreak = WinStreak.get(globalWinnerId) + 1;
+      WinStreak.set(globalWinnerId, winStreak);
+
+      bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
+      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalWinnerId));
+
+      if (gamesByLevel.length == 0) {
+        TopLevel.set(winStreak);
+
+        bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
+        for (uint256 i = 0; i < gamesByLevel.length; i++) {
+          updatedGamesByLevel[i] = gamesByLevel[i];
+
+          if (gamesByLevel[i] == savedGameId) {
+            return;
+          }
+        }
+        updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
+        GamesByLevel.set(winStreak, updatedGamesByLevel);
+
+        LastGameWonInRun.set(globalWinnerId, bytes32(0));
+      } else {
+        LastGameWonInRun.set(globalWinnerId, savedGameId);
+      }
+    }
   }
 }
