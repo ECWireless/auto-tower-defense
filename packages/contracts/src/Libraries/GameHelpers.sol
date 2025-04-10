@@ -1,6 +1,7 @@
 import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, LastGameWonInRun, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileData, SavedGame, SavedGameData, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
+import { TowerHelpers } from "./TowerHelpers.sol";
 import { MAX_ACTIONS, MAX_CASTLE_HEALTH } from "../../constants.sol";
 import "forge-std/console.sol";
 
@@ -76,12 +77,29 @@ library GameHelpers {
 
   function nextLevel(address player1Address) public view returns (bytes32) {
     bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
-    uint256 winStreak = WinStreak.get(globalPlayer1);
-    require(winStreak > 0, "GameSystem: player1 has no win streak");
+    uint256 level = WinStreak.get(globalPlayer1);
+    uint256 topLevel = TopLevel.get();
+    require(level > 0, "GameSystem: player1 has no win streak");
 
     uint256 randomNumber = block.chainid == 31337 ? block.timestamp : block.prevrandao;
 
-    bytes32[] memory savedGameIds = GamesByLevel.get(winStreak);
+    // If no playable saved game is found, go up a level
+    for (uint256 i = 0; i < 10; i++) {
+      bytes32 savedGameId = _getPlayableSavedGameId(player1Address, randomNumber, level);
+      if (savedGameId != bytes32(0)) {
+        return savedGameId;
+      }
+      level++;
+      if (level > topLevel) {
+        break;
+      }
+    }
+
+    revert("GameSystem: no valid saved game found");
+  }
+
+  function _getPlayableSavedGameId(address player1Address, uint256 randomNumber, uint256 level) internal view returns (bytes32) {
+    bytes32[] memory savedGameIds = GamesByLevel.get(level);
     require(savedGameIds.length > 0, "GameSystem: no saved games available");
 
     bytes32 savedGameId;
@@ -110,7 +128,7 @@ library GameHelpers {
       randomNumber = uint256(keccak256(abi.encode(randomNumber, index)));
     }
 
-    revert("GameSystem: no valid saved game found");
+    return bytes32(0);
   }
 
   function validateCreateGame(bytes32 globalPlayer1, string memory username) public {
@@ -129,7 +147,7 @@ library GameHelpers {
     }
   }
 
-  function executePlayer2Actions(address worldAddress, bytes32 gameId, address player1Address) public {
+  function executePlayer2Actions(bytes32 gameId, address player1Address, address player2Address) public {
     bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
     uint8 roundCount = Game.getRoundCount(gameId) - 1;
     uint8 actionCount = Game.getActionCount(gameId);
@@ -146,16 +164,13 @@ library GameHelpers {
     action.oldX = width - action.oldX;
 
     if (action.actionType == ActionType.Install) {
-      bytes memory data = abi.encodeWithSignature(
-        "app__installTower(bytes32,bool,int16,int16)",
+      TowerHelpers.installTower(
+        player2Address,
         CurrentGame.get(globalPlayer1),
         action.projectile,
         action.newX,
         action.newY
       );
-
-      (bool success, ) = worldAddress.call(data);
-      require(success, "installTower call failed");
     } else if (action.actionType == ActionType.Move) {
       bytes32 towerEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY));
       uint8 towerHealth = Health.getCurrentHealth(towerEntity);
@@ -163,16 +178,7 @@ library GameHelpers {
         return;
       }
 
-      bytes memory data = abi.encodeWithSignature(
-        "app__moveTower(bytes32,bytes32,int16,int16)",
-        CurrentGame.get(globalPlayer1),
-        towerEntity,
-        action.newX,
-        action.newY
-      );
-
-      (bool success, ) = worldAddress.call(data);
-      require(success, "moveTower call failed");
+      TowerHelpers.moveTower(player2Address, CurrentGame.get(globalPlayer1), towerEntity, action.newX, action.newY);
     } else if (action.actionType == ActionType.Modify) {
       ProjectileData memory projectileData = Projectile.get(actionIds[actionIdIndex]);
       bytes32 towerEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY));
@@ -181,89 +187,7 @@ library GameHelpers {
         return;
       }
 
-      bytes memory data = abi.encodeWithSignature(
-        "app__modifyTowerSystem(bytes32,bytes,string)",
-        towerEntity,
-        projectileData.bytecode,
-        projectileData.sourceCode
-      );
-
-      (bool success, ) = worldAddress.call(data);
-      require(success, "modifyTowerSystem call failed");
-    }
-  }
-
-  function endGame(bytes32 gameId, address winner) public {
-    require(Game.getWinner(gameId) == address(0), "GameSystem: game has already ended");
-    require(Game.getEndTimestamp(gameId) == 0, "GameSystem: game has already ended");
-
-    Game.setEndTimestamp(gameId, block.timestamp);
-    Game.setWinner(gameId, winner);
-
-    (int16 mapHeight, int16 mapWidth) = MapConfig.get();
-
-    bytes32 player1CastleId = EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2);
-    bytes32 player2CastleId = EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2);
-
-    bool isWinnerPlayer1 = Game.get(gameId).player1Address == winner;
-    bytes32 loserCastleId = isWinnerPlayer1 ? player2CastleId : player1CastleId;
-
-    uint8 loserCastleHealth = Health.getCurrentHealth(loserCastleId);
-    require(loserCastleHealth == 0, "GameSystem: loser castle health is not zero");
-
-    GameData memory game = Game.get(gameId);
-    address loserAddress = game.player1Address == winner ? game.player2Address : game.player1Address;
-
-    if (loserAddress == game.player1Address) {
-      bytes32 globalLoserId = EntityHelpers.globalAddressToKey(loserAddress);
-
-      bytes32 savedGameId = LastGameWonInRun.get(globalLoserId);
-      uint256 winStreak = WinStreak.get(globalLoserId);
-
-      if (savedGameId != bytes32(0) && winStreak > 0) {
-        bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
-
-        bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
-        for (uint256 i = 0; i < gamesByLevel.length; i++) {
-          updatedGamesByLevel[i] = gamesByLevel[i];
-
-          if (gamesByLevel[i] == savedGameId) {
-            return;
-          }
-        }
-        updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
-        GamesByLevel.set(winStreak, updatedGamesByLevel);
-
-        LastGameWonInRun.set(globalLoserId, bytes32(0));
-      }
-      
-      WinStreak.set(globalLoserId, 0);
-    } else {
-      bytes32 globalWinnerId = EntityHelpers.globalAddressToKey(winner);
-      uint256 winStreak = WinStreak.get(globalWinnerId) + 1;
-      WinStreak.set(globalWinnerId, winStreak);
-
-      bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
-      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalWinnerId));
-
-      if (gamesByLevel.length == 0) {
-        TopLevel.set(winStreak);
-
-        bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
-        for (uint256 i = 0; i < gamesByLevel.length; i++) {
-          updatedGamesByLevel[i] = gamesByLevel[i];
-
-          if (gamesByLevel[i] == savedGameId) {
-            return;
-          }
-        }
-        updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
-        GamesByLevel.set(winStreak, updatedGamesByLevel);
-
-        LastGameWonInRun.set(globalWinnerId, bytes32(0));
-      } else {
-        LastGameWonInRun.set(globalWinnerId, savedGameId);
-      }
+      TowerHelpers.modifyTowerSystem(player2Address, CurrentGame.get(globalPlayer1), towerEntity, projectileData.bytecode, projectileData.sourceCode);
     }
   }
 }

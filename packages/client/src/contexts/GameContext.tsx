@@ -288,7 +288,6 @@ export const GameProvider = ({
         const hasProjectile = activePiece === 'offense';
 
         const { error, success } = await installTower(
-          game.id,
           hasProjectile,
           col * 10,
           row * 10,
@@ -337,7 +336,6 @@ export const GameProvider = ({
         }
 
         const { error, success } = await moveTower(
-          game.id,
           activeTowerId,
           col * 10,
           row * 10,

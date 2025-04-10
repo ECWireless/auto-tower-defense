@@ -134,15 +134,9 @@ export function createSystemCalls(
     }
   };
 
-  const installTower = async (
-    potentialGameId: string,
-    projectile: boolean,
-    x: number,
-    y: number,
-  ) => {
+  const installTower = async (projectile: boolean, x: number, y: number) => {
     try {
-      const tx = await worldContract.write.app__installTower([
-        potentialGameId as `0x${string}`,
+      const tx = await worldContract.write.app__playerInstallTower([
         projectile,
         x,
         y,
@@ -170,7 +164,7 @@ export function createSystemCalls(
     sourceCode: string,
   ) => {
     try {
-      const tx = await worldContract.write.app__modifyTowerSystem([
+      const tx = await worldContract.write.app__playerModifyTowerSystem([
         towerId as `0x${string}`,
         bytecode as `0x${string}`,
         sourceCode,
@@ -192,15 +186,9 @@ export function createSystemCalls(
     }
   };
 
-  const moveTower = async (
-    gameId: string,
-    towerId: string,
-    x: number,
-    y: number,
-  ) => {
+  const moveTower = async (towerId: string, x: number, y: number) => {
     try {
-      const tx = await worldContract.write.app__moveTower([
-        gameId as `0x${string}`,
+      const tx = await worldContract.write.app__playerMoveTower([
         towerId as `0x${string}`,
         x,
         y,

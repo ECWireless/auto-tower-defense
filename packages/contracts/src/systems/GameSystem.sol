@@ -6,7 +6,7 @@ import { Game, GameData, SavedGame, SavedGameData, WinStreak } from "../codegen/
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { GameHelpers } from "../Libraries/GameHelpers.sol";
-import { TowerHelpers } from "../Libraries/TowerHelpers.sol";
+import { ActionStorageHelpers } from "../Libraries/ActionStorageHelpers.sol";
 import { MAX_ACTIONS } from "../../constants.sol";
 import "forge-std/console.sol";
 
@@ -47,7 +47,7 @@ contract GameSystem is System {
       // For all actions remaining, add that number of skipped actions
       uint256 skippedActions = Game.getActionCount(gameId);
       for (uint256 i = 0; i < skippedActions; i++) {
-        TowerHelpers.storeSkipAction(gameId, player1Address);
+        ActionStorageHelpers.storeSkipAction(gameId, player1Address);
       }
 
       bytes32 localPlayer1 = EntityHelpers.localAddressToKey(gameId, player1Address);
@@ -64,9 +64,8 @@ contract GameSystem is System {
     Game.setActionCount(gameId, MAX_ACTIONS);
 
     if (Game.getTurn(gameId) == player2Address) {
-      address worldAddress = _world();
       for (uint256 i = 0; i < MAX_ACTIONS; i++) {
-        GameHelpers.executePlayer2Actions(worldAddress, gameId, player1Address);
+        GameHelpers.executePlayer2Actions(gameId, player1Address, player2Address);
       }
     }
   }

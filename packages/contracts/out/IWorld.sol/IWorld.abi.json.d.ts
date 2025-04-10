@@ -93,26 +93,21 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__getTowerSystemAddress",
-    "inputs": [],
-    "outputs": [
+    "name": "app__nextTurn",
+    "inputs": [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
+        "name": "gameId",
+        "type": "bytes32",
+        "internalType": "bytes32"
       }
     ],
-    "stateMutability": "view"
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "app__installTower",
+    "name": "app__playerInstallTower",
     "inputs": [
-      {
-        "name": "potentialGameId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
       {
         "name": "projectile",
         "type": "bool",
@@ -140,7 +135,7 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__modifyTowerSystem",
+    "name": "app__playerModifyTowerSystem",
     "inputs": [
       {
         "name": "towerId",
@@ -169,13 +164,8 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__moveTower",
+    "name": "app__playerMoveTower",
     "inputs": [
-      {
-        "name": "potentialGameId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
       {
         "name": "towerId",
         "type": "bytes32",
@@ -199,19 +189,6 @@ declare const abi: [
         "internalType": "bytes32"
       }
     ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__nextTurn",
-    "inputs": [
-      {
-        "name": "gameId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
