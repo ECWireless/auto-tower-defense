@@ -3,7 +3,6 @@ import {
   DragEndEvent,
   DragStartEvent,
   PointerSensor,
-  useDndContext,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -15,7 +14,6 @@ import { zeroAddress } from 'viem';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { CastleHitDialog } from '@/components/CastleHitDialog';
-import { Draggable } from '@/components/Draggable';
 import { GameBoard, INSTALLABLE_TOWERS } from '@/components/GameBoard';
 import { GameControlButtons } from '@/components/GameControlButtons';
 import { GameStatusBar } from '@/components/GameStatusBar';
@@ -24,6 +22,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { NoActionsDialog } from '@/components/NoActionsDialog';
 import { NoGameScreen } from '@/components/NoGameScreen';
 import { PlayAgainDialog } from '@/components/PlayAgainDialog';
+import { TowerSelection } from '@/components/TowerSelection';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -55,7 +54,6 @@ export const InnerGamePage = (): JSX.Element => {
     enemyCastlePosition,
     game,
     handleDragStart,
-    handleTowerSelect,
     isChangingTurn,
     isPlayer1,
     isRefreshing,
@@ -66,7 +64,6 @@ export const InnerGamePage = (): JSX.Element => {
     towers,
   } = useGame();
   const { playSfx } = useSettings();
-  const { active: draggingActive } = useDndContext();
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: {
       distance: 5,
@@ -133,7 +130,7 @@ export const InnerGamePage = (): JSX.Element => {
         activeTower.type =
           tower.projectileLogicAddress === zeroAddress ? 'defense' : 'offense';
 
-        const isLeftSide = tower.x <= 60;
+        const isLeftSide = tower.x <= 65;
         if (!isLeftSide) return;
       }
     }
@@ -231,37 +228,7 @@ export const InnerGamePage = (): JSX.Element => {
             <GameBoard />
 
             {/* Tower Selection Row */}
-            <div className="bg-gray-900 border border-cyan-900/50 mt-1 p-2 rounded-b-md">
-              <div className="mb-1 px-1 text-cyan-400 text-xs">TOWERS</div>
-              <div className="flex min-w-[300px] sm:min-w-0 space-x-2">
-                {INSTALLABLE_TOWERS.map(tower => (
-                  <Draggable
-                    key={tower.id}
-                    disabled={!isPlayer1}
-                    id={tower.id}
-                    onClick={() => handleTowerSelect(tower.id, tower.type)}
-                  >
-                    <div
-                      style={{
-                        cursor:
-                          activeTowerId === tower.id && !!draggingActive
-                            ? 'grabbing'
-                            : 'grab',
-                        touchAction: 'none',
-                      }}
-                      className={`bg-gradient-to-b ${tower.color} flex flex-col items-center min-w-[60px] p-2 rounded tower-card ${activeTowerId === tower.id ? 'selected' : ''}`}
-                    >
-                      <div className="flex h-8 items-center justify-center">
-                        {tower.icon}
-                      </div>
-                      <span className="mt-1 text-white text-xs">
-                        {tower.name}
-                      </span>
-                    </div>
-                  </Draggable>
-                ))}
-              </div>
-            </div>
+            <TowerSelection />
 
             {/* Control Buttons - Mobile */}
             <div className="flex justify-center mt-4 sm:hidden space-x-2">
