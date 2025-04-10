@@ -64,20 +64,14 @@ library TowerHelpers {
 
   function modifyTowerSystem(
     address playerAddress,
+    bytes32 gameId,
     bytes32 towerId,
     bytes memory bytecode,
     string memory sourceCode
   ) external returns (address projectileLogicAddress) {
-    bytes32 playerGameId = CurrentGame.get(EntityHelpers.globalAddressToKey(playerAddress));
+    GameData memory currentGame = Game.get(gameId);
 
-    address gameSystemAddress = _gameSystemAddress();
-    if (playerAddress == gameSystemAddress) {
-      playerGameId = CurrentGame.get(towerId);
-    }
-
-    GameData memory currentGame = Game.get(playerGameId);
-
-    _validModifySystem(playerGameId, gameSystemAddress, towerId, playerAddress);
+    _validModifySystem(gameId, towerId, playerAddress);
 
     address newSystem;
     assembly {
@@ -95,11 +89,11 @@ library TowerHelpers {
       string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
     );
 
-    Game.setActionCount(playerGameId, currentGame.actionCount - 1);
+    Game.setActionCount(gameId, currentGame.actionCount - 1);
     Projectile.set(towerId, address(newSystem), DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
 
     _incrementSavedModificationUseCount(bytecode);
-    ActionStorageHelpers.storeModifyTowerAction(playerGameId, playerAddress, towerId, bytecode, newSystem, sourceCode);
+    ActionStorageHelpers.storeModifyTowerAction(gameId, playerAddress, towerId, bytecode, newSystem, sourceCode);
     return address(newSystem);
   }
 
@@ -203,7 +197,6 @@ library TowerHelpers {
 
   function _validModifySystem(
     bytes32 gameId,
-    address gameSystemAddress,
     bytes32 towerId,
     address playerAddress
   ) public {
@@ -213,15 +206,11 @@ library TowerHelpers {
     require(gameId != 0, "TowerSystem: player has no ongoing game");
     require(gameId == towerGameId, "TowerSystem: game does not match player's ongoing game");
 
-    if (playerAddress == gameSystemAddress) {
+    if (playerAddress == currentGame.player2Address) {
       require(Owner.get(towerId) == currentGame.player2Address, "TowerSystem: player does not own tower");
-    } else {
-      require(Owner.get(towerId) == playerAddress, "TowerSystem: player does not own tower");
-    }
-
-    if (playerAddress == gameSystemAddress) {
       require(currentGame.turn == currentGame.player2Address, "TowerSystem: not player's turn");
     } else {
+      require(Owner.get(towerId) == playerAddress, "TowerSystem: player does not own tower");
       require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
     }
 

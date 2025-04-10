@@ -39,7 +39,9 @@ contract TowerSystem is System {
     string memory sourceCode
   ) external returns (address projectileLogicAddress) {
     address playerAddress = _msgSender();
-    return TowerHelpers.modifyTowerSystem(playerAddress, towerId, bytecode, sourceCode);
+    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+    bytes32 gameId = CurrentGame.get(globalPlayerId);
+    return TowerHelpers.modifyTowerSystem(playerAddress, gameId, towerId, bytecode, sourceCode);
   }
 
   function saveModification(

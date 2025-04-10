@@ -77,12 +77,29 @@ library GameHelpers {
 
   function nextLevel(address player1Address) public view returns (bytes32) {
     bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
-    uint256 winStreak = WinStreak.get(globalPlayer1);
-    require(winStreak > 0, "GameSystem: player1 has no win streak");
+    uint256 level = WinStreak.get(globalPlayer1);
+    uint256 topLevel = TopLevel.get();
+    require(level > 0, "GameSystem: player1 has no win streak");
 
     uint256 randomNumber = block.chainid == 31337 ? block.timestamp : block.prevrandao;
 
-    bytes32[] memory savedGameIds = GamesByLevel.get(winStreak);
+    // If no playable saved game is found, go up a level
+    for (uint256 i = 0; i < 10; i++) {
+      bytes32 savedGameId = _getPlayableSavedGameId(player1Address, randomNumber, level);
+      if (savedGameId != bytes32(0)) {
+        return savedGameId;
+      }
+      level++;
+      if (level > topLevel) {
+        break;
+      }
+    }
+
+    revert("GameSystem: no valid saved game found");
+  }
+
+  function _getPlayableSavedGameId(address player1Address, uint256 randomNumber, uint256 level) internal view returns (bytes32) {
+    bytes32[] memory savedGameIds = GamesByLevel.get(level);
     require(savedGameIds.length > 0, "GameSystem: no saved games available");
 
     bytes32 savedGameId;
@@ -111,7 +128,7 @@ library GameHelpers {
       randomNumber = uint256(keccak256(abi.encode(randomNumber, index)));
     }
 
-    revert("GameSystem: no valid saved game found");
+    return bytes32(0);
   }
 
   function validateCreateGame(bytes32 globalPlayer1, string memory username) public {
@@ -170,7 +187,7 @@ library GameHelpers {
         return;
       }
 
-      TowerHelpers.modifyTowerSystem(player2Address, towerEntity, projectileData.bytecode, projectileData.sourceCode);
+      TowerHelpers.modifyTowerSystem(player2Address, CurrentGame.get(globalPlayer1), towerEntity, projectileData.bytecode, projectileData.sourceCode);
     }
   }
 }

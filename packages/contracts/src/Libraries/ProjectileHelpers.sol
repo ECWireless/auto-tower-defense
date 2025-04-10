@@ -320,6 +320,7 @@ library ProjectileHelpers {
     GameData memory game = Game.get(gameId);
     address loserAddress = game.player1Address == winner ? game.player2Address : game.player1Address;
 
+    // Only save the game in GamesByLevel if the loser is player 1, and they have a last game won in run
     if (loserAddress == game.player1Address) {
       bytes32 globalLoserId = EntityHelpers.globalAddressToKey(loserAddress);
 
@@ -337,6 +338,7 @@ library ProjectileHelpers {
             return;
           }
         }
+
         updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
         GamesByLevel.set(winStreak, updatedGamesByLevel);
 
@@ -344,6 +346,9 @@ library ProjectileHelpers {
       }
 
       WinStreak.set(globalLoserId, 0);
+
+    // If they win, save their last game won in run, but don't save to GamesByLevel
+    // However, if they have the highest level, set won game in GamesByLevel
     } else {
       bytes32 globalWinnerId = EntityHelpers.globalAddressToKey(winner);
       uint256 winStreak = WinStreak.get(globalWinnerId) + 1;
