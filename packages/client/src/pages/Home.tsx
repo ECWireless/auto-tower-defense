@@ -3,6 +3,11 @@ import {
   getComponentValue,
   getComponentValueStrict,
 } from '@latticexyz/recs';
+import {
+  decodeEntity,
+  encodeEntity,
+  singletonEntity,
+} from '@latticexyz/store-sync/recs';
 import { Loader2, Play } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
@@ -21,7 +26,15 @@ import { GAMES_PATH } from '@/Routes';
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
   const {
-    components: { CurrentGame, Game, Username },
+    components: {
+      CurrentGame,
+      Game,
+      GamesByLevel,
+      SavedGame,
+      TopLevel,
+      Username,
+      WinStreak,
+    },
     network: { playerEntity },
     systemCalls: { createGame },
   } = useMUD();
@@ -52,7 +65,43 @@ export const Home = (): JSX.Element => {
           }
         }
 
-        const { error, success } = await createGame(username, true);
+        const winStreak =
+          getComponentValue(WinStreak, playerEntity)?.value ?? BigInt(0);
+        const topLevel =
+          getComponentValue(TopLevel, singletonEntity)?.level ?? BigInt(0);
+
+        const levelAsEntity = encodeEntity(
+          { level: 'uint256' },
+          { level: topLevel ?? 0n },
+        );
+
+        const topLevelGames =
+          getComponentValue(GamesByLevel, levelAsEntity)?.gameIds ?? [];
+
+        const playerAddress = decodeEntity(
+          {
+            address: 'address',
+          },
+          playerEntity,
+        ).address;
+
+        const topLevelGamesICanPlay = topLevelGames.filter(gameId => {
+          const savedTopLevelGame = getComponentValueStrict(
+            SavedGame,
+            gameId as Entity,
+          );
+          const topLevelGame = getComponentValueStrict(
+            Game,
+            savedTopLevelGame.gameId as Entity,
+          );
+          return topLevelGame.player1Address !== playerAddress;
+        });
+
+        const resetLevel =
+          winStreak === 0n ||
+          (topLevel === winStreak && topLevelGamesICanPlay.length === 0);
+
+        const { error, success } = await createGame(username, resetLevel);
 
         if (error && !success) {
           throw new Error(error);
@@ -78,7 +127,19 @@ export const Home = (): JSX.Element => {
         setIsCreatingGame(false);
       }
     },
-    [createGame, CurrentGame, Game, navigate, playerEntity, playSfx, username],
+    [
+      createGame,
+      CurrentGame,
+      Game,
+      GamesByLevel,
+      navigate,
+      playerEntity,
+      playSfx,
+      SavedGame,
+      TopLevel,
+      username,
+      WinStreak,
+    ],
   );
 
   useEffect(() => {
