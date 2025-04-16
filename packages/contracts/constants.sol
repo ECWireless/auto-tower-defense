@@ -7,5 +7,6 @@ uint8 constant MAX_CASTLE_HEALTH = 2;
 uint256 constant MAX_MOD_DESCRIPTION_LENGTH = 256;
 uint256 constant MAX_MOD_NAME_LENGTH = 32;
 uint256 constant MAX_ROUNDS = 10;
-uint8 constant MAX_TOWER_HEALTH = 5;
+uint8 constant MAX_HEALTH_CANNON = 2;
+uint8 constant MAX_HEALTH_WALL = 5;
 uint256 constant MAX_TICKS = 28;
