@@ -12,7 +12,7 @@ import { EntityHelpers } from "./EntityHelpers.sol";
 import { GameHelpers } from "./GameHelpers.sol";
 import { ProjectileHelpers } from "./ProjectileHelpers.sol";
 import { ActionStorageHelpers } from "./ActionStorageHelpers.sol";
-import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_TOWER_HEALTH } from "../../constants.sol";
+import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_HEALTH_CANNON, MAX_HEALTH_WALL } from "../../constants.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
@@ -159,7 +159,7 @@ library TowerHelpers {
     _addTowerToPlayer(gameId, playerAddress, towerId);
 
     if (projectile) {
-      Health.set(towerId, MAX_TOWER_HEALTH, MAX_TOWER_HEALTH);
+      Health.set(towerId, MAX_HEALTH_CANNON, MAX_HEALTH_CANNON);
 
       address defaultProjectileLogicLeftAddress = DefaultLogic.get();
       Projectile.setLogicAddress(towerId, defaultProjectileLogicLeftAddress);
@@ -169,7 +169,7 @@ library TowerHelpers {
       );
       Projectile.setSizeLimit(towerId, DEFAULT_LOGIC_SIZE_LIMIT);
     } else {
-      Health.set(towerId, MAX_TOWER_HEALTH * 2, MAX_TOWER_HEALTH * 2);
+      Health.set(towerId, MAX_HEALTH_WALL, MAX_HEALTH_WALL);
     }
     Position.set(towerId, x, y);
     EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, x, y), towerId);
@@ -195,11 +195,7 @@ library TowerHelpers {
     Game.setActionCount(gameId, Game.getActionCount(gameId) - 1);
   }
 
-  function _validModifySystem(
-    bytes32 gameId,
-    bytes32 towerId,
-    address playerAddress
-  ) public {
+  function _validModifySystem(bytes32 gameId, bytes32 towerId, address playerAddress) public {
     bytes32 towerGameId = CurrentGame.get(towerId);
     GameData memory currentGame = Game.get(gameId);
 

@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 import { Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, LastGameWonInRun, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, TopLevel, WinStreak } from "../codegen/index.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
-import { MAX_ROUNDS, MAX_TICKS, MAX_TOWER_HEALTH } from "../../constants.sol";
+import { MAX_ROUNDS, MAX_TICKS, MAX_HEALTH_WALL } from "../../constants.sol";
 
 /**
  * @title ProjectileHelpers
@@ -278,7 +278,7 @@ library ProjectileHelpers {
 
     OwnerTowers.set(localOwnerId, updatedTowers);
     Owner.set(positionEntity, address(0));
-    Health.set(positionEntity, 0, MAX_TOWER_HEALTH);
+    Health.set(positionEntity, 0, MAX_HEALTH_WALL);
     EntityAtPosition.set(
       EntityHelpers.positionToEntityKey(gameId, Position.getX(positionEntity), Position.getY(positionEntity)),
       0
@@ -347,8 +347,8 @@ library ProjectileHelpers {
 
       WinStreak.set(globalLoserId, 0);
 
-    // If they win, save their last game won in run, but don't save to GamesByLevel
-    // However, if they have the highest level, set won game in GamesByLevel
+      // If they win, save their last game won in run, but don't save to GamesByLevel
+      // However, if they have the highest level, set won game in GamesByLevel
     } else {
       bytes32 globalWinnerId = EntityHelpers.globalAddressToKey(winner);
       uint256 winStreak = WinStreak.get(globalWinnerId) + 1;
