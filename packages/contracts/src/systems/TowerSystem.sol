@@ -9,7 +9,7 @@ import { Systems } from "@latticexyz/world/src/codegen/tables/Systems.sol";
 import { _gameSystemAddress } from "../utils.sol";
 import { CurrentGame, SavedModification, SavedModNameTaken } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
-import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_MOD_DESCRIPTION_LENGTH, MAX_MOD_NAME_LENGTH, MAX_TOWER_HEALTH } from "../../constants.sol";
+import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_MOD_DESCRIPTION_LENGTH, MAX_MOD_NAME_LENGTH } from "../../constants.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { TowerHelpers } from "../Libraries/TowerHelpers.sol";
