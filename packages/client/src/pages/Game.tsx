@@ -7,6 +7,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { Entity } from '@latticexyz/recs';
+import { decodeEntity } from '@latticexyz/store-sync/recs';
 import { Check, Copy, Home } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -33,6 +34,7 @@ import {
 import { GameProvider, useGame } from '@/contexts/GameContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import useCopy from '@/hooks/useCopy';
+import { useMUD } from '@/MUDContext';
 import { shortenAddress } from '@/utils/helpers';
 
 const HOW_TO_SEEN_KEY = 'how-to-seen';
@@ -49,6 +51,9 @@ export const GamePage = (): JSX.Element => {
 export const InnerGamePage = (): JSX.Element => {
   const { copiedText, copyToClipboard } = useCopy();
   const navigate = useNavigate();
+  const {
+    network: { playerEntity },
+  } = useMUD();
   const {
     activeTowerId,
     enemyCastlePosition,
@@ -85,11 +90,20 @@ export const InnerGamePage = (): JSX.Element => {
     if (!game) return;
     if (game.winner === zeroAddress && game.endTimestamp === BigInt(0)) return;
 
-    if (game.winner === game.player1Address) {
+    const playerAddress = decodeEntity(
+      {
+        address: 'address',
+      },
+      playerEntity,
+    ).address;
+
+    if (playerAddress !== game.player1Address) return;
+
+    if (game.winner === playerAddress) {
       playSfx('win');
     }
     setIsGameOverDialogOpen(true);
-  }, [game, playSfx]);
+  }, [game, playerEntity, playSfx]);
 
   // Open How To info dialog if this is the first time the user is playing a game.
   useEffect(() => {
