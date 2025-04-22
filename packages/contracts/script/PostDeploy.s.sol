@@ -8,8 +8,14 @@ import { DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedModification, U
 import { ActionType } from "../src/codegen/common.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";
+import "forge-std/console.sol";
 
 import "../src/defaultLogicContracts/DefaultProjectileLogic.sol";
+
+interface IERC20 {
+  function balanceOf(address account) external view returns (uint256);
+  function decimals() external view returns (uint8);
+}
 
 contract PostDeploy is Script {
   function run(address worldAddress) external {
@@ -21,6 +27,17 @@ contract PostDeploy is Script {
 
     // Start broadcasting transactions from the deployer account
     vm.startBroadcast(deployerPrivateKey);
+
+    address mockUsdcAddress = vm.envAddress("MOCK_USDC_ADDRESS");
+    if (mockUsdcAddress != address(0) && block.chainid == 31337) {
+      IERC20 usdc = IERC20(mockUsdcAddress);
+      address deployer = vm.addr(deployerPrivateKey);
+
+      // TODO: Send USDC to the Solar Farm System
+      uint256 balance = usdc.balanceOf(deployer);
+      console.logString("Deployer MockUSDC balance:");
+      console.logUint(balance);
+    }
 
     MapConfig.set(70, 140);
 

@@ -7,6 +7,7 @@
     "build": "mud build",
     "clean": "forge clean && shx rm -rf src/**/codegen",
     "deploy:local": "mud deploy",
+    "deploy:local-usdc": "forge script script/DeployMockUSDC.s.sol:DeployMockUSDC --fork-url http://localhost:8545 --broadcast",
     "deploy:garnet": "mud deploy --profile=garnet",
     "deploy:pyrope": "mud deploy --profile=pyrope",
     "deploy:redstone": "mud deploy --profile=redstone",
