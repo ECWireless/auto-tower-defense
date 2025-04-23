@@ -6,7 +6,6 @@ import { MudTest } from "@latticexyz/world/test/MudTest.t.sol";
 import { getKeysWithValue } from "@latticexyz/world-modules/src/modules/keyswithvalue/getKeysWithValue.sol";
 
 import { IWorld } from "../src/codegen/world/IWorld.sol";
-import { Counter } from "../src/codegen/index.sol";
 import { CurrentGame, Game, GameData, Level, Username, UsernameTaken, WinStreak } from "../src/codegen/index.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 
@@ -127,11 +126,11 @@ contract GameTest is MudTest {
     bytes32 gameId = IWorld(worldAddress).app__createGame("Bob", true);
     endGame(bobAddress, gameId);
 
-    vm.startPrank(aliceAddress);
+    vm.prank(aliceAddress);
     gameId = IWorld(worldAddress).app__createGame("Alice", true);
     endGame(aliceAddress, gameId);
+    vm.prank(aliceAddress);
     gameId = IWorld(worldAddress).app__createGame("Alice", false);
-    vm.stopPrank();
 
     uint256 winStreak = WinStreak.get(EntityHelpers.globalAddressToKey(aliceAddress));
     assertEq(winStreak, 1);

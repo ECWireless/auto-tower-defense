@@ -8,14 +8,11 @@ import { DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedModification, U
 import { ActionType } from "../src/codegen/common.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";
+import "@openzeppelin/contracts/utils/Create2.sol";
+import "../mocks/MockUSDC.sol";
 import "forge-std/console.sol";
 
 import "../src/defaultLogicContracts/DefaultProjectileLogic.sol";
-
-interface IERC20 {
-  function balanceOf(address account) external view returns (uint256);
-  function decimals() external view returns (uint8);
-}
 
 contract PostDeploy is Script {
   function run(address worldAddress) external {
@@ -28,10 +25,10 @@ contract PostDeploy is Script {
     // Start broadcasting transactions from the deployer account
     vm.startBroadcast(deployerPrivateKey);
 
-    address mockUsdcAddress = vm.envAddress("MOCK_USDC_ADDRESS");
-    if (mockUsdcAddress != address(0) && block.chainid == 31337) {
-      IERC20 usdc = IERC20(mockUsdcAddress);
+    if (block.chainid == 31337) {
       address deployer = vm.addr(deployerPrivateKey);
+      address mockUsdcAddress = deployMockUSDC(deployer);
+      IERC20 usdc = IERC20(mockUsdcAddress);
 
       // TODO: Send USDC to the Solar Farm System
       uint256 balance = usdc.balanceOf(deployer);
@@ -110,5 +107,17 @@ contract PostDeploy is Script {
     UsernameTaken.set(usernameKey, true);
 
     vm.stopBroadcast();
+  }
+
+  function deployMockUSDC(address deployer) internal returns (address) {
+    uint256 supply = 1_000_000 * 1e6;
+    bytes32 salt = keccak256("mock-usdc");
+
+    bytes memory bytecode = abi.encodePacked(type(MockUSDC).creationCode, abi.encode(deployer, supply));
+    address deployed = Create2.deploy(0, salt, bytecode);
+    console.log("MockUSDC deployed at:");
+    console.logAddress(deployed);
+
+    return deployed;
   }
 }

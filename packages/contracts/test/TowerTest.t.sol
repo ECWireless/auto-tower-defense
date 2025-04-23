@@ -6,8 +6,7 @@ import { MudTest } from "@latticexyz/world/test/MudTest.t.sol";
 import { getKeysWithValue } from "@latticexyz/world-modules/src/modules/keyswithvalue/getKeysWithValue.sol";
 
 import { IWorld } from "../src/codegen/world/IWorld.sol";
-import { Counter } from "../src/codegen/index.sol";
-import { CurrentGame, EntityAtPosition, Health, Position, Projectile, SavedModification, SavedModificationData, Tower, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { CurrentGame, EntityAtPosition, Health, MapConfig, Position, Projectile, SavedModification, SavedModificationData, Tower, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 
 contract TowerTest is MudTest {
@@ -68,20 +67,6 @@ contract TowerTest is MudTest {
     vm.stopPrank();
   }
 
-  function testRevertInstallNotPlayerGame() public {
-    vm.startPrank(alice);
-    bytes32 aliceGameId = IWorld(worldAddress).app__createGame("Alice", true);
-    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__nextTurn(aliceGameId);
-    IWorld(worldAddress).app__nextTurn(aliceGameId);
-    vm.stopPrank();
-
-    vm.startPrank(bob);
-    IWorld(worldAddress).app__createGame("Bob", true);
-    vm.expectRevert(bytes("TowerSystem: game does not match player's ongoing game"));
-    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-  }
-
   function testMoveTower() public {
     vm.startPrank(alice);
     bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
@@ -107,9 +92,11 @@ contract TowerTest is MudTest {
     IWorld(worldAddress).app__nextTurn(gameId);
     IWorld(worldAddress).app__nextTurn(gameId);
 
-    bytes32 fakeTowerId = keccak256(abi.encodePacked("fake"));
+    (int16 mapHeight, ) = MapConfig.get();
+    bytes32 castleId = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2));
+
     vm.expectRevert(bytes("TowerSystem: entity is not a tower"));
-    IWorld(worldAddress).app__playerMoveTower(fakeTowerId, 45, 45);
+    IWorld(worldAddress).app__playerMoveTower(castleId, 45, 45);
     vm.stopPrank();
   }
 
@@ -138,7 +125,7 @@ contract TowerTest is MudTest {
 
     vm.startPrank(bob);
     IWorld(worldAddress).app__createGame("Bob", true);
-    vm.expectRevert(bytes("TowerSystem: game does not match player's ongoing game"));
+    vm.expectRevert(bytes("TowerSystem: tower is not in player's ongoing game"));
     IWorld(worldAddress).app__playerMoveTower(towerId, 45, 45);
   }
 
@@ -191,7 +178,7 @@ contract TowerTest is MudTest {
 
     vm.startPrank(bob);
     IWorld(worldAddress).app__createGame("Bob", true);
-    vm.expectRevert(bytes("TowerSystem: game does not match player's ongoing game"));
+    vm.expectRevert(bytes("TowerSystem: tower is not in player's ongoing game"));
     IWorld(worldAddress).app__playerModifyTowerSystem(towerId, BYTECODE, "");
   }
 

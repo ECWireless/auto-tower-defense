@@ -120,7 +120,9 @@ library TowerHelpers {
   }
 
   function _validateMoveTower(bytes32 gameId, address playerAddress, bytes32 towerId, int16 x, int16 y) internal view {
+    bytes32 towerGameId = CurrentGame.get(towerId);
     require(gameId != 0, "TowerSystem: player has no ongoing game");
+    require(gameId == towerGameId, "TowerSystem: tower is not in player's ongoing game");
 
     GameData memory currentGame = Game.get(gameId);
     require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
@@ -200,7 +202,7 @@ library TowerHelpers {
     GameData memory currentGame = Game.get(gameId);
 
     require(gameId != 0, "TowerSystem: player has no ongoing game");
-    require(gameId == towerGameId, "TowerSystem: game does not match player's ongoing game");
+    require(gameId == towerGameId, "TowerSystem: tower is not in player's ongoing game");
 
     if (playerAddress == currentGame.player2Address) {
       require(Owner.get(towerId) == currentGame.player2Address, "TowerSystem: player does not own tower");
