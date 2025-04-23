@@ -63,6 +63,7 @@ library GameHelpers {
     EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2), castle2Id);
 
     bytes32[] memory savedGameActions = SavedGame.getActions(savedGameId);
+    // TODO: use LoadedEnemyKingdom table here
     SavedGameData memory loadedSavedGame = SavedGameData({
       gameId: gameId,
       winner: address(0),
@@ -98,7 +99,11 @@ library GameHelpers {
     revert("GameSystem: no valid saved game found");
   }
 
-  function _getPlayableSavedGameId(address player1Address, uint256 randomNumber, uint256 level) internal view returns (bytes32) {
+  function _getPlayableSavedGameId(
+    address player1Address,
+    uint256 randomNumber,
+    uint256 level
+  ) internal view returns (bytes32) {
     bytes32[] memory savedGameIds = GamesByLevel.get(level);
     require(savedGameIds.length > 0, "GameSystem: no saved games available");
 
@@ -187,7 +192,13 @@ library GameHelpers {
         return;
       }
 
-      TowerHelpers.modifyTowerSystem(player2Address, CurrentGame.get(globalPlayer1), towerEntity, projectileData.bytecode, projectileData.sourceCode);
+      TowerHelpers.modifyTowerSystem(
+        player2Address,
+        CurrentGame.get(globalPlayer1),
+        towerEntity,
+        projectileData.bytecode,
+        projectileData.sourceCode
+      );
     }
   }
 }

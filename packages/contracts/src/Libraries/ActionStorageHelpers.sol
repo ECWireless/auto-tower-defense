@@ -45,7 +45,7 @@ library ActionStorageHelpers {
     }
   }
 
-function storeInstallTowerAction(
+  function storeInstallTowerAction(
     bytes32 gameId,
     address playerAddress,
     int16 newX,
@@ -97,7 +97,7 @@ function storeInstallTowerAction(
     }
   }
 
-function storeMoveTowerAction(
+  function storeMoveTowerAction(
     bytes32 gameId,
     address playerAddress,
     bytes32 towerId,
@@ -147,7 +147,7 @@ function storeMoveTowerAction(
     }
   }
 
-function storeModifyTowerAction(
+  function storeModifyTowerAction(
     bytes32 gameId,
     address playerAddress,
     bytes32 towerId,
@@ -199,7 +199,7 @@ function storeModifyTowerAction(
     }
   }
 
-    function _setActionProjectile(
+  function _setActionProjectile(
     bytes32 actionId,
     address systemAddress,
     bytes memory bytecode,

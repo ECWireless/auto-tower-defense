@@ -1,6 +1,30 @@
 declare const abi: [
   {
     "type": "function",
+    "name": "app__addSavedKingdomRow",
+    "inputs": [
+      {
+        "name": "savedGameId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "level",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "isAdmin",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__createGame",
     "inputs": [
       {

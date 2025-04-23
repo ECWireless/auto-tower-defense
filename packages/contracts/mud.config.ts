@@ -8,6 +8,11 @@ export default defineWorld({
   enums: {
     ActionType: ["Skip", "Install", "Move", "Modify"],
   },
+  systems: {
+    AdminSystem: {
+      openAccess: false,
+    },
+  },
   tables: {
     Action: {
       schema: {
@@ -21,6 +26,7 @@ export default defineWorld({
       },
       key: ["id"],
     },
+    // BatteryDetails: {},
     Castle: "bool",
     Counter: {
       schema: {
@@ -39,6 +45,7 @@ export default defineWorld({
       },
     },
     EntityAtPosition: "bytes32",
+    // ExpenseReceipt: {},
     Game: {
       schema: {
         id: "bytes32", // keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
@@ -69,6 +76,13 @@ export default defineWorld({
       key: ["id"],
       codegen: {
         dataStruct: false,
+      },
+    },
+    KingdomsByLevel: {
+      key: ["level"],
+      schema: {
+        level: "uint256",
+        savedKingdomIds: "bytes32[]",
       },
     },
     LastGameWonInRun: "bytes32", // ID is global player ID; value is savedGameId
@@ -123,11 +137,25 @@ export default defineWorld({
         dataStruct: false,
       },
     },
+    // RevenueReceipt: {},
     SavedGame: {
+      // This is the table that accumulates actions throughout a game; at the end of a run, it is copied to SavedKingdom
       schema: {
         id: "bytes32", // keccak256(abi.encodePacked(gameId, playerId)) when the template is saved; gameId when the template is loaded for a game
         gameId: "bytes32",
         winner: "address",
+        actions: "bytes32[]",
+      },
+      key: ["id"],
+    },
+    SavedKingdom: {
+      // This is the table accumulates revenue for each player (author)
+      schema: {
+        id: "bytes32", // This is a deterministic hash of all actions by the author in the game; keccak256(abi.encodePacked(actions[]))
+        author: "address",
+        electricitybalance: "uint256",
+        timestamp: "uint256",
+        winStreak: "uint256",
         actions: "bytes32[]",
       },
       key: ["id"],
@@ -155,6 +183,15 @@ export default defineWorld({
       codegen: {
         dataStruct: false,
       },
+    },
+    SolarFarmDetails: {
+      schema: {
+        electricityPrice: "uint256", // Unformatted cost in USDC with 6 decimals
+        fiatBalance: "uint256", // Unformatted balance of USDC with 6 decimals
+        electricityBalance: "uint256",
+        msPerWh: "uint256", // Number of milliseconds per watt hour; start at 3600ms
+      },
+      key: [],
     },
     TopLevel: {
       schema: {

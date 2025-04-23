@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, LastGameWonInRun, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, TopLevel, WinStreak } from "../codegen/index.sol";
+import { Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, LastGameWonInRun, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, TopLevel, WinStreak } from "../codegen/index.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { MAX_ROUNDS, MAX_TICKS, MAX_HEALTH_WALL } from "../../constants.sol";
@@ -341,6 +341,7 @@ library ProjectileHelpers {
 
         updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
         GamesByLevel.set(winStreak, updatedGamesByLevel);
+        Level.set(savedGameId, winStreak);
 
         LastGameWonInRun.set(globalLoserId, bytes32(0));
       }
@@ -370,6 +371,7 @@ library ProjectileHelpers {
         }
         updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
         GamesByLevel.set(winStreak, updatedGamesByLevel);
+        Level.set(savedGameId, winStreak);
 
         LastGameWonInRun.set(globalWinnerId, bytes32(0));
       } else {

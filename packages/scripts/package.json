@@ -1,0 +1,27 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "save-games-as-kingdoms": "tsx saveGamesAsKingdoms.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.8.0",
+  "devDependencies": {
+    "tsx": "^4.19.3",
+    "typescript": "5.4.2"
+  },
+  "dependencies": {
+    "@latticexyz/common": "2.2.14",
+    "@latticexyz/recs": "2.2.14",
+    "@latticexyz/store-sync": "2.2.14",
+    "@latticexyz/world": "2.2.14",
+    "dotenv": "^16.4.7",
+    "rxjs": "7.5.5",
+    "viem": "2.21.19"
+  }
+}
