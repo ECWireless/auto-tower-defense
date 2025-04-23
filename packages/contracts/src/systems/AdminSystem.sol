@@ -37,13 +37,13 @@ contract AdminSystem is System {
     for (uint256 i = 0; i < kingdomsByLevel.length; i++) {
       updatedKingdomsByLevel[i] = kingdomsByLevel[i];
 
-      if (kingdomsByLevel[i] == savedGameId) {
+      if (kingdomsByLevel[i] == savedKingdomId) {
         console.log("Saved kingdom already exists in KingdomsByLevel");
         return false;
       }
     }
 
-    updatedKingdomsByLevel[updatedKingdomsByLevel.length - 1] = savedGameId;
+    updatedKingdomsByLevel[updatedKingdomsByLevel.length - 1] = savedKingdomId;
     KingdomsByLevel.set(level, updatedKingdomsByLevel);
     SavedKingdom.set(savedKingdomId, savedKingdom);
     Level.set(savedKingdomId, level);
