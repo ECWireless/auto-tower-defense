@@ -29,8 +29,8 @@ export const Home = (): JSX.Element => {
     components: {
       CurrentGame,
       Game,
-      GamesByLevel,
-      SavedGame,
+      KingdomsByLevel,
+      SavedKingdom,
       TopLevel,
       Username,
       WinStreak,
@@ -75,8 +75,9 @@ export const Home = (): JSX.Element => {
           { level: topLevel ?? 0n },
         );
 
-        const topLevelGames =
-          getComponentValue(GamesByLevel, levelAsEntity)?.gameIds ?? [];
+        const topLevelKingdoms =
+          getComponentValue(KingdomsByLevel, levelAsEntity)?.savedKingdomIds ??
+          [];
 
         const playerAddress = decodeEntity(
           {
@@ -85,21 +86,19 @@ export const Home = (): JSX.Element => {
           playerEntity,
         ).address;
 
-        const topLevelGamesICanPlay = topLevelGames.filter(gameId => {
-          const savedTopLevelGame = getComponentValueStrict(
-            SavedGame,
-            gameId as Entity,
-          );
-          const topLevelGame = getComponentValueStrict(
-            Game,
-            savedTopLevelGame.gameId as Entity,
-          );
-          return topLevelGame.player1Address !== playerAddress;
-        });
+        const topLevelKingdomsICanPlay = topLevelKingdoms.filter(
+          savedKingdomId => {
+            const savedTopLevelKingdom = getComponentValueStrict(
+              SavedKingdom,
+              savedKingdomId as Entity,
+            );
+            return savedTopLevelKingdom.author !== playerAddress;
+          },
+        );
 
         const resetLevel =
           winStreak === 0n ||
-          (topLevel === winStreak && topLevelGamesICanPlay.length === 0);
+          (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0);
 
         const { error, success } = await createGame(username, resetLevel);
 
@@ -131,11 +130,11 @@ export const Home = (): JSX.Element => {
       createGame,
       CurrentGame,
       Game,
-      GamesByLevel,
+      KingdomsByLevel,
       navigate,
       playerEntity,
       playSfx,
-      SavedGame,
+      SavedKingdom,
       TopLevel,
       username,
       WinStreak,

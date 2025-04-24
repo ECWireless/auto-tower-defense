@@ -1,4 +1,4 @@
-import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, LastGameWonInRun, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileData, SavedGame, SavedGameData, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
+import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, KingdomsByLevel, LastGameWonInRun, Level, LoadedKingdomActions, LoadedKingdomActionsData, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileData, SavedKingdom, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { TowerHelpers } from "./TowerHelpers.sol";
@@ -16,7 +16,7 @@ library GameHelpers {
   function initializeGame(
     address player1Address,
     address player2Address,
-    bytes32 savedGameId,
+    bytes32 savedKingdomId,
     bytes32 globalPlayer1
   ) public returns (bytes32) {
     uint256 timestamp = block.timestamp;
@@ -62,14 +62,12 @@ library GameHelpers {
     EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2), castle1Id);
     EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2), castle2Id);
 
-    bytes32[] memory savedGameActions = SavedGame.getActions(savedGameId);
-    // TODO: use LoadedEnemyKingdom table here
-    SavedGameData memory loadedSavedGame = SavedGameData({
-      gameId: gameId,
-      winner: address(0),
-      actions: savedGameActions
+    bytes32[] memory savedKingdomActions = SavedKingdom.getActions(savedKingdomId);
+    LoadedKingdomActionsData memory loadedKingdomActions = LoadedKingdomActionsData({
+      savedKingdomId: savedKingdomId,
+      actions: savedKingdomActions
     });
-    SavedGame.set(gameId, loadedSavedGame);
+    LoadedKingdomActions.set(gameId, loadedKingdomActions);
 
     Level.set(gameId, WinStreak.get(globalPlayer1));
 
@@ -86,9 +84,9 @@ library GameHelpers {
 
     // If no playable saved game is found, go up a level
     for (uint256 i = 0; i < 10; i++) {
-      bytes32 savedGameId = _getPlayableSavedGameId(player1Address, randomNumber, level);
-      if (savedGameId != bytes32(0)) {
-        return savedGameId;
+      bytes32 savedKingdomId = _getPlayableSavedKingdomId(player1Address, randomNumber, level);
+      if (savedKingdomId != bytes32(0)) {
+        return savedKingdomId;
       }
       level++;
       if (level > topLevel) {
@@ -99,34 +97,34 @@ library GameHelpers {
     revert("GameSystem: no valid saved game found");
   }
 
-  function _getPlayableSavedGameId(
+  function _getPlayableSavedKingdomId(
     address player1Address,
     uint256 randomNumber,
     uint256 level
   ) internal view returns (bytes32) {
-    bytes32[] memory savedGameIds = GamesByLevel.get(level);
-    require(savedGameIds.length > 0, "GameSystem: no saved games available");
+    bytes32[] memory savedKingdomIds = KingdomsByLevel.get(level);
+    require(savedKingdomIds.length > 0, "GameSystem: no saved kingdoms available");
 
-    bytes32 savedGameId;
-    address savedGameWinner;
+    bytes32 savedKingdomId;
+    address savedKingdomAuthor;
 
-    uint256 savedGameOriginalLength = savedGameIds.length;
+    uint256 savedKingdomsOriginalLength = savedKingdomIds.length;
 
-    for (uint256 i = 0; i < savedGameOriginalLength; i++) {
-      // Pick a random saved game
-      uint256 index = randomNumber % savedGameIds.length;
-      savedGameId = savedGameIds[index];
-      savedGameWinner = SavedGame.getWinner(savedGameId);
+    for (uint256 i = 0; i < savedKingdomsOriginalLength; i++) {
+      // Pick a random saved kingdom
+      uint256 index = randomNumber % savedKingdomIds.length;
+      savedKingdomId = savedKingdomIds[index];
+      savedKingdomAuthor = SavedKingdom.getAuthor(savedKingdomId);
 
-      // If the winner is not the player, return the game ID
-      if (savedGameWinner != player1Address) {
-        return savedGameId;
+      // If the author is not the player, return the saved kingdom ID
+      if (savedKingdomAuthor != player1Address) {
+        return savedKingdomId;
       }
 
-      // Remove the checked game ID from the array
-      savedGameIds[index] = savedGameIds[savedGameIds.length - 1];
+      // Remove the checked saved game ID from the array
+      savedKingdomIds[index] = savedKingdomIds[savedKingdomIds.length - 1];
       assembly {
-        mstore(savedGameIds, sub(mload(savedGameIds), 1))
+        mstore(savedKingdomIds, sub(mload(savedKingdomIds), 1))
       }
 
       // Update random number for the next iteration
@@ -158,7 +156,7 @@ library GameHelpers {
     uint8 actionCount = Game.getActionCount(gameId);
     uint256 actionIdIndex = (roundCount * MAX_ACTIONS) + (MAX_ACTIONS - actionCount);
 
-    bytes32[] memory actionIds = SavedGame.getActions(gameId);
+    bytes32[] memory actionIds = LoadedKingdomActions.getActions(gameId);
     if (actionIdIndex >= actionIds.length) {
       return;
     }

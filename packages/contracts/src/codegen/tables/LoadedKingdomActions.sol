@@ -16,26 +16,22 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
-struct SavedKingdomData {
-  address author;
-  uint256 electricitybalance;
-  uint256 losses;
-  uint256 timestamp;
-  uint256 wins;
+struct LoadedKingdomActionsData {
+  bytes32 savedKingdomId;
   bytes32[] actions;
 }
 
-library SavedKingdom {
-  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "SavedKingdom", typeId: RESOURCE_TABLE });`
-  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000053617665644b696e67646f6d00000000);
+library LoadedKingdomActions {
+  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "LoadedKingdomAct", typeId: RESOURCE_TABLE });`
+  ResourceId constant _tableId = ResourceId.wrap(0x746261707000000000000000000000004c6f616465644b696e67646f6d416374);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0094050114202020200000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0020010120000000000000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (address, uint256, uint256, uint256, uint256, bytes32[])
-  Schema constant _valueSchema = Schema.wrap(0x00940501611f1f1f1fc100000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (bytes32, bytes32[])
+  Schema constant _valueSchema = Schema.wrap(0x002001015fc10000000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -51,13 +47,9 @@ library SavedKingdom {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](6);
-    fieldNames[0] = "author";
-    fieldNames[1] = "electricitybalance";
-    fieldNames[2] = "losses";
-    fieldNames[3] = "timestamp";
-    fieldNames[4] = "wins";
-    fieldNames[5] = "actions";
+    fieldNames = new string[](2);
+    fieldNames[0] = "savedKingdomId";
+    fieldNames[1] = "actions";
   }
 
   /**
@@ -75,213 +67,45 @@ library SavedKingdom {
   }
 
   /**
-   * @notice Get author.
+   * @notice Get savedKingdomId.
    */
-  function getAuthor(bytes32 id) internal view returns (address author) {
+  function getSavedKingdomId(bytes32 id) internal view returns (bytes32 savedKingdomId) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (address(bytes20(_blob)));
+    return (bytes32(_blob));
   }
 
   /**
-   * @notice Get author.
+   * @notice Get savedKingdomId.
    */
-  function _getAuthor(bytes32 id) internal view returns (address author) {
+  function _getSavedKingdomId(bytes32 id) internal view returns (bytes32 savedKingdomId) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (address(bytes20(_blob)));
+    return (bytes32(_blob));
   }
 
   /**
-   * @notice Set author.
+   * @notice Set savedKingdomId.
    */
-  function setAuthor(bytes32 id, address author) internal {
+  function setSavedKingdomId(bytes32 id, bytes32 savedKingdomId) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((author)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((savedKingdomId)), _fieldLayout);
   }
 
   /**
-   * @notice Set author.
+   * @notice Set savedKingdomId.
    */
-  function _setAuthor(bytes32 id, address author) internal {
+  function _setSavedKingdomId(bytes32 id, bytes32 savedKingdomId) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((author)), _fieldLayout);
-  }
-
-  /**
-   * @notice Get electricitybalance.
-   */
-  function getElectricitybalance(bytes32 id) internal view returns (uint256 electricitybalance) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
-    return (uint256(bytes32(_blob)));
-  }
-
-  /**
-   * @notice Get electricitybalance.
-   */
-  function _getElectricitybalance(bytes32 id) internal view returns (uint256 electricitybalance) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
-    return (uint256(bytes32(_blob)));
-  }
-
-  /**
-   * @notice Set electricitybalance.
-   */
-  function setElectricitybalance(bytes32 id, uint256 electricitybalance) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((electricitybalance)), _fieldLayout);
-  }
-
-  /**
-   * @notice Set electricitybalance.
-   */
-  function _setElectricitybalance(bytes32 id, uint256 electricitybalance) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((electricitybalance)), _fieldLayout);
-  }
-
-  /**
-   * @notice Get losses.
-   */
-  function getLosses(bytes32 id) internal view returns (uint256 losses) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
-    return (uint256(bytes32(_blob)));
-  }
-
-  /**
-   * @notice Get losses.
-   */
-  function _getLosses(bytes32 id) internal view returns (uint256 losses) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
-    return (uint256(bytes32(_blob)));
-  }
-
-  /**
-   * @notice Set losses.
-   */
-  function setLosses(bytes32 id, uint256 losses) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((losses)), _fieldLayout);
-  }
-
-  /**
-   * @notice Set losses.
-   */
-  function _setLosses(bytes32 id, uint256 losses) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((losses)), _fieldLayout);
-  }
-
-  /**
-   * @notice Get timestamp.
-   */
-  function getTimestamp(bytes32 id) internal view returns (uint256 timestamp) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
-    return (uint256(bytes32(_blob)));
-  }
-
-  /**
-   * @notice Get timestamp.
-   */
-  function _getTimestamp(bytes32 id) internal view returns (uint256 timestamp) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
-    return (uint256(bytes32(_blob)));
-  }
-
-  /**
-   * @notice Set timestamp.
-   */
-  function setTimestamp(bytes32 id, uint256 timestamp) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((timestamp)), _fieldLayout);
-  }
-
-  /**
-   * @notice Set timestamp.
-   */
-  function _setTimestamp(bytes32 id, uint256 timestamp) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((timestamp)), _fieldLayout);
-  }
-
-  /**
-   * @notice Get wins.
-   */
-  function getWins(bytes32 id) internal view returns (uint256 wins) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
-    return (uint256(bytes32(_blob)));
-  }
-
-  /**
-   * @notice Get wins.
-   */
-  function _getWins(bytes32 id) internal view returns (uint256 wins) {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
-    return (uint256(bytes32(_blob)));
-  }
-
-  /**
-   * @notice Set wins.
-   */
-  function setWins(bytes32 id, uint256 wins) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((wins)), _fieldLayout);
-  }
-
-  /**
-   * @notice Set wins.
-   */
-  function _setWins(bytes32 id, uint256 wins) internal {
-    bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = id;
-
-    StoreCore.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((wins)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((savedKingdomId)), _fieldLayout);
   }
 
   /**
@@ -449,7 +273,7 @@ library SavedKingdom {
   /**
    * @notice Get the full data.
    */
-  function get(bytes32 id) internal view returns (SavedKingdomData memory _table) {
+  function get(bytes32 id) internal view returns (LoadedKingdomActionsData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -464,7 +288,7 @@ library SavedKingdom {
   /**
    * @notice Get the full data.
    */
-  function _get(bytes32 id) internal view returns (SavedKingdomData memory _table) {
+  function _get(bytes32 id) internal view returns (LoadedKingdomActionsData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -479,16 +303,8 @@ library SavedKingdom {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(
-    bytes32 id,
-    address author,
-    uint256 electricitybalance,
-    uint256 losses,
-    uint256 timestamp,
-    uint256 wins,
-    bytes32[] memory actions
-  ) internal {
-    bytes memory _staticData = encodeStatic(author, electricitybalance, losses, timestamp, wins);
+  function set(bytes32 id, bytes32 savedKingdomId, bytes32[] memory actions) internal {
+    bytes memory _staticData = encodeStatic(savedKingdomId);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
     bytes memory _dynamicData = encodeDynamic(actions);
@@ -502,16 +318,8 @@ library SavedKingdom {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(
-    bytes32 id,
-    address author,
-    uint256 electricitybalance,
-    uint256 losses,
-    uint256 timestamp,
-    uint256 wins,
-    bytes32[] memory actions
-  ) internal {
-    bytes memory _staticData = encodeStatic(author, electricitybalance, losses, timestamp, wins);
+  function _set(bytes32 id, bytes32 savedKingdomId, bytes32[] memory actions) internal {
+    bytes memory _staticData = encodeStatic(savedKingdomId);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
     bytes memory _dynamicData = encodeDynamic(actions);
@@ -525,14 +333,8 @@ library SavedKingdom {
   /**
    * @notice Set the full data using the data struct.
    */
-  function set(bytes32 id, SavedKingdomData memory _table) internal {
-    bytes memory _staticData = encodeStatic(
-      _table.author,
-      _table.electricitybalance,
-      _table.losses,
-      _table.timestamp,
-      _table.wins
-    );
+  function set(bytes32 id, LoadedKingdomActionsData memory _table) internal {
+    bytes memory _staticData = encodeStatic(_table.savedKingdomId);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.actions);
     bytes memory _dynamicData = encodeDynamic(_table.actions);
@@ -546,14 +348,8 @@ library SavedKingdom {
   /**
    * @notice Set the full data using the data struct.
    */
-  function _set(bytes32 id, SavedKingdomData memory _table) internal {
-    bytes memory _staticData = encodeStatic(
-      _table.author,
-      _table.electricitybalance,
-      _table.losses,
-      _table.timestamp,
-      _table.wins
-    );
+  function _set(bytes32 id, LoadedKingdomActionsData memory _table) internal {
+    bytes memory _staticData = encodeStatic(_table.savedKingdomId);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.actions);
     bytes memory _dynamicData = encodeDynamic(_table.actions);
@@ -567,22 +363,8 @@ library SavedKingdom {
   /**
    * @notice Decode the tightly packed blob of static data using this table's field layout.
    */
-  function decodeStatic(
-    bytes memory _blob
-  )
-    internal
-    pure
-    returns (address author, uint256 electricitybalance, uint256 losses, uint256 timestamp, uint256 wins)
-  {
-    author = (address(Bytes.getBytes20(_blob, 0)));
-
-    electricitybalance = (uint256(Bytes.getBytes32(_blob, 20)));
-
-    losses = (uint256(Bytes.getBytes32(_blob, 52)));
-
-    timestamp = (uint256(Bytes.getBytes32(_blob, 84)));
-
-    wins = (uint256(Bytes.getBytes32(_blob, 116)));
+  function decodeStatic(bytes memory _blob) internal pure returns (bytes32 savedKingdomId) {
+    savedKingdomId = (Bytes.getBytes32(_blob, 0));
   }
 
   /**
@@ -610,10 +392,8 @@ library SavedKingdom {
     bytes memory _staticData,
     EncodedLengths _encodedLengths,
     bytes memory _dynamicData
-  ) internal pure returns (SavedKingdomData memory _table) {
-    (_table.author, _table.electricitybalance, _table.losses, _table.timestamp, _table.wins) = decodeStatic(
-      _staticData
-    );
+  ) internal pure returns (LoadedKingdomActionsData memory _table) {
+    (_table.savedKingdomId) = decodeStatic(_staticData);
 
     (_table.actions) = decodeDynamic(_encodedLengths, _dynamicData);
   }
@@ -642,14 +422,8 @@ library SavedKingdom {
    * @notice Tightly pack static (fixed length) data using this table's schema.
    * @return The static data, encoded into a sequence of bytes.
    */
-  function encodeStatic(
-    address author,
-    uint256 electricitybalance,
-    uint256 losses,
-    uint256 timestamp,
-    uint256 wins
-  ) internal pure returns (bytes memory) {
-    return abi.encodePacked(author, electricitybalance, losses, timestamp, wins);
+  function encodeStatic(bytes32 savedKingdomId) internal pure returns (bytes memory) {
+    return abi.encodePacked(savedKingdomId);
   }
 
   /**
@@ -678,14 +452,10 @@ library SavedKingdom {
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
   function encode(
-    address author,
-    uint256 electricitybalance,
-    uint256 losses,
-    uint256 timestamp,
-    uint256 wins,
+    bytes32 savedKingdomId,
     bytes32[] memory actions
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(author, electricitybalance, losses, timestamp, wins);
+    bytes memory _staticData = encodeStatic(savedKingdomId);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
     bytes memory _dynamicData = encodeDynamic(actions);

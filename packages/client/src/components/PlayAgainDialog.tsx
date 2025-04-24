@@ -38,9 +38,8 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   const {
     components: {
       CurrentGame,
-      Game,
-      GamesByLevel,
-      SavedGame,
+      KingdomsByLevel,
+      SavedKingdom,
       TopLevel,
       WinStreak,
     },
@@ -59,23 +58,22 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     { level: 'uint256' },
     { level: topLevel ?? 0n },
   );
-  const topLevelGames = useComponentValue(GamesByLevel, levelAsEntity)?.gameIds;
+  const topLevelKingdoms = useComponentValue(
+    KingdomsByLevel,
+    levelAsEntity,
+  )?.savedKingdomIds;
 
-  const topLevelGamesICanPlay = useMemo(() => {
-    if (!(game && topLevelGames)) return [];
+  const topLevelKingdomsICanPlay = useMemo(() => {
+    if (!(game && topLevelKingdoms)) return [];
 
-    return topLevelGames.filter(gameId => {
-      const savedTopLevelGame = getComponentValueStrict(
-        SavedGame,
-        gameId as Entity,
+    return topLevelKingdoms.filter(savedKingdomId => {
+      const savedTopLevelKingdom = getComponentValueStrict(
+        SavedKingdom,
+        savedKingdomId as Entity,
       );
-      const topLevelGame = getComponentValueStrict(
-        Game,
-        savedTopLevelGame.gameId as Entity,
-      );
-      return topLevelGame.player1Address !== game.player1Address;
+      return savedTopLevelKingdom.author !== game.player1Address;
     });
-  }, [game, Game, SavedGame, topLevelGames]);
+  }, [game, SavedKingdom, topLevelKingdoms]);
 
   const onCreateGame = useCallback(async () => {
     try {
@@ -88,7 +86,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
 
       const resetLevel =
         game.winner !== game.player1Address ||
-        (topLevel === winStreak && topLevelGamesICanPlay.length === 0);
+        (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0);
 
       const { error, success } = await createGame(
         game.player1Username,
@@ -127,7 +125,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     playSfx,
     setIsGameOverDialogOpen,
     topLevel,
-    topLevelGamesICanPlay,
+    topLevelKingdomsICanPlay,
     winStreak,
   ]);
 
@@ -154,7 +152,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     );
   }
 
-  if (topLevel === winStreak && topLevelGamesICanPlay.length === 0) {
+  if (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0) {
     return (
       <Dialog
         open={isGameOverDialogOpen}
@@ -171,7 +169,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
           </DialogHeader>
           <p>
             Congratulations! You are now{' '}
-            {topLevelGames?.length === 1 ? 'the' : 'a'}{' '}
+            {topLevelKingdoms?.length === 1 ? 'the' : 'a'}{' '}
             <strong>top player</strong>!
           </p>
           <p>

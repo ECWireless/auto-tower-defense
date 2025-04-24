@@ -26,8 +26,9 @@ contract AdminSystem is System {
     SavedKingdomData memory savedKingdom = SavedKingdomData({
       author: savedGame.winner,
       electricitybalance: 0,
+      losses: 0,
       timestamp: block.timestamp,
-      winStreak: 0,
+      wins: 0,
       actions: savedGame.actions
     });
 

@@ -33,7 +33,10 @@ library TowerHelpers {
     uint256 towerCounter = TowerCounter.get();
     bytes32 towerId = keccak256(abi.encodePacked(gameId, playerAddress, towerCounter));
     _initializeTower(towerId, gameId, playerAddress, x, y, projectile);
-    ActionStorageHelpers.storeInstallTowerAction(gameId, playerAddress, x, y, projectile);
+    address player1Address = Game.getPlayer1Address(gameId);
+    if (playerAddress == player1Address) {
+      ActionStorageHelpers.storeInstallTowerAction(gameId, playerAddress, x, y, projectile);
+    }
     TowerCounter.set(towerCounter + 1);
 
     return towerId;
@@ -57,7 +60,11 @@ library TowerHelpers {
     EntityAtPosition.set(EntityHelpers.positionToEntityKey(gameId, actualX, actualY), towerId);
 
     _decrementActionCount(gameId);
-    ActionStorageHelpers.storeMoveTowerAction(gameId, playerAddress, towerId, oldX, oldY, actualX, actualY);
+
+    address player1Address = Game.getPlayer1Address(gameId);
+    if (playerAddress == player1Address) {
+      ActionStorageHelpers.storeMoveTowerAction(gameId, towerId, oldX, oldY, actualX, actualY);
+    }
 
     return towerId;
   }
@@ -93,7 +100,11 @@ library TowerHelpers {
     Projectile.set(towerId, address(newSystem), DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
 
     _incrementSavedModificationUseCount(bytecode);
-    ActionStorageHelpers.storeModifyTowerAction(gameId, playerAddress, towerId, bytecode, newSystem, sourceCode);
+
+    address player1Address = Game.getPlayer1Address(gameId);
+    if (playerAddress == player1Address) {
+      ActionStorageHelpers.storeModifyTowerAction(gameId, towerId, bytecode, newSystem, sourceCode);
+    }
     return address(newSystem);
   }
 

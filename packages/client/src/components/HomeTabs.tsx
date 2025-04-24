@@ -166,7 +166,7 @@ export const HomeTabs: React.FC = () => {
   const navigate = useNavigate();
   const { copiedText, copyToClipboard } = useCopy();
   const {
-    components: { Game, GamesByLevel, Level, SavedGame, Username },
+    components: { Game, KingdomsByLevel, Level, SavedKingdom, Username },
   } = useMUD();
 
   const games = useEntityQuery([Has(Game)]).map(entity => {
@@ -208,18 +208,21 @@ export const HomeTabs: React.FC = () => {
     };
   }) as Game[];
 
-  const gamesByLevel = useEntityQuery([Has(GamesByLevel)]).map(entity => {
-    const _gamesByLevel = getComponentValueStrict(GamesByLevel, entity);
-    const winners = _gamesByLevel.gameIds.map(gameId => {
-      const savedGame = getComponentValueStrict(SavedGame, gameId as Entity);
-      return savedGame.winner;
+  const kingdomsByLevel = useEntityQuery([Has(KingdomsByLevel)]).map(entity => {
+    const _kingdomsByLevel = getComponentValueStrict(KingdomsByLevel, entity);
+    const authors = _kingdomsByLevel.savedKingdomIds.map(savedKingdomId => {
+      const savedKingdom = getComponentValueStrict(
+        SavedKingdom,
+        savedKingdomId as Entity,
+      );
+      return savedKingdom.author;
     });
 
     const decodedKey = decodeEntity({ level: 'uint256' }, entity);
 
     return {
       level: decodedKey.level,
-      winners,
+      winners: authors,
     };
   });
 
@@ -228,7 +231,7 @@ export const HomeTabs: React.FC = () => {
     level: number;
     username: string;
   }[] = useMemo(() => {
-    const fullLeaderboardList = gamesByLevel.reduce(
+    const fullLeaderboardList = kingdomsByLevel.reduce(
       (acc, game) => {
         const { level, winners } = game;
         const levelWinners = winners.map(winner => ({
@@ -265,7 +268,7 @@ export const HomeTabs: React.FC = () => {
     );
 
     return leaderboardNoDuplicates.sort((a, b) => b.level - a.level);
-  }, [gamesByLevel, Username]);
+  }, [kingdomsByLevel, Username]);
 
   const activeGames = useMemo(
     () =>

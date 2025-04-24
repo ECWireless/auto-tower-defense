@@ -77,6 +77,7 @@ export default defineWorld({
       },
       key: ["id"],
     },
+    // TODO: Remove in the future
     GamesByLevel: {
       key: ["level"],
       schema: {
@@ -104,6 +105,15 @@ export default defineWorld({
     },
     LastGameWonInRun: "bytes32", // ID is global player ID; value is savedGameId
     Level: "uint256",
+    LoadedKingdomActions: {
+      // When a game is created, the enemy SavedKingdom's actions are loaded into the game
+      schema: {
+        id: "bytes32", // gameId of the game being played
+        savedKingdomId: "bytes32", // The SavedKindom the actions are loaded from
+        actions: "bytes32[]",
+      },
+      key: ["id"],
+    },
     LogicSystemAddress: {
       schema: {
         value: "address",
@@ -168,7 +178,7 @@ export default defineWorld({
     SavedGame: {
       // This is the table that accumulates actions throughout a game; at the end of a run, it is copied to SavedKingdom
       schema: {
-        id: "bytes32", // keccak256(abi.encodePacked(gameId, playerId)) when the template is saved; gameId when the template is loaded for a game
+        id: "bytes32", // gameId of the game being played
         gameId: "bytes32",
         winner: "address",
         actions: "bytes32[]",
@@ -181,8 +191,9 @@ export default defineWorld({
         id: "bytes32", // This is a deterministic hash of all actions by the author in the game; keccak256(abi.encodePacked(actions[]))
         author: "address",
         electricitybalance: "uint256",
+        losses: "uint256",
         timestamp: "uint256",
-        winStreak: "uint256",
+        wins: "uint256",
         actions: "bytes32[]",
       },
       key: ["id"],
