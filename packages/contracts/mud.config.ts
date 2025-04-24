@@ -30,9 +30,9 @@ export default defineWorld({
       key: ["id"],
       schema: {
         id: "bytes32", // This is the globalPlayerId
-        activeBalance: "uint256", // Electricity in kWh
-        reserveBalance: "uint256", // Electricity in kWh
-        stakedBalance: "uint256", // Electricity in kWh
+        activeBalance: "uint256", // Electricity in watt-hours
+        reserveBalance: "uint256", // Electricity in watt-hours
+        stakedBalance: "uint256", // Electricity in watt-hours
       },
     },
     Castle: "bool",
@@ -56,7 +56,7 @@ export default defineWorld({
     ExpenseReceipt: {
       key: ["savedKingdomId", "timestamp"],
       schema: {
-        amount: "uint256", // Electricity in kWh
+        amount: "uint256", // Electricity in watt-hours
         playerAddress: "address",
         savedKingdomId: "bytes32",
         timestamp: "uint256",
@@ -167,8 +167,8 @@ export default defineWorld({
     RevenueReceipt: {
       key: ["savedKingdomId", "timestamp"],
       schema: {
-        amountToCastle: "uint256", // Electricity in kWh
-        amountToReserve: "uint256", // Electricity in kWh
+        amountToCastle: "uint256", // Electricity in watt-hours
+        amountToReserve: "uint256", // Electricity in watt-hours
         playerAddress: "address",
         savedKingdomId: "bytes32",
         timestamp: "uint256",
