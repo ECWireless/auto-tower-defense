@@ -26,7 +26,15 @@ export default defineWorld({
       },
       key: ["id"],
     },
-    // BatteryDetails: {},
+    BatteryDetails: {
+      key: ["id"],
+      schema: {
+        id: "bytes32", // This is the globalPlayerId
+        activeBalance: "uint256", // Electricity in kWh
+        reserveBalance: "uint256", // Electricity in kWh
+        stakedBalance: "uint256", // Electricity in kWh
+      },
+    },
     Castle: "bool",
     Counter: {
       schema: {
@@ -45,7 +53,16 @@ export default defineWorld({
       },
     },
     EntityAtPosition: "bytes32",
-    // ExpenseReceipt: {},
+    ExpenseReceipt: {
+      key: ["savedKingdomId", "timestamp"],
+      schema: {
+        amount: "uint256", // Electricity in kWh
+        playerAddress: "address",
+        savedKingdomId: "bytes32",
+        timestamp: "uint256",
+      },
+      type: "offchainTable",
+    },
     Game: {
       schema: {
         id: "bytes32", // keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
@@ -137,7 +154,17 @@ export default defineWorld({
         dataStruct: false,
       },
     },
-    // RevenueReceipt: {},
+    RevenueReceipt: {
+      key: ["savedKingdomId", "timestamp"],
+      schema: {
+        amountToCastle: "uint256", // Electricity in kWh
+        amountToReserve: "uint256", // Electricity in kWh
+        playerAddress: "address",
+        savedKingdomId: "bytes32",
+        timestamp: "uint256",
+      },
+      type: "offchainTable",
+    },
     SavedGame: {
       // This is the table that accumulates actions throughout a game; at the end of a run, it is copied to SavedKingdom
       schema: {
