@@ -18,6 +18,7 @@ import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct BatteryDetailsData {
   uint256 activeBalance;
+  uint256 lastRechargeTimestamp;
   uint256 reserveBalance;
   uint256 stakedBalance;
 }
@@ -27,12 +28,12 @@ library BatteryDetails {
   ResourceId constant _tableId = ResourceId.wrap(0x746261707000000000000000000000004261747465727944657461696c730000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0060030020202000000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0080040020202020000000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (uint256, uint256, uint256)
-  Schema constant _valueSchema = Schema.wrap(0x006003001f1f1f00000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (uint256, uint256, uint256, uint256)
+  Schema constant _valueSchema = Schema.wrap(0x008004001f1f1f1f000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -48,10 +49,11 @@ library BatteryDetails {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](3);
+    fieldNames = new string[](4);
     fieldNames[0] = "activeBalance";
-    fieldNames[1] = "reserveBalance";
-    fieldNames[2] = "stakedBalance";
+    fieldNames[1] = "lastRechargeTimestamp";
+    fieldNames[2] = "reserveBalance";
+    fieldNames[3] = "stakedBalance";
   }
 
   /**
@@ -111,13 +113,55 @@ library BatteryDetails {
   }
 
   /**
+   * @notice Get lastRechargeTimestamp.
+   */
+  function getLastRechargeTimestamp(bytes32 id) internal view returns (uint256 lastRechargeTimestamp) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (uint256(bytes32(_blob)));
+  }
+
+  /**
+   * @notice Get lastRechargeTimestamp.
+   */
+  function _getLastRechargeTimestamp(bytes32 id) internal view returns (uint256 lastRechargeTimestamp) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (uint256(bytes32(_blob)));
+  }
+
+  /**
+   * @notice Set lastRechargeTimestamp.
+   */
+  function setLastRechargeTimestamp(bytes32 id, uint256 lastRechargeTimestamp) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((lastRechargeTimestamp)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set lastRechargeTimestamp.
+   */
+  function _setLastRechargeTimestamp(bytes32 id, uint256 lastRechargeTimestamp) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((lastRechargeTimestamp)), _fieldLayout);
+  }
+
+  /**
    * @notice Get reserveBalance.
    */
   function getReserveBalance(bytes32 id) internal view returns (uint256 reserveBalance) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -128,7 +172,7 @@ library BatteryDetails {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -139,7 +183,7 @@ library BatteryDetails {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((reserveBalance)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((reserveBalance)), _fieldLayout);
   }
 
   /**
@@ -149,7 +193,7 @@ library BatteryDetails {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((reserveBalance)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((reserveBalance)), _fieldLayout);
   }
 
   /**
@@ -159,7 +203,7 @@ library BatteryDetails {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -170,7 +214,7 @@ library BatteryDetails {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -181,7 +225,7 @@ library BatteryDetails {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((stakedBalance)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((stakedBalance)), _fieldLayout);
   }
 
   /**
@@ -191,7 +235,7 @@ library BatteryDetails {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((stakedBalance)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((stakedBalance)), _fieldLayout);
   }
 
   /**
@@ -227,8 +271,14 @@ library BatteryDetails {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(bytes32 id, uint256 activeBalance, uint256 reserveBalance, uint256 stakedBalance) internal {
-    bytes memory _staticData = encodeStatic(activeBalance, reserveBalance, stakedBalance);
+  function set(
+    bytes32 id,
+    uint256 activeBalance,
+    uint256 lastRechargeTimestamp,
+    uint256 reserveBalance,
+    uint256 stakedBalance
+  ) internal {
+    bytes memory _staticData = encodeStatic(activeBalance, lastRechargeTimestamp, reserveBalance, stakedBalance);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -242,8 +292,14 @@ library BatteryDetails {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(bytes32 id, uint256 activeBalance, uint256 reserveBalance, uint256 stakedBalance) internal {
-    bytes memory _staticData = encodeStatic(activeBalance, reserveBalance, stakedBalance);
+  function _set(
+    bytes32 id,
+    uint256 activeBalance,
+    uint256 lastRechargeTimestamp,
+    uint256 reserveBalance,
+    uint256 stakedBalance
+  ) internal {
+    bytes memory _staticData = encodeStatic(activeBalance, lastRechargeTimestamp, reserveBalance, stakedBalance);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -258,7 +314,12 @@ library BatteryDetails {
    * @notice Set the full data using the data struct.
    */
   function set(bytes32 id, BatteryDetailsData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.activeBalance, _table.reserveBalance, _table.stakedBalance);
+    bytes memory _staticData = encodeStatic(
+      _table.activeBalance,
+      _table.lastRechargeTimestamp,
+      _table.reserveBalance,
+      _table.stakedBalance
+    );
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -273,7 +334,12 @@ library BatteryDetails {
    * @notice Set the full data using the data struct.
    */
   function _set(bytes32 id, BatteryDetailsData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.activeBalance, _table.reserveBalance, _table.stakedBalance);
+    bytes memory _staticData = encodeStatic(
+      _table.activeBalance,
+      _table.lastRechargeTimestamp,
+      _table.reserveBalance,
+      _table.stakedBalance
+    );
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -289,12 +355,18 @@ library BatteryDetails {
    */
   function decodeStatic(
     bytes memory _blob
-  ) internal pure returns (uint256 activeBalance, uint256 reserveBalance, uint256 stakedBalance) {
+  )
+    internal
+    pure
+    returns (uint256 activeBalance, uint256 lastRechargeTimestamp, uint256 reserveBalance, uint256 stakedBalance)
+  {
     activeBalance = (uint256(Bytes.getBytes32(_blob, 0)));
 
-    reserveBalance = (uint256(Bytes.getBytes32(_blob, 32)));
+    lastRechargeTimestamp = (uint256(Bytes.getBytes32(_blob, 32)));
 
-    stakedBalance = (uint256(Bytes.getBytes32(_blob, 64)));
+    reserveBalance = (uint256(Bytes.getBytes32(_blob, 64)));
+
+    stakedBalance = (uint256(Bytes.getBytes32(_blob, 96)));
   }
 
   /**
@@ -308,7 +380,9 @@ library BatteryDetails {
     EncodedLengths,
     bytes memory
   ) internal pure returns (BatteryDetailsData memory _table) {
-    (_table.activeBalance, _table.reserveBalance, _table.stakedBalance) = decodeStatic(_staticData);
+    (_table.activeBalance, _table.lastRechargeTimestamp, _table.reserveBalance, _table.stakedBalance) = decodeStatic(
+      _staticData
+    );
   }
 
   /**
@@ -337,10 +411,11 @@ library BatteryDetails {
    */
   function encodeStatic(
     uint256 activeBalance,
+    uint256 lastRechargeTimestamp,
     uint256 reserveBalance,
     uint256 stakedBalance
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(activeBalance, reserveBalance, stakedBalance);
+    return abi.encodePacked(activeBalance, lastRechargeTimestamp, reserveBalance, stakedBalance);
   }
 
   /**
@@ -351,10 +426,11 @@ library BatteryDetails {
    */
   function encode(
     uint256 activeBalance,
+    uint256 lastRechargeTimestamp,
     uint256 reserveBalance,
     uint256 stakedBalance
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(activeBalance, reserveBalance, stakedBalance);
+    bytes memory _staticData = encodeStatic(activeBalance, lastRechargeTimestamp, reserveBalance, stakedBalance);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;

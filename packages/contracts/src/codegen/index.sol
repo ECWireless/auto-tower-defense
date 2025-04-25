@@ -31,6 +31,7 @@ import { SavedKingdom, SavedKingdomData } from "./tables/SavedKingdom.sol";
 import { SavedModification, SavedModificationData } from "./tables/SavedModification.sol";
 import { SavedModNameTaken } from "./tables/SavedModNameTaken.sol";
 import { SolarFarmDetails, SolarFarmDetailsData } from "./tables/SolarFarmDetails.sol";
+import { TokenAddresses } from "./tables/TokenAddresses.sol";
 import { TopLevel } from "./tables/TopLevel.sol";
 import { Tower } from "./tables/Tower.sol";
 import { TowerCounter } from "./tables/TowerCounter.sol";

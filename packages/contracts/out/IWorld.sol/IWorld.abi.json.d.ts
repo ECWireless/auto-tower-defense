@@ -16,11 +16,44 @@ declare const abi: [
     ],
     "outputs": [
       {
-        "name": "isAdmin",
+        "name": "added",
         "type": "bool",
         "internalType": "bool"
       }
     ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__addUsdcTokenAddress",
+    "inputs": [
+      {
+        "name": "usdcTokenAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__buyElectricity",
+    "inputs": [
+      {
+        "name": "electricityAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__claimCharge",
+    "inputs": [],
+    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -247,6 +280,19 @@ declare const abi: [
         "internalType": "bytes32"
       }
     ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__sellElectricity",
+    "inputs": [
+      {
+        "name": "electricityAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {

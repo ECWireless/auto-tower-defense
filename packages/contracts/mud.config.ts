@@ -31,6 +31,7 @@ export default defineWorld({
       schema: {
         id: "bytes32", // This is the globalPlayerId
         activeBalance: "uint256", // Electricity in watt-hours
+        lastRechargeTimestamp: "uint256",
         reserveBalance: "uint256", // Electricity in watt-hours
         stakedBalance: "uint256", // Electricity in watt-hours
       },
@@ -224,10 +225,16 @@ export default defineWorld({
     },
     SolarFarmDetails: {
       schema: {
-        electricityPrice: "uint256", // Unformatted cost in USDC with 6 decimals
+        electricityBalance: "uint256", // 16.8 gWh (16800000000 watt-hours) to start
+        electricityPrice: "uint256", // Unformatted cost in USDC with 6 decimals; 1.92kWh/cent; Min is 1 cent
         fiatBalance: "uint256", // Unformatted balance of USDC with 6 decimals
-        electricityBalance: "uint256",
         msPerWh: "uint256", // Number of milliseconds per watt hour; start at 3600ms
+      },
+      key: [],
+    },
+    TokenAddresses: {
+      schema: {
+        usdcAddress: "address",
       },
       key: [],
     },

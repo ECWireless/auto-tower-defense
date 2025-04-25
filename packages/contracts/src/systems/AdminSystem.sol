@@ -2,14 +2,10 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { ResourceId, WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
-import { ROOT_NAMESPACE_ID } from "@latticexyz/world/src/constants.sol";
-import { AccessControl } from "@latticexyz/world/src/AccessControl.sol";
-import { KingdomsByLevel, Level, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData } from "../codegen/index.sol";
-import "forge-std/console.sol";
+import { KingdomsByLevel, Level, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData, TokenAddresses } from "../codegen/index.sol";
 
 contract AdminSystem is System {
-  function addSavedKingdomRow(bytes32 savedGameId, uint256 level) external returns (bool isAdmin) {
+  function addSavedKingdomRow(bytes32 savedGameId, uint256 level) external returns (bool added) {
     // Get the SavedGame by ID
     SavedGameData memory savedGame = SavedGame.get(savedGameId);
 
@@ -18,7 +14,6 @@ contract AdminSystem is System {
 
     // Check if the savedKingdomId already exists
     if (SavedKingdom.get(savedKingdomId).timestamp != 0) {
-      console.log("Saved kingdom already exists");
       return false;
     }
 
@@ -39,7 +34,6 @@ contract AdminSystem is System {
       updatedKingdomsByLevel[i] = kingdomsByLevel[i];
 
       if (kingdomsByLevel[i] == savedKingdomId) {
-        console.log("Saved kingdom already exists in KingdomsByLevel");
         return false;
       }
     }
@@ -50,5 +44,9 @@ contract AdminSystem is System {
     Level.set(savedKingdomId, level);
 
     return true;
+  }
+
+  function addUsdcTokenAddress(address usdcTokenAddress) external {
+    TokenAddresses.setUsdcAddress(usdcTokenAddress);
   }
 }

@@ -12,3 +12,4 @@ uint256 constant MAX_MOD_NAME_LENGTH = 32;
 uint256 constant MAX_PLAYERS = 100;
 uint256 constant MAX_ROUNDS = 10;
 uint256 constant MAX_TICKS = 28;
+uint256 constant MIN_USDC_EXCHANGED = 10000; // 0.01 USDC

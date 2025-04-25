@@ -4,13 +4,12 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
-import { DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedModification, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedModification, TokenAddresses, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { ActionType } from "../src/codegen/common.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 import "../mocks/MockUSDC.sol";
-import "forge-std/console.sol";
 
 import "../src/defaultLogicContracts/DefaultProjectileLogic.sol";
 
@@ -28,9 +27,10 @@ contract PostDeploy is Script {
     if (block.chainid == 31337) {
       address deployer = vm.addr(deployerPrivateKey);
       address mockUsdcAddress = deployMockUSDC(deployer);
-      IERC20 usdc = IERC20(mockUsdcAddress);
+      TokenAddresses.setUsdcAddress(mockUsdcAddress);
 
       // TODO: Send USDC to the Solar Farm System
+      IERC20 usdc = IERC20(mockUsdcAddress);
       uint256 balance = usdc.balanceOf(deployer);
       console.logString("Deployer MockUSDC balance:");
       console.logUint(balance);

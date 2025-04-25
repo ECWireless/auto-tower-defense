@@ -4,6 +4,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
+    "add-usdc-address": "forge script script/AddUsdcTokenAddress.s.sol:AddUsdcTokenAddress --fork-url http://localhost:8545 --broadcast",
     "build": "mud build",
     "clean": "forge clean && shx rm -rf src/**/codegen",
     "deploy:local": "mud deploy",
