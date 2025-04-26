@@ -191,7 +191,7 @@ export default defineWorld({
       schema: {
         id: "bytes32", // This is a deterministic hash of all actions by the author in the game; keccak256(abi.encodePacked(actions[]))
         author: "address",
-        electricitybalance: "uint256",
+        electricityBalance: "uint256",
         losses: "uint256",
         timestamp: "uint256",
         wins: "uint256",

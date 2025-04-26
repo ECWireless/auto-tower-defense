@@ -18,7 +18,7 @@ import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct SavedKingdomData {
   address author;
-  uint256 electricitybalance;
+  uint256 electricityBalance;
   uint256 losses;
   uint256 timestamp;
   uint256 wins;
@@ -53,7 +53,7 @@ library SavedKingdom {
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
     fieldNames = new string[](6);
     fieldNames[0] = "author";
-    fieldNames[1] = "electricitybalance";
+    fieldNames[1] = "electricityBalance";
     fieldNames[2] = "losses";
     fieldNames[3] = "timestamp";
     fieldNames[4] = "wins";
@@ -117,9 +117,9 @@ library SavedKingdom {
   }
 
   /**
-   * @notice Get electricitybalance.
+   * @notice Get electricityBalance.
    */
-  function getElectricitybalance(bytes32 id) internal view returns (uint256 electricitybalance) {
+  function getElectricityBalance(bytes32 id) internal view returns (uint256 electricityBalance) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -128,9 +128,9 @@ library SavedKingdom {
   }
 
   /**
-   * @notice Get electricitybalance.
+   * @notice Get electricityBalance.
    */
-  function _getElectricitybalance(bytes32 id) internal view returns (uint256 electricitybalance) {
+  function _getElectricityBalance(bytes32 id) internal view returns (uint256 electricityBalance) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -139,23 +139,23 @@ library SavedKingdom {
   }
 
   /**
-   * @notice Set electricitybalance.
+   * @notice Set electricityBalance.
    */
-  function setElectricitybalance(bytes32 id, uint256 electricitybalance) internal {
+  function setElectricityBalance(bytes32 id, uint256 electricityBalance) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((electricitybalance)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((electricityBalance)), _fieldLayout);
   }
 
   /**
-   * @notice Set electricitybalance.
+   * @notice Set electricityBalance.
    */
-  function _setElectricitybalance(bytes32 id, uint256 electricitybalance) internal {
+  function _setElectricityBalance(bytes32 id, uint256 electricityBalance) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((electricitybalance)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((electricityBalance)), _fieldLayout);
   }
 
   /**
@@ -482,13 +482,13 @@ library SavedKingdom {
   function set(
     bytes32 id,
     address author,
-    uint256 electricitybalance,
+    uint256 electricityBalance,
     uint256 losses,
     uint256 timestamp,
     uint256 wins,
     bytes32[] memory actions
   ) internal {
-    bytes memory _staticData = encodeStatic(author, electricitybalance, losses, timestamp, wins);
+    bytes memory _staticData = encodeStatic(author, electricityBalance, losses, timestamp, wins);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
     bytes memory _dynamicData = encodeDynamic(actions);
@@ -505,13 +505,13 @@ library SavedKingdom {
   function _set(
     bytes32 id,
     address author,
-    uint256 electricitybalance,
+    uint256 electricityBalance,
     uint256 losses,
     uint256 timestamp,
     uint256 wins,
     bytes32[] memory actions
   ) internal {
-    bytes memory _staticData = encodeStatic(author, electricitybalance, losses, timestamp, wins);
+    bytes memory _staticData = encodeStatic(author, electricityBalance, losses, timestamp, wins);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
     bytes memory _dynamicData = encodeDynamic(actions);
@@ -528,7 +528,7 @@ library SavedKingdom {
   function set(bytes32 id, SavedKingdomData memory _table) internal {
     bytes memory _staticData = encodeStatic(
       _table.author,
-      _table.electricitybalance,
+      _table.electricityBalance,
       _table.losses,
       _table.timestamp,
       _table.wins
@@ -549,7 +549,7 @@ library SavedKingdom {
   function _set(bytes32 id, SavedKingdomData memory _table) internal {
     bytes memory _staticData = encodeStatic(
       _table.author,
-      _table.electricitybalance,
+      _table.electricityBalance,
       _table.losses,
       _table.timestamp,
       _table.wins
@@ -572,11 +572,11 @@ library SavedKingdom {
   )
     internal
     pure
-    returns (address author, uint256 electricitybalance, uint256 losses, uint256 timestamp, uint256 wins)
+    returns (address author, uint256 electricityBalance, uint256 losses, uint256 timestamp, uint256 wins)
   {
     author = (address(Bytes.getBytes20(_blob, 0)));
 
-    electricitybalance = (uint256(Bytes.getBytes32(_blob, 20)));
+    electricityBalance = (uint256(Bytes.getBytes32(_blob, 20)));
 
     losses = (uint256(Bytes.getBytes32(_blob, 52)));
 
@@ -611,7 +611,7 @@ library SavedKingdom {
     EncodedLengths _encodedLengths,
     bytes memory _dynamicData
   ) internal pure returns (SavedKingdomData memory _table) {
-    (_table.author, _table.electricitybalance, _table.losses, _table.timestamp, _table.wins) = decodeStatic(
+    (_table.author, _table.electricityBalance, _table.losses, _table.timestamp, _table.wins) = decodeStatic(
       _staticData
     );
 
@@ -644,12 +644,12 @@ library SavedKingdom {
    */
   function encodeStatic(
     address author,
-    uint256 electricitybalance,
+    uint256 electricityBalance,
     uint256 losses,
     uint256 timestamp,
     uint256 wins
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(author, electricitybalance, losses, timestamp, wins);
+    return abi.encodePacked(author, electricityBalance, losses, timestamp, wins);
   }
 
   /**
@@ -679,13 +679,13 @@ library SavedKingdom {
    */
   function encode(
     address author,
-    uint256 electricitybalance,
+    uint256 electricityBalance,
     uint256 losses,
     uint256 timestamp,
     uint256 wins,
     bytes32[] memory actions
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(author, electricitybalance, losses, timestamp, wins);
+    bytes memory _staticData = encodeStatic(author, electricityBalance, losses, timestamp, wins);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
     bytes memory _dynamicData = encodeDynamic(actions);

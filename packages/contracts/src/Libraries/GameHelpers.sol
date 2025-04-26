@@ -1,12 +1,13 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.24;
+
 import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, KingdomsByLevel, LastGameWonInRun, Level, LoadedKingdomActions, LoadedKingdomActionsData, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileData, SavedKingdom, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { TowerHelpers } from "./TowerHelpers.sol";
+import { BatteryHelpers } from "./BatteryHelpers.sol";
 import { MAX_ACTIONS, MAX_CASTLE_HEALTH } from "../../constants.sol";
 import "forge-std/console.sol";
-
-// SPDX-License-Identifier: MIT
-pragma solidity >=0.8.24;
 
 /**
  * @title GameHelpers
@@ -19,6 +20,9 @@ library GameHelpers {
     bytes32 savedKingdomId,
     bytes32 globalPlayer1
   ) public returns (bytes32) {
+    // Stake 8 kWh of electricity
+    BatteryHelpers.stakeElectricity(globalPlayer1);
+
     uint256 timestamp = block.timestamp;
     bytes32 gameId = keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
 
@@ -141,6 +145,9 @@ library GameHelpers {
       require(!UsernameTaken.get(usernameBytes), "GameSystem: username is taken");
       Username.set(globalPlayer1, username);
       UsernameTaken.set(usernameBytes, true);
+
+      // Grant player a fully charged battery
+      BatteryHelpers.grantBattery(globalPlayer1);
     }
 
     bytes32 currentGameId = CurrentGame.get(globalPlayer1);

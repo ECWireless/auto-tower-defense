@@ -20,7 +20,7 @@ contract AdminSystem is System {
     // Convert to SavedKingdom
     SavedKingdomData memory savedKingdom = SavedKingdomData({
       author: savedGame.winner,
-      electricitybalance: 0,
+      electricityBalance: 0,
       losses: 0,
       timestamp: block.timestamp,
       wins: 0,
