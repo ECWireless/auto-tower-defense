@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { BatteryDetails, BatteryDetailsData, LoadedKingdomActions, MapConfig, Projectile, SavedKingdom } from "../codegen/index.sol";
+import { Action, BatteryDetails, BatteryDetailsData, LoadedKingdomActions, Projectile, SavedGame, SavedKingdom } from "../codegen/index.sol";
+import { ActionType } from "../codegen/common.sol";
 import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 
@@ -167,37 +168,35 @@ library BatteryHelpers {
    * @param player1Kingdom Boolean for scanning left or right side of the board
    */
   function _getAllKingdomTowerAuthors(bytes32 gameId, bool player1Kingdom) internal view returns (address[] memory) {
-    // Loop through all towers on one side of the board
-    // TODO: This is wildly inefficient, but it works for now
-    (int16 mapHeight, int16 mapWidth) = MapConfig.get();
-    uint256 height = uint256(uint16(mapHeight));
-    uint256 width = uint256(uint16(mapWidth));
-    bytes32[] memory allTowersIds = new bytes32[]((height * width) / 2);
+    // If player1Kingdom is true, get all actions from SavedGame
+    // If player1Kingdom is false, get all actions from LoadedKingdomActions
+    bytes32[] memory savedGameActionIds = player1Kingdom
+      ? SavedGame.getActions(gameId)
+      : LoadedKingdomActions.getActions(gameId);
+    bytes32[] memory modifyActions = new bytes32[](savedGameActionIds.length);
 
-    if (player1Kingdom) {
-      // Loop through all towers on player 1's side of the board
-      for (uint256 i = 0; i < height; i++) {
-        for (uint256 j = 0; j < width / 2; j++) {
-          bytes32 towerId = EntityHelpers.positionToEntityKey(gameId, int16(uint16(i)), int16(uint16(j)));
-          allTowersIds[i * width + j] = towerId;
-        }
-      }
-    } else {
-      // Loop through all towers on player 2's side of the board
-      for (uint256 i = 0; i < height; i++) {
-        for (uint256 j = width / 2; j < width; j++) {
-          bytes32 towerId = EntityHelpers.positionToEntityKey(gameId, int16(uint16(i)), int16(uint16(j)));
-          allTowersIds[i * width + j] = towerId;
-        }
+    // Get actionType from ActionData, then filter by actionType == Modify
+    // Resize the modifyActions array to the actual number of Modify actions
+    uint256 modifyCount = 0;
+    for (uint256 i = 0; i < savedGameActionIds.length; i++) {
+      ActionType actionType = Action.getActionType(savedGameActionIds[i]);
+      if (actionType == ActionType.Modify) {
+        modifyActions[modifyCount] = savedGameActionIds[i];
+        modifyCount++;
       }
     }
+    bytes32[] memory resizedModifyActions = new bytes32[](modifyCount);
+    for (uint256 i = 0; i < modifyCount; i++) {
+      resizedModifyActions[i] = modifyActions[i];
+    }
+    modifyActions = resizedModifyActions;
 
-    // Get Projectile with the tower IDs to get all tower bytecode
+    // Use the actionId to get the bytes from Projectile
     // Use SavedModification with keccak256(abi.encodePacked(bytecode)) to get all the authors of the towers used in the game
-    address[] memory authors = new address[](allTowersIds.length);
-    for (uint256 i = 0; i < allTowersIds.length; i++) {
-      bytes32 towerId = allTowersIds[i];
-      bytes32 bytecodeHash = keccak256(abi.encodePacked(Projectile.getBytecode(towerId)));
+    address[] memory authors = new address[](modifyActions.length);
+    for (uint256 i = 0; i < modifyActions.length; i++) {
+      bytes32 actionId = modifyActions[i];
+      bytes32 bytecodeHash = keccak256(abi.encodePacked(Projectile.getBytecode(actionId)));
       address author = SavedKingdom.getAuthor(bytecodeHash);
       authors[i] = author;
     }
