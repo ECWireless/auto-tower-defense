@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { _gameSystemAddress } from "../utils.sol";
 import { Action, ActionData, Position, Projectile, SavedGame, SavedGameData } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";

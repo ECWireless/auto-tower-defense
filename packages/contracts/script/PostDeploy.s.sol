@@ -4,8 +4,9 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
-import { DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedModification, TokenAddresses, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedModification, SolarFarmDetails, SolarFarmDetailsData, TokenAddresses, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { ActionType } from "../src/codegen/common.sol";
+import { _solarFarmSystemAddress } from "../src/utils.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
@@ -24,49 +25,37 @@ contract PostDeploy is Script {
     // Start broadcasting transactions from the deployer account
     vm.startBroadcast(deployerPrivateKey);
 
-    if (block.chainid == 31337) {
-      address deployer = vm.addr(deployerPrivateKey);
-      address mockUsdcAddress = deployMockUSDC(deployer);
-      TokenAddresses.setUsdcAddress(mockUsdcAddress);
+    // Add map dimensions
+    MapConfig.set(70, 140);
 
-      // TODO: Send USDC to the Solar Farm System
+    // Add Solar Farm details
+    SolarFarmDetailsData memory solarFarmDetails = SolarFarmDetailsData({
+      electricityBalance: 16800000000, // 16.8 gWh
+      fiatBalance: 0,
+      msPerWh: 3600,
+      whPerCentPrice: 1920 // 1.92kWh/cent
+    });
+    SolarFarmDetails.set(solarFarmDetails);
+
+    if (block.chainid == 31337) {
+      uint256 solarFarmerStartingBalance = 100 * 1e6;
+      SolarFarmDetails.setFiatBalance(solarFarmerStartingBalance);
+
+      // Send USDC to the Solar Farm System
+      address solarFarmSystemAddress = _solarFarmSystemAddress();
+      address mockUsdcAddress = _deployMockUSDC(solarFarmSystemAddress, solarFarmerStartingBalance);
+      TokenAddresses.setUsdcAddress(mockUsdcAddress);
       IERC20 usdc = IERC20(mockUsdcAddress);
-      uint256 balance = usdc.balanceOf(deployer);
-      console.logString("Deployer MockUSDC balance:");
+      uint256 balance = usdc.balanceOf(solarFarmSystemAddress);
+      console.logString("Solar Farm System MockUSDC balance:");
       console.logUint(balance);
     }
-
-    MapConfig.set(70, 140);
 
     // Set logic defaults
     address defaultProjectileLogicLeftAddress = address(new DefaultProjectileLogic());
     DefaultLogic.set(defaultProjectileLogicLeftAddress);
 
-    // Set actions for first level saved game
-    // ActionData[] memory actions = new ActionData[](0);
-    // actions[0] = ActionData({
-    //   actionType: ActionType.Install,
-    //   newX: 115,
-    //   newY: 35,
-    //   oldX: 0,
-    //   oldY: 0,
-    //   projectile: true
-    // });
-
     bytes32[] memory defaultActionIds = new bytes32[](0);
-    // for (uint256 i = 0; i < actions.length; i++) {
-    //   defaultActionIds[i] = keccak256(
-    //     abi.encodePacked(
-    //       actions[i].actionType,
-    //       actions[i].newX,
-    //       actions[i].newY,
-    //       actions[i].oldX,
-    //       actions[i].oldY,
-    //       actions[i].projectile
-    //     )
-    //   );
-    //   Action.set(defaultActionIds[i], actions[i]);
-    // }
 
     bytes32 globalPlayerId;
     bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), globalPlayerId));
@@ -109,11 +98,10 @@ contract PostDeploy is Script {
     vm.stopBroadcast();
   }
 
-  function deployMockUSDC(address deployer) internal returns (address) {
-    uint256 supply = 1_000_000 * 1e6;
+  function _deployMockUSDC(address solarFarmSystem, uint256 supply) internal returns (address) {
     bytes32 salt = keccak256("mock-usdc");
 
-    bytes memory bytecode = abi.encodePacked(type(MockUSDC).creationCode, abi.encode(deployer, supply));
+    bytes memory bytecode = abi.encodePacked(type(MockUSDC).creationCode, abi.encode(solarFarmSystem, supply));
     address deployed = Create2.deploy(0, salt, bytecode);
     console.log("MockUSDC deployed at:");
     console.logAddress(deployed);

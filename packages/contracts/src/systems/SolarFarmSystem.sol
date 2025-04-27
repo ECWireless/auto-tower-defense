@@ -4,12 +4,12 @@ pragma solidity >=0.8.24;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { System } from "@latticexyz/world/src/System.sol";
 import { BatteryDetails, SolarFarmDetails, TokenAddresses } from "../codegen/index.sol";
-import { BATTERY_STORAGE_LIMIT, MIN_USDC_EXCHANGED } from "../../constants.sol";
+import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 
 contract SolarFarmSystem is System {
   /**
-   * Allows purchasing watt-hours with USDC based on electricityPrice
+   * Allows purchasing watt-hours with USDC based on whPerCentPrice
    * Electricity first goes to activeBalance of BatteryDetails
    * Excess goes to reserveBalance of BatteryDetails
    * @param electricityAmount in watt-hours
@@ -18,10 +18,11 @@ contract SolarFarmSystem is System {
     require(electricityAmount > 0, "SolarFarmSystem: electricity amount must be greater than 0");
 
     // Figure out how much USDC to transfer
-    uint256 electricityPrice = SolarFarmDetails.getElectricityPrice();
-    uint256 usdcAmount = electricityAmount * electricityPrice;
+    uint256 whPerCentPrice = SolarFarmDetails.getWhPerCentPrice();
+    require(electricityAmount >= whPerCentPrice, "SolarFarmSystem: amount must be greater than 0.01 USDC");
+    uint256 usdcAmountCents = electricityAmount / whPerCentPrice;
+    uint256 usdcAmount = usdcAmountCents * 10000; // Convert to unformatted USDC
     require(usdcAmount > 0, "SolarFarmSystem: USDC amount must be greater than 0");
-    require(usdcAmount >= MIN_USDC_EXCHANGED, "SolarFarmSystem: amount must be greater than 0.01 USDC");
 
     uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
     require(solarFarmElectricityBalance >= electricityAmount, "SolarFarmSystem: not enough electricity in Solar Farm");
@@ -62,10 +63,11 @@ contract SolarFarmSystem is System {
     require(electricityAmount > 0, "SolarFarmSystem: electricity amount must be greater than 0");
 
     // Figure out how much USDC to transfer
-    uint256 electricityPrice = SolarFarmDetails.getElectricityPrice();
-    uint256 usdcAmount = electricityAmount * electricityPrice;
+    uint256 whPerCentPrice = SolarFarmDetails.getWhPerCentPrice();
+    require(electricityAmount >= whPerCentPrice, "SolarFarmSystem: amount must be greater than 0.01 USDC");
+    uint256 usdcAmountCents = electricityAmount / whPerCentPrice;
+    uint256 usdcAmount = usdcAmountCents * 10000; // Convert to unformatted USDC
     require(usdcAmount > 0, "SolarFarmSystem: USDC amount must be greater than 0");
-    require(usdcAmount >= MIN_USDC_EXCHANGED, "SolarFarmSystem: amount must be greater than 0.01 USDC");
 
     uint256 solarFarmFiatBalance = SolarFarmDetails.getFiatBalance();
     require(solarFarmFiatBalance >= usdcAmount, "SolarFarmSystem: not enough USDC in Solar Farm");

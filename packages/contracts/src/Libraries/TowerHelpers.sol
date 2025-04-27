@@ -4,7 +4,6 @@ pragma solidity >=0.8.24;
 import { RESOURCE_SYSTEM } from "@latticexyz/world/src/worldResourceTypes.sol";
 import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
 
-import { _gameSystemAddress } from "../utils.sol";
 import { CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedModification, Tower, TowerCounter } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";

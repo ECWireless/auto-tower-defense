@@ -226,9 +226,9 @@ export default defineWorld({
     SolarFarmDetails: {
       schema: {
         electricityBalance: "uint256", // 16.8 gWh (16800000000 watt-hours) to start
-        electricityPrice: "uint256", // Unformatted cost in USDC with 6 decimals; 1.92kWh/cent; Min is 1 cent
         fiatBalance: "uint256", // Unformatted balance of USDC with 6 decimals
         msPerWh: "uint256", // Number of milliseconds per watt hour; start at 3600ms
+        whPerCentPrice: "uint256", // Electricity in watt-hours per 1 cent in USDC; 1.92kWh/cent; start at 1920
       },
       key: [],
     },

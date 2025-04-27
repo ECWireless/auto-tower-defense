@@ -18,9 +18,9 @@ import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct SolarFarmDetailsData {
   uint256 electricityBalance;
-  uint256 electricityPrice;
   uint256 fiatBalance;
   uint256 msPerWh;
+  uint256 whPerCentPrice;
 }
 
 library SolarFarmDetails {
@@ -50,9 +50,9 @@ library SolarFarmDetails {
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
     fieldNames = new string[](4);
     fieldNames[0] = "electricityBalance";
-    fieldNames[1] = "electricityPrice";
-    fieldNames[2] = "fiatBalance";
-    fieldNames[3] = "msPerWh";
+    fieldNames[1] = "fiatBalance";
+    fieldNames[2] = "msPerWh";
+    fieldNames[3] = "whPerCentPrice";
   }
 
   /**
@@ -108,50 +108,12 @@ library SolarFarmDetails {
   }
 
   /**
-   * @notice Get electricityPrice.
-   */
-  function getElectricityPrice() internal view returns (uint256 electricityPrice) {
-    bytes32[] memory _keyTuple = new bytes32[](0);
-
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
-    return (uint256(bytes32(_blob)));
-  }
-
-  /**
-   * @notice Get electricityPrice.
-   */
-  function _getElectricityPrice() internal view returns (uint256 electricityPrice) {
-    bytes32[] memory _keyTuple = new bytes32[](0);
-
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
-    return (uint256(bytes32(_blob)));
-  }
-
-  /**
-   * @notice Set electricityPrice.
-   */
-  function setElectricityPrice(uint256 electricityPrice) internal {
-    bytes32[] memory _keyTuple = new bytes32[](0);
-
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((electricityPrice)), _fieldLayout);
-  }
-
-  /**
-   * @notice Set electricityPrice.
-   */
-  function _setElectricityPrice(uint256 electricityPrice) internal {
-    bytes32[] memory _keyTuple = new bytes32[](0);
-
-    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((electricityPrice)), _fieldLayout);
-  }
-
-  /**
    * @notice Get fiatBalance.
    */
   function getFiatBalance() internal view returns (uint256 fiatBalance) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -161,7 +123,7 @@ library SolarFarmDetails {
   function _getFiatBalance() internal view returns (uint256 fiatBalance) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -171,7 +133,7 @@ library SolarFarmDetails {
   function setFiatBalance(uint256 fiatBalance) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((fiatBalance)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((fiatBalance)), _fieldLayout);
   }
 
   /**
@@ -180,7 +142,7 @@ library SolarFarmDetails {
   function _setFiatBalance(uint256 fiatBalance) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((fiatBalance)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((fiatBalance)), _fieldLayout);
   }
 
   /**
@@ -189,7 +151,7 @@ library SolarFarmDetails {
   function getMsPerWh() internal view returns (uint256 msPerWh) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -199,7 +161,7 @@ library SolarFarmDetails {
   function _getMsPerWh() internal view returns (uint256 msPerWh) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -209,7 +171,7 @@ library SolarFarmDetails {
   function setMsPerWh(uint256 msPerWh) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((msPerWh)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((msPerWh)), _fieldLayout);
   }
 
   /**
@@ -218,7 +180,45 @@ library SolarFarmDetails {
   function _setMsPerWh(uint256 msPerWh) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((msPerWh)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((msPerWh)), _fieldLayout);
+  }
+
+  /**
+   * @notice Get whPerCentPrice.
+   */
+  function getWhPerCentPrice() internal view returns (uint256 whPerCentPrice) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    return (uint256(bytes32(_blob)));
+  }
+
+  /**
+   * @notice Get whPerCentPrice.
+   */
+  function _getWhPerCentPrice() internal view returns (uint256 whPerCentPrice) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    return (uint256(bytes32(_blob)));
+  }
+
+  /**
+   * @notice Set whPerCentPrice.
+   */
+  function setWhPerCentPrice(uint256 whPerCentPrice) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((whPerCentPrice)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set whPerCentPrice.
+   */
+  function _setWhPerCentPrice(uint256 whPerCentPrice) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((whPerCentPrice)), _fieldLayout);
   }
 
   /**
@@ -252,8 +252,8 @@ library SolarFarmDetails {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(uint256 electricityBalance, uint256 electricityPrice, uint256 fiatBalance, uint256 msPerWh) internal {
-    bytes memory _staticData = encodeStatic(electricityBalance, electricityPrice, fiatBalance, msPerWh);
+  function set(uint256 electricityBalance, uint256 fiatBalance, uint256 msPerWh, uint256 whPerCentPrice) internal {
+    bytes memory _staticData = encodeStatic(electricityBalance, fiatBalance, msPerWh, whPerCentPrice);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -266,8 +266,8 @@ library SolarFarmDetails {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(uint256 electricityBalance, uint256 electricityPrice, uint256 fiatBalance, uint256 msPerWh) internal {
-    bytes memory _staticData = encodeStatic(electricityBalance, electricityPrice, fiatBalance, msPerWh);
+  function _set(uint256 electricityBalance, uint256 fiatBalance, uint256 msPerWh, uint256 whPerCentPrice) internal {
+    bytes memory _staticData = encodeStatic(electricityBalance, fiatBalance, msPerWh, whPerCentPrice);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -283,9 +283,9 @@ library SolarFarmDetails {
   function set(SolarFarmDetailsData memory _table) internal {
     bytes memory _staticData = encodeStatic(
       _table.electricityBalance,
-      _table.electricityPrice,
       _table.fiatBalance,
-      _table.msPerWh
+      _table.msPerWh,
+      _table.whPerCentPrice
     );
 
     EncodedLengths _encodedLengths;
@@ -302,9 +302,9 @@ library SolarFarmDetails {
   function _set(SolarFarmDetailsData memory _table) internal {
     bytes memory _staticData = encodeStatic(
       _table.electricityBalance,
-      _table.electricityPrice,
       _table.fiatBalance,
-      _table.msPerWh
+      _table.msPerWh,
+      _table.whPerCentPrice
     );
 
     EncodedLengths _encodedLengths;
@@ -320,14 +320,14 @@ library SolarFarmDetails {
    */
   function decodeStatic(
     bytes memory _blob
-  ) internal pure returns (uint256 electricityBalance, uint256 electricityPrice, uint256 fiatBalance, uint256 msPerWh) {
+  ) internal pure returns (uint256 electricityBalance, uint256 fiatBalance, uint256 msPerWh, uint256 whPerCentPrice) {
     electricityBalance = (uint256(Bytes.getBytes32(_blob, 0)));
 
-    electricityPrice = (uint256(Bytes.getBytes32(_blob, 32)));
+    fiatBalance = (uint256(Bytes.getBytes32(_blob, 32)));
 
-    fiatBalance = (uint256(Bytes.getBytes32(_blob, 64)));
+    msPerWh = (uint256(Bytes.getBytes32(_blob, 64)));
 
-    msPerWh = (uint256(Bytes.getBytes32(_blob, 96)));
+    whPerCentPrice = (uint256(Bytes.getBytes32(_blob, 96)));
   }
 
   /**
@@ -341,9 +341,7 @@ library SolarFarmDetails {
     EncodedLengths,
     bytes memory
   ) internal pure returns (SolarFarmDetailsData memory _table) {
-    (_table.electricityBalance, _table.electricityPrice, _table.fiatBalance, _table.msPerWh) = decodeStatic(
-      _staticData
-    );
+    (_table.electricityBalance, _table.fiatBalance, _table.msPerWh, _table.whPerCentPrice) = decodeStatic(_staticData);
   }
 
   /**
@@ -370,11 +368,11 @@ library SolarFarmDetails {
    */
   function encodeStatic(
     uint256 electricityBalance,
-    uint256 electricityPrice,
     uint256 fiatBalance,
-    uint256 msPerWh
+    uint256 msPerWh,
+    uint256 whPerCentPrice
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(electricityBalance, electricityPrice, fiatBalance, msPerWh);
+    return abi.encodePacked(electricityBalance, fiatBalance, msPerWh, whPerCentPrice);
   }
 
   /**
@@ -385,11 +383,11 @@ library SolarFarmDetails {
    */
   function encode(
     uint256 electricityBalance,
-    uint256 electricityPrice,
     uint256 fiatBalance,
-    uint256 msPerWh
+    uint256 msPerWh,
+    uint256 whPerCentPrice
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(electricityBalance, electricityPrice, fiatBalance, msPerWh);
+    bytes memory _staticData = encodeStatic(electricityBalance, fiatBalance, msPerWh, whPerCentPrice);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
