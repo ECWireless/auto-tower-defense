@@ -8,13 +8,14 @@ import {
 } from '@dnd-kit/core';
 import { Entity } from '@latticexyz/recs';
 import { decodeEntity } from '@latticexyz/store-sync/recs';
-import { Check, Copy, Home } from 'lucide-react';
+import { Flag, Home } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { zeroAddress } from 'viem';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { CastleHitDialog } from '@/components/CastleHitDialog';
+import { ForfeitDialog } from '@/components/ForfeitDialog';
 import { GameBoard, INSTALLABLE_TOWERS } from '@/components/GameBoard';
 import { GameControlButtons } from '@/components/GameControlButtons';
 import { GameStatusBar } from '@/components/GameStatusBar';
@@ -25,17 +26,9 @@ import { NoGameScreen } from '@/components/NoGameScreen';
 import { PlayAgainDialog } from '@/components/PlayAgainDialog';
 import { TowerSelection } from '@/components/TowerSelection';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { GameProvider, useGame } from '@/contexts/GameContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import useCopy from '@/hooks/useCopy';
 import { useMUD } from '@/MUDContext';
-import { shortenAddress } from '@/utils/helpers';
 
 const HOW_TO_SEEN_KEY = 'how-to-seen';
 
@@ -49,7 +42,6 @@ export const GamePage = (): JSX.Element => {
 };
 
 export const InnerGamePage = (): JSX.Element => {
-  const { copiedText, copyToClipboard } = useCopy();
   const navigate = useNavigate();
   const {
     network: { playerEntity },
@@ -83,6 +75,7 @@ export const InnerGamePage = (): JSX.Element => {
     }
   }, [game]);
 
+  const [isForfeitDialogOpen, setShowForfeitDialog] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isGameOverDialogOpen, setIsGameOverDialogOpen] = useState(false);
 
@@ -199,26 +192,15 @@ export const InnerGamePage = (): JSX.Element => {
           </Button>
         </div>
         <div className="fixed right-4 text-cyan-400 text-sm top-4 z-10">
-          <div className="flex items-center space-x-2">
-            <span>Game ID: {shortenAddress(game.id)}</span>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger
-                  className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
-                  onClick={() => copyToClipboard(game.id)}
-                >
-                  {copiedText === game.id ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{copiedText === game.id ? 'Copied!' : 'Copy address'}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+          <Button
+            className="text-gray-500 hover:text-red-400 hover:bg-red-900/10"
+            onClick={() => setShowForfeitDialog(true)}
+            size="sm"
+            variant="ghost"
+          >
+            <Flag className="h-4 w-4 mr-1" />
+            Forfeit
+          </Button>
         </div>
 
         {/* Game Container */}
@@ -255,6 +237,10 @@ export const InnerGamePage = (): JSX.Element => {
           </div>
         </div>
 
+        <ForfeitDialog
+          isForfeitDialogOpen={isForfeitDialogOpen}
+          setIsForfeitDialogOpen={setShowForfeitDialog}
+        />
         <HowToPlayDialog
           onChangeHowToDialog={onChangeHowToDialog}
           isHelpDialogOpen={isHelpDialogOpen}

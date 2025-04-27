@@ -118,6 +118,24 @@ export function createSystemCalls(
     }
   };
 
+  const forfeitRun = async () => {
+    try {
+      const tx = await worldContract.write.app__forfeitRun();
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+      return {
+        error: success ? undefined : 'Failed to forfeit run.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const getContractSize = async (bytecode: string) => {
     try {
       const simulatedTx = await publicClient.simulateContract({
@@ -266,6 +284,7 @@ export function createSystemCalls(
     createGame,
     deleteModification,
     editModification,
+    forfeitRun,
     getContractSize,
     installTower,
     modifyTowerSystem,

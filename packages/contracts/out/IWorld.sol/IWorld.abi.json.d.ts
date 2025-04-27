@@ -61,6 +61,13 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__forfeitRun",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__getContractSize",
     "inputs": [
       {
