@@ -28,7 +28,7 @@ library ProjectileHelpers {
 
     bool isGameOver = Game.getEndTimestamp(gameId) != 0;
     if (game.roundCount > MAX_ROUNDS && !isGameOver) {
-      _endGame(gameId, game.player2Address);
+      endGame(gameId, game.player2Address);
     }
   }
 
@@ -232,7 +232,7 @@ library ProjectileHelpers {
 
         // Preference is given to player 1 if both castles are destroyed at the same time
         if (Game.getEndTimestamp(gameId) == 0) {
-          _endGame(gameId, Owner.get(towers[i].id));
+          endGame(gameId, Owner.get(towers[i].id));
         }
       }
     } else {
@@ -263,22 +263,8 @@ library ProjectileHelpers {
   }
 
   function _removeDestroyedTower(bytes32 positionEntity) internal {
-    address ownerAddress = Owner.get(positionEntity);
     bytes32 gameId = CurrentGame.get(positionEntity);
-    bytes32 localOwnerId = EntityHelpers.localAddressToKey(gameId, ownerAddress);
 
-    bytes32[] memory ownerTowers = OwnerTowers.get(localOwnerId);
-    bytes32[] memory updatedTowers = new bytes32[](ownerTowers.length - 1);
-    uint256 index = 0;
-
-    for (uint256 i = 0; i < ownerTowers.length; i++) {
-      if (ownerTowers[i] != positionEntity) {
-        updatedTowers[index++] = ownerTowers[i];
-      }
-    }
-
-    OwnerTowers.set(localOwnerId, updatedTowers);
-    Owner.set(positionEntity, address(0));
     Health.set(positionEntity, 0, MAX_HEALTH_WALL);
     EntityAtPosition.set(
       EntityHelpers.positionToEntityKey(gameId, Position.getX(positionEntity), Position.getY(positionEntity)),
@@ -300,7 +286,7 @@ library ProjectileHelpers {
     return a >= b ? a : b;
   }
 
-  function _endGame(bytes32 gameId, address winner) public {
+  function endGame(bytes32 gameId, address winner) public {
     require(Game.getWinner(gameId) == address(0), "GameSystem: game has already ended");
     require(Game.getEndTimestamp(gameId) == 0, "GameSystem: game has already ended");
 
