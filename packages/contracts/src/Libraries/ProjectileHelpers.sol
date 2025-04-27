@@ -262,22 +262,8 @@ library ProjectileHelpers {
   }
 
   function _removeDestroyedTower(bytes32 positionEntity) internal {
-    address ownerAddress = Owner.get(positionEntity);
     bytes32 gameId = CurrentGame.get(positionEntity);
-    bytes32 localOwnerId = EntityHelpers.localAddressToKey(gameId, ownerAddress);
 
-    bytes32[] memory ownerTowers = OwnerTowers.get(localOwnerId);
-    bytes32[] memory updatedTowers = new bytes32[](ownerTowers.length - 1);
-    uint256 index = 0;
-
-    for (uint256 i = 0; i < ownerTowers.length; i++) {
-      if (ownerTowers[i] != positionEntity) {
-        updatedTowers[index++] = ownerTowers[i];
-      }
-    }
-
-    OwnerTowers.set(localOwnerId, updatedTowers);
-    Owner.set(positionEntity, address(0));
     Health.set(positionEntity, 0, MAX_HEALTH_WALL);
     EntityAtPosition.set(
       EntityHelpers.positionToEntityKey(gameId, Position.getX(positionEntity), Position.getY(positionEntity)),
