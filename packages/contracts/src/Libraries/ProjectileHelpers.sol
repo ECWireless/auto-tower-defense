@@ -27,7 +27,7 @@ library ProjectileHelpers {
 
     bool isGameOver = Game.getEndTimestamp(gameId) != 0;
     if (game.roundCount > MAX_ROUNDS && !isGameOver) {
-      _endGame(gameId, game.player2Address);
+      endGame(gameId, game.player2Address);
     }
   }
 
@@ -231,7 +231,7 @@ library ProjectileHelpers {
 
         // Preference is given to player 1 if both castles are destroyed at the same time
         if (Game.getEndTimestamp(gameId) == 0) {
-          _endGame(gameId, Owner.get(towers[i].id));
+          endGame(gameId, Owner.get(towers[i].id));
         }
       }
     } else {
@@ -285,7 +285,7 @@ library ProjectileHelpers {
     return a >= b ? a : b;
   }
 
-  function _endGame(bytes32 gameId, address winner) public {
+  function endGame(bytes32 gameId, address winner) public {
     require(Game.getWinner(gameId) == address(0), "GameSystem: game has already ended");
     require(Game.getEndTimestamp(gameId) == 0, "GameSystem: game has already ended");
 
