@@ -17,7 +17,7 @@ import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/Encoded
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct RevenueReceiptData {
-  uint256 amountToCastle;
+  uint256 amountToKingdom;
   uint256 amountToReserve;
   address playerAddress;
 }
@@ -50,7 +50,7 @@ library RevenueReceipt {
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
     fieldNames = new string[](3);
-    fieldNames[0] = "amountToCastle";
+    fieldNames[0] = "amountToKingdom";
     fieldNames[1] = "amountToReserve";
     fieldNames[2] = "playerAddress";
   }
@@ -70,25 +70,25 @@ library RevenueReceipt {
   }
 
   /**
-   * @notice Set amountToCastle.
+   * @notice Set amountToKingdom.
    */
-  function setAmountToCastle(bytes32 savedKingdomId, uint256 timestamp, uint256 amountToCastle) internal {
+  function setAmountToKingdom(bytes32 savedKingdomId, uint256 timestamp, uint256 amountToKingdom) internal {
     bytes32[] memory _keyTuple = new bytes32[](2);
     _keyTuple[0] = savedKingdomId;
     _keyTuple[1] = bytes32(uint256(timestamp));
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((amountToCastle)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((amountToKingdom)), _fieldLayout);
   }
 
   /**
-   * @notice Set amountToCastle.
+   * @notice Set amountToKingdom.
    */
-  function _setAmountToCastle(bytes32 savedKingdomId, uint256 timestamp, uint256 amountToCastle) internal {
+  function _setAmountToKingdom(bytes32 savedKingdomId, uint256 timestamp, uint256 amountToKingdom) internal {
     bytes32[] memory _keyTuple = new bytes32[](2);
     _keyTuple[0] = savedKingdomId;
     _keyTuple[1] = bytes32(uint256(timestamp));
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((amountToCastle)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((amountToKingdom)), _fieldLayout);
   }
 
   /**
@@ -141,11 +141,11 @@ library RevenueReceipt {
   function set(
     bytes32 savedKingdomId,
     uint256 timestamp,
-    uint256 amountToCastle,
+    uint256 amountToKingdom,
     uint256 amountToReserve,
     address playerAddress
   ) internal {
-    bytes memory _staticData = encodeStatic(amountToCastle, amountToReserve, playerAddress);
+    bytes memory _staticData = encodeStatic(amountToKingdom, amountToReserve, playerAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -163,11 +163,11 @@ library RevenueReceipt {
   function _set(
     bytes32 savedKingdomId,
     uint256 timestamp,
-    uint256 amountToCastle,
+    uint256 amountToKingdom,
     uint256 amountToReserve,
     address playerAddress
   ) internal {
-    bytes memory _staticData = encodeStatic(amountToCastle, amountToReserve, playerAddress);
+    bytes memory _staticData = encodeStatic(amountToKingdom, amountToReserve, playerAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -183,7 +183,7 @@ library RevenueReceipt {
    * @notice Set the full data using the data struct.
    */
   function set(bytes32 savedKingdomId, uint256 timestamp, RevenueReceiptData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.amountToCastle, _table.amountToReserve, _table.playerAddress);
+    bytes memory _staticData = encodeStatic(_table.amountToKingdom, _table.amountToReserve, _table.playerAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -199,7 +199,7 @@ library RevenueReceipt {
    * @notice Set the full data using the data struct.
    */
   function _set(bytes32 savedKingdomId, uint256 timestamp, RevenueReceiptData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.amountToCastle, _table.amountToReserve, _table.playerAddress);
+    bytes memory _staticData = encodeStatic(_table.amountToKingdom, _table.amountToReserve, _table.playerAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -216,8 +216,8 @@ library RevenueReceipt {
    */
   function decodeStatic(
     bytes memory _blob
-  ) internal pure returns (uint256 amountToCastle, uint256 amountToReserve, address playerAddress) {
-    amountToCastle = (uint256(Bytes.getBytes32(_blob, 0)));
+  ) internal pure returns (uint256 amountToKingdom, uint256 amountToReserve, address playerAddress) {
+    amountToKingdom = (uint256(Bytes.getBytes32(_blob, 0)));
 
     amountToReserve = (uint256(Bytes.getBytes32(_blob, 32)));
 
@@ -235,7 +235,7 @@ library RevenueReceipt {
     EncodedLengths,
     bytes memory
   ) internal pure returns (RevenueReceiptData memory _table) {
-    (_table.amountToCastle, _table.amountToReserve, _table.playerAddress) = decodeStatic(_staticData);
+    (_table.amountToKingdom, _table.amountToReserve, _table.playerAddress) = decodeStatic(_staticData);
   }
 
   /**
@@ -265,11 +265,11 @@ library RevenueReceipt {
    * @return The static data, encoded into a sequence of bytes.
    */
   function encodeStatic(
-    uint256 amountToCastle,
+    uint256 amountToKingdom,
     uint256 amountToReserve,
     address playerAddress
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(amountToCastle, amountToReserve, playerAddress);
+    return abi.encodePacked(amountToKingdom, amountToReserve, playerAddress);
   }
 
   /**
@@ -279,11 +279,11 @@ library RevenueReceipt {
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
   function encode(
-    uint256 amountToCastle,
+    uint256 amountToKingdom,
     uint256 amountToReserve,
     address playerAddress
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(amountToCastle, amountToReserve, playerAddress);
+    bytes memory _staticData = encodeStatic(amountToKingdom, amountToReserve, playerAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;

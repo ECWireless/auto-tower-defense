@@ -168,7 +168,7 @@ export default defineWorld({
     RevenueReceipt: {
       key: ["savedKingdomId", "timestamp"],
       schema: {
-        amountToCastle: "uint256", // Electricity in watt-hours
+        amountToKingdom: "uint256", // Electricity in watt-hours
         amountToReserve: "uint256", // Electricity in watt-hours
         playerAddress: "address",
         savedKingdomId: "bytes32",

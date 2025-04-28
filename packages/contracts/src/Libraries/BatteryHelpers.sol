@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, BatteryDetails, BatteryDetailsData, LoadedKingdomActions, Projectile, SavedGame, SavedKingdom } from "../codegen/index.sol";
+import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, LoadedKingdomActions, Projectile, RevenueReceipt, RevenueReceiptData, SavedGame, SavedKingdom } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
@@ -104,6 +104,12 @@ library BatteryHelpers {
       authorReserveBalance += authorEarnings;
       BatteryDetails.setReserveBalance(authorId, authorReserveBalance);
     }
+
+    ExpenseReceiptData memory expenseReceipt = ExpenseReceiptData({
+      amount: winningPot,
+      playerAddress: SavedKingdom.getAuthor(savedKingdomId)
+    });
+    ExpenseReceipt.set(savedKingdomId, block.timestamp, expenseReceipt);
   }
 
   /**
@@ -164,6 +170,13 @@ library BatteryHelpers {
       authorReserveBalance += authorEarnings;
       BatteryDetails.setReserveBalance(authorId, authorReserveBalance);
     }
+
+    RevenueReceiptData memory revenueReceipt = RevenueReceiptData({
+      amountToKingdom: opponentSavedKingdomEarnings,
+      amountToReserve: opponentReserveEarnings,
+      playerAddress: player2Address
+    });
+    RevenueReceipt.set(savedKingdomId, block.timestamp, revenueReceipt);
   }
 
   /**
