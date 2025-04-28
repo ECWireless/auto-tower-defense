@@ -12,4 +12,6 @@ interface IAdminSystem {
   function app__addSavedKingdomRow(bytes32 savedGameId, uint256 level) external returns (bool added);
 
   function app__addUsdcTokenAddress(address usdcTokenAddress) external;
+
+  function app__updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external;
 }

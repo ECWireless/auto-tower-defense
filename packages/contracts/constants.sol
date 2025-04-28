@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-uint256 constant BATTERY_STORAGE_LIMIT = 16800000; // Watt-hours
+uint256 constant BATTERY_STORAGE_LIMIT = 24000; // Watt-hours
 uint256 constant DEFAULT_LOGIC_SIZE_LIMIT = 1000;
 uint8 constant MAX_ACTIONS = 2;
 uint8 constant MAX_CASTLE_HEALTH = 2;

@@ -13,5 +13,5 @@ interface ISolarFarmSystem {
 
   function app__sellElectricity(uint256 electricityAmount) external;
 
-  function app__claimCharge() external;
+  function app__claimRecharge() external;
 }

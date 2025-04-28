@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { KingdomsByLevel, Level, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData, TokenAddresses } from "../codegen/index.sol";
+import { KingdomsByLevel, Level, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData, SolarFarmDetails, TokenAddresses } from "../codegen/index.sol";
 
 contract AdminSystem is System {
   function addSavedKingdomRow(bytes32 savedGameId, uint256 level) external returns (bool added) {
@@ -48,5 +48,9 @@ contract AdminSystem is System {
 
   function addUsdcTokenAddress(address usdcTokenAddress) external {
     TokenAddresses.setUsdcAddress(usdcTokenAddress);
+  }
+
+  function updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external {
+    SolarFarmDetails.setElectricityBalance(newElectricityBalance);
   }
 }

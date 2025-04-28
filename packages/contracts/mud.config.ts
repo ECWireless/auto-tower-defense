@@ -254,7 +254,7 @@ export default defineWorld({
       },
       key: [],
     },
-    Username: "string",
+    Username: "string", // ID is globalPlayerId
     UsernameTaken: {
       schema: {
         usernameBytes: "bytes32",

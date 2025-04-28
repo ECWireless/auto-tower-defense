@@ -51,7 +51,7 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__claimCharge",
+    "name": "app__claimRecharge",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -295,6 +295,19 @@ declare const abi: [
     "inputs": [
       {
         "name": "electricityAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateSolarFarmElectricityBalance",
+    "inputs": [
+      {
+        "name": "newElectricityBalance",
         "type": "uint256",
         "internalType": "uint256"
       }

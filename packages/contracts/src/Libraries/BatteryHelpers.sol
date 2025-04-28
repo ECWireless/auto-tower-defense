@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, LoadedKingdomActions, Projectile, RevenueReceipt, RevenueReceiptData, SavedGame, SavedKingdom } from "../codegen/index.sol";
+import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Projectile, RevenueReceipt, RevenueReceiptData, SavedGame, SavedModification, SavedKingdom, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
+import "forge-std/console.sol";
 
 /**
  * @title BatteryHelpers
@@ -22,8 +23,13 @@ library BatteryHelpers {
     require(batteryDetails.reserveBalance == 0, "BatteryHelpers: player already has a battery");
 
     // Set active and reserve balance to BATTERY_STORAGE_LIMIT
-    BatteryDetails.setActiveBalance(globalPlayerId, BATTERY_STORAGE_LIMIT);
-    BatteryDetails.setReserveBalance(globalPlayerId, 0);
+    BatteryDetailsData memory newBatteryDetails = BatteryDetailsData({
+      activeBalance: BATTERY_STORAGE_LIMIT,
+      lastRechargeTimestamp: block.timestamp,
+      reserveBalance: 0,
+      stakedBalance: 0
+    });
+    BatteryDetails.set(globalPlayerId, newBatteryDetails);
   }
 
   /**
@@ -66,6 +72,7 @@ library BatteryHelpers {
 
     // If electricitybalance is less than 1.92 kWh, do nothing; this balance is too small to be meaningful
     if (electricityBalance < 1920) {
+      _processPotentialStakeReturn(globalPlayer1Id);
       return;
     }
 
@@ -110,6 +117,8 @@ library BatteryHelpers {
       playerAddress: SavedKingdom.getAuthor(savedKingdomId)
     });
     ExpenseReceipt.set(savedKingdomId, block.timestamp, expenseReceipt);
+
+    _processPotentialStakeReturn(globalPlayer1Id);
   }
 
   /**
@@ -124,6 +133,10 @@ library BatteryHelpers {
     uint256 stakedBalance = BatteryDetails.getStakedBalance(globalPlayer1Id);
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayer1Id);
     uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayer1Id);
+
+    if (stakedBalance < 1920) {
+      return;
+    }
 
     // Define winningPot as 50% of stakedBalance
     uint256 winningPot = stakedBalance / 2;
@@ -214,7 +227,7 @@ library BatteryHelpers {
     for (uint256 i = 0; i < modifyActions.length; i++) {
       bytes32 actionId = modifyActions[i];
       bytes32 bytecodeHash = keccak256(abi.encodePacked(Projectile.getBytecode(actionId)));
-      address author = SavedKingdom.getAuthor(bytecodeHash);
+      address author = SavedModification.getAuthor(bytecodeHash);
       authors[i] = author;
     }
 
@@ -235,5 +248,31 @@ library BatteryHelpers {
     }
 
     return nonEmptyAuthors;
+  }
+
+  /**
+   * Checks if the player is the top player in the game
+   * If they are, return their stake to active and reserve balance
+   * @param globalPlayer1Id The global ID of the player
+   */
+  function _processPotentialStakeReturn(bytes32 globalPlayer1Id) internal {
+    uint256 winStreak = WinStreak.get(globalPlayer1Id);
+    bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(winStreak);
+
+    if (kingdomsByLevel.length == 0) {
+      uint256 stakedBalance = BatteryDetails.getStakedBalance(globalPlayer1Id);
+      uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayer1Id);
+      uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayer1Id);
+
+      activeBalance += stakedBalance;
+      if (activeBalance > BATTERY_STORAGE_LIMIT) {
+        reserveBalance += activeBalance - BATTERY_STORAGE_LIMIT;
+        activeBalance = BATTERY_STORAGE_LIMIT;
+      }
+
+      BatteryDetails.setActiveBalance(globalPlayer1Id, activeBalance);
+      BatteryDetails.setReserveBalance(globalPlayer1Id, reserveBalance);
+      BatteryDetails.setStakedBalance(globalPlayer1Id, 0);
+    }
   }
 }

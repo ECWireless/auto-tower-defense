@@ -308,8 +308,8 @@ library ProjectileHelpers {
     uint256 winStreak = WinStreak.get(globalPlayer1Id);
 
     if (isWinnerPlayer1) {
-      // If they win, save their last game won in run, but don't save to GamesByLevel
-      // However, if they have the highest level, set won game in GamesByLevel
+      // If they win, save their last game won in run, but don't save to KingdomsByLevel
+      // However, if they have the highest level, set won game in KingdomsByLevel
 
       winStreak++;
       WinStreak.set(globalPlayer1Id, winStreak);
@@ -318,6 +318,8 @@ library ProjectileHelpers {
       // Create ID by hashing all actions
       bytes32 savedKingdomId = keccak256(abi.encode(savedGameActions));
       uint256 savedKingdomTimestamp = SavedKingdom.getTimestamp(savedKingdomId);
+
+      BatteryHelpers.winStake(gameId, globalPlayer1Id);
 
       // If this saved kingdom already exists, skip everything below
       if (savedKingdomTimestamp != 0) {
@@ -329,13 +331,10 @@ library ProjectileHelpers {
       bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(winStreak);
       if (kingdomsByLevel.length == 0) {
         TopLevel.set(winStreak);
-
         _updateKingdomsByLevel(kingdomsByLevel, savedKingdomId, winStreak, globalPlayer1Id);
       } else {
         LastGameWonInRun.set(globalPlayer1Id, savedKingdomId);
       }
-
-      BatteryHelpers.winStake(gameId, globalPlayer1Id);
 
       // Only save the game in KingdomsByLevel if the loser is player 1, and they have a LastGameWonInRun
     } else {

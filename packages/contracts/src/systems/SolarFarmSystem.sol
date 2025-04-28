@@ -3,7 +3,7 @@ pragma solidity >=0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { System } from "@latticexyz/world/src/System.sol";
-import { BatteryDetails, SolarFarmDetails, TokenAddresses } from "../codegen/index.sol";
+import { BatteryDetails, SolarFarmDetails, TokenAddresses, Username } from "../codegen/index.sol";
 import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 
@@ -17,6 +17,14 @@ contract SolarFarmSystem is System {
   function buyElectricity(uint256 electricityAmount) external {
     require(electricityAmount > 0, "SolarFarmSystem: electricity amount must be greater than 0");
 
+    // Make sure the player already has a Battery
+    address playerAddress = _msgSender();
+    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+    require(
+      BatteryDetails.getLastRechargeTimestamp(globalPlayerId) != 0,
+      "SolarFarmSystem: player must have a battery"
+    );
+
     // Figure out how much USDC to transfer
     uint256 whPerCentPrice = SolarFarmDetails.getWhPerCentPrice();
     require(electricityAmount >= whPerCentPrice, "SolarFarmSystem: amount must be greater than 0.01 USDC");
@@ -26,9 +34,6 @@ contract SolarFarmSystem is System {
 
     uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
     require(solarFarmElectricityBalance >= electricityAmount, "SolarFarmSystem: not enough electricity in Solar Farm");
-
-    address playerAddress = _msgSender();
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
 
     // Transfer USDC from player to Solar Farm
     address usdcAddress = TokenAddresses.getUsdcAddress();
@@ -62,18 +67,23 @@ contract SolarFarmSystem is System {
   function sellElectricity(uint256 electricityAmount) external {
     require(electricityAmount > 0, "SolarFarmSystem: electricity amount must be greater than 0");
 
+    // Make sure the player already has a Battery
+    address playerAddress = _msgSender();
+    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+    require(
+      BatteryDetails.getLastRechargeTimestamp(globalPlayerId) != 0,
+      "SolarFarmSystem: player must have a battery"
+    );
+
     // Figure out how much USDC to transfer
     uint256 whPerCentPrice = SolarFarmDetails.getWhPerCentPrice();
+    require(whPerCentPrice > 0, "SolarFarmSystem: whPerCentPrice must be greater than 0");
     require(electricityAmount >= whPerCentPrice, "SolarFarmSystem: amount must be greater than 0.01 USDC");
     uint256 usdcAmountCents = electricityAmount / whPerCentPrice;
     uint256 usdcAmount = usdcAmountCents * 10000; // Convert to unformatted USDC
-    require(usdcAmount > 0, "SolarFarmSystem: USDC amount must be greater than 0");
 
     uint256 solarFarmFiatBalance = SolarFarmDetails.getFiatBalance();
     require(solarFarmFiatBalance >= usdcAmount, "SolarFarmSystem: not enough USDC in Solar Farm");
-
-    address playerAddress = _msgSender();
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
 
     // Transfer USDC from Solar Farm to player
     address usdcAddress = TokenAddresses.getUsdcAddress();
@@ -98,9 +108,15 @@ contract SolarFarmSystem is System {
    * Claims more electricity for BatteryDetails activeBalance based on SolarFarmDetails msPerWh; cannot exceed BATTERY_STORAGE_LIMIT
    * Also decreases SolarFarmSystem electricityBalance
    */
-  function claimCharge() external {
-    // Get time elapsed in ms since last recharge
+  function claimRecharge() external {
+    // Make sure the player already has a Battery
     bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(_msgSender());
+    require(
+      BatteryDetails.getLastRechargeTimestamp(globalPlayerId) != 0,
+      "SolarFarmSystem: player must have a battery"
+    );
+
+    // Get time elapsed in ms since last recharge
     uint256 lastRechargeTimestamp = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
     uint256 currentTimestamp = block.timestamp;
     uint256 timeElapsed = currentTimestamp - lastRechargeTimestamp;
@@ -112,6 +128,7 @@ contract SolarFarmSystem is System {
 
     // Only claim enough to fill activeBalance to BATTERY_STORAGE_LIMIT
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
+    require(activeBalance < BATTERY_STORAGE_LIMIT, "SolarFarmSystem: battery already full");
     if (activeBalance + claimableElectricity > BATTERY_STORAGE_LIMIT) {
       claimableElectricity = BATTERY_STORAGE_LIMIT - activeBalance;
     }
