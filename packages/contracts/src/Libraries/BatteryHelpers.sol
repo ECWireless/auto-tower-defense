@@ -153,6 +153,10 @@ library BatteryHelpers {
     address[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, true);
 
     // Move remaining winningPot to authors (their reserveBalance) of all the towers used by winner (player 2)
+    if (allAuthors.length == 0) {
+      return;
+    }
+
     uint256 authorEarnings = winningPot / allAuthors.length;
     for (uint256 i = 0; i < allAuthors.length; i++) {
       bytes32 authorId = EntityHelpers.globalAddressToKey(allAuthors[i]);

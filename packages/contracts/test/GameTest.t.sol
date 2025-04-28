@@ -82,6 +82,40 @@ contract GameTest is MudTest {
     IWorld(worldAddress).app__createGame("Alice", true);
   }
 
+  function testForfeitRun() public {
+    vm.startPrank(aliceAddress);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+
+    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
+    IWorld(worldAddress).app__nextTurn(gameId);
+
+    IWorld(worldAddress).app__forfeitRun();
+
+    GameData memory game = Game.get(gameId);
+    assertTrue(game.endTimestamp > 0);
+    assertEq(game.winner, robAddress);
+  }
+
+  function testRevertForfeitGameAlreadyEnded() public {
+    vm.prank(aliceAddress);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    endGame(aliceAddress, gameId);
+
+    vm.expectRevert(bytes("GameSystem: game has ended"));
+    vm.prank(aliceAddress);
+    IWorld(worldAddress).app__forfeitRun();
+  }
+
+  function testRevertForfeitNotPlayer1() public {
+    vm.startPrank(aliceAddress);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    endGame(aliceAddress, gameId);
+
+    vm.expectRevert(bytes("GameSystem: not player1"));
+    vm.prank(bobAddress);
+    IWorld(worldAddress).app__forfeitRun();
+  }
+
   function testNextTurn() public {
     vm.startPrank(aliceAddress);
     bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
