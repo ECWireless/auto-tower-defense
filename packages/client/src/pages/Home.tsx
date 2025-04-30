@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { HomeTabs } from '@/components/HomeTabs';
+import { MaxPlayersDialog } from '@/components/MaxPlayersDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,6 +48,8 @@ export const Home = (): JSX.Element => {
   const [usernameSaved, setUsernameSaved] = useState(false);
   const [isCreatingGame, setIsCreatingGame] = useState(false);
 
+  const [isMaxPlayersDialogOpen, setIsMaxPlayersDialogOpen] = useState(false);
+
   // Ensure home page title is always "Auto Tower Defense"
   useEffect(() => {
     document.title = `Auto Tower Defense`;
@@ -62,6 +65,12 @@ export const Home = (): JSX.Element => {
       try {
         setIsCreatingGame(true);
         playSfx('click1');
+
+        const savedUsername = getComponentValue(Username, playerEntity)?.value;
+        if (playerCount >= MAX_PLAYERS && !savedUsername) {
+          setIsMaxPlayersDialogOpen(true);
+          return;
+        }
 
         let currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
         if (currentGame) {
@@ -141,8 +150,10 @@ export const Home = (): JSX.Element => {
       navigate,
       playerEntity,
       playSfx,
+      playerCount,
       SavedKingdom,
       TopLevel,
+      Username,
       username,
       WinStreak,
     ],
@@ -223,6 +234,11 @@ export const Home = (): JSX.Element => {
       <div className="mb-20 z-1">
         <HomeTabs />
       </div>
+
+      <MaxPlayersDialog
+        isMaxPlayersDialogOpen={isMaxPlayersDialogOpen}
+        setIsMaxPlayersDialogOpen={setIsMaxPlayersDialogOpen}
+      />
     </div>
   );
 };
