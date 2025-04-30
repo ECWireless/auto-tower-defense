@@ -22,6 +22,7 @@ import { LogicSystemAddress } from "./tables/LogicSystemAddress.sol";
 import { MapConfig } from "./tables/MapConfig.sol";
 import { Owner } from "./tables/Owner.sol";
 import { OwnerTowers } from "./tables/OwnerTowers.sol";
+import { PlayerCount } from "./tables/PlayerCount.sol";
 import { Position } from "./tables/Position.sol";
 import { Projectile, ProjectileData } from "./tables/Projectile.sol";
 import { ProjectileTrajectory } from "./tables/ProjectileTrajectory.sol";

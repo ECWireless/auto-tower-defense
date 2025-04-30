@@ -64,6 +64,18 @@ contract GameTest is MudTest {
     assertEq(username, "Alice");
   }
 
+  function testRevertMaxPlayers() public {
+    uint8 dummyPlayersCount = 100;
+    for (uint8 i = 0; i < dummyPlayersCount; i++) {
+      vm.prank(address(uint160(i + 1)));
+      IWorld(worldAddress).app__createGame(string(abi.encodePacked("Player", i)), true);
+    }
+
+    vm.prank(address(101));
+    vm.expectRevert(bytes("GameSystem: max players reached"));
+    IWorld(worldAddress).app__createGame(string(abi.encodePacked("Player", uint8(101))), true);
+  }
+
   function testRevertUsernameTaken() public {
     vm.prank(aliceAddress);
     IWorld(worldAddress).app__createGame("Alice", true);

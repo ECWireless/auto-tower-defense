@@ -317,7 +317,7 @@ library ProjectileHelpers {
 
       // Create ID by hashing all actions
       bytes32 savedKingdomId = keccak256(abi.encode(savedGameActions));
-      uint256 savedKingdomTimestamp = SavedKingdom.getTimestamp(savedKingdomId);
+      uint256 savedKingdomTimestamp = SavedKingdom.getCreatedAtTimestamp(savedKingdomId);
 
       BatteryHelpers.winStake(gameId, globalPlayer1Id);
 
@@ -376,9 +376,9 @@ library ProjectileHelpers {
   function _saveKingdom(address winner, bytes32[] memory savedGameActions, bytes32 savedKingdomId) internal {
     SavedKingdomData memory savedKingdom = SavedKingdomData({
       author: winner,
+      createdAtTimestamp: block.timestamp,
       electricityBalance: 0,
       losses: 0,
-      timestamp: block.timestamp,
       wins: 0,
       actions: savedGameActions
     });

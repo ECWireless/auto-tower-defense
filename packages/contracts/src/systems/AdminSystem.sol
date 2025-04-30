@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { KingdomsByLevel, Level, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData, SolarFarmDetails, TokenAddresses } from "../codegen/index.sol";
+import { KingdomsByLevel, Level, PlayerCount, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData, SolarFarmDetails, TokenAddresses } from "../codegen/index.sol";
 
 contract AdminSystem is System {
   function addSavedKingdomRow(bytes32 savedGameId, uint256 level) external returns (bool added) {
@@ -13,16 +13,16 @@ contract AdminSystem is System {
     bytes32 savedKingdomId = keccak256(abi.encode(savedGame.actions));
 
     // Check if the savedKingdomId already exists
-    if (SavedKingdom.get(savedKingdomId).timestamp != 0) {
+    if (SavedKingdom.get(savedKingdomId).createdAtTimestamp != 0) {
       return false;
     }
 
     // Convert to SavedKingdom
     SavedKingdomData memory savedKingdom = SavedKingdomData({
       author: savedGame.winner,
+      createdAtTimestamp: block.timestamp,
       electricityBalance: 0,
       losses: 0,
-      timestamp: block.timestamp,
       wins: 0,
       actions: savedGame.actions
     });
@@ -52,5 +52,9 @@ contract AdminSystem is System {
 
   function updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external {
     SolarFarmDetails.setElectricityBalance(newElectricityBalance);
+  }
+
+  function updatePlayerCount(uint256 newPlayerCount) external {
+    PlayerCount.set(newPlayerCount);
   }
 }
