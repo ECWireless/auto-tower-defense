@@ -8,6 +8,7 @@ import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { GameHelpers } from "../Libraries/GameHelpers.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { ActionStorageHelpers } from "../Libraries/ActionStorageHelpers.sol";
+import { BatteryHelpers } from "../Libraries/BatteryHelpers.sol";
 import { MAX_ACTIONS } from "../../constants.sol";
 import "forge-std/console.sol";
 
@@ -22,13 +23,15 @@ contract GameSystem is System {
 
     bytes32 savedKingdomId;
 
+    GameHelpers.validateCreateGame(globalPlayer1, username);
+
     if (resetLevel) {
       WinStreak.set(globalPlayer1, 0);
+      // Stake 8 kWh of electricity
+      BatteryHelpers.stakeElectricity(globalPlayer1);
     } else {
       savedKingdomId = GameHelpers.nextLevel(player1Address);
     }
-
-    GameHelpers.validateCreateGame(globalPlayer1, username);
 
     SavedKingdomData memory savedKingdom = SavedKingdom.get(savedKingdomId);
     return GameHelpers.initializeGame(player1Address, savedKingdom.author, savedKingdomId, globalPlayer1);

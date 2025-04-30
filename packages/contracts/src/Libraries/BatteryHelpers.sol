@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Projectile, RevenueReceipt, RevenueReceiptData, SavedGame, SavedModification, SavedKingdom, WinStreak } from "../codegen/index.sol";
+import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Projectile, RevenueReceipt, RevenueReceiptData, SavedGame, SavedModification, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
-import "forge-std/console.sol";
 
 /**
  * @title BatteryHelpers
@@ -19,8 +18,7 @@ library BatteryHelpers {
    */
   function grantBattery(bytes32 globalPlayerId) public {
     BatteryDetailsData memory batteryDetails = BatteryDetails.get(globalPlayerId);
-    require(batteryDetails.activeBalance == 0, "BatteryHelpers: player already has a battery");
-    require(batteryDetails.reserveBalance == 0, "BatteryHelpers: player already has a battery");
+    require(batteryDetails.lastRechargeTimestamp == 0, "BatteryHelpers: player already has a battery");
 
     // Set active and reserve balance to BATTERY_STORAGE_LIMIT
     BatteryDetailsData memory newBatteryDetails = BatteryDetailsData({
@@ -68,16 +66,18 @@ library BatteryHelpers {
   function winStake(bytes32 gameId, bytes32 globalPlayer1Id) public {
     // Get SaveKingdomId from LoadedKingdomActions using gameId; then get electricitybalance from SavedKingdom
     bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(gameId);
-    uint256 electricityBalance = SavedKingdom.getElectricityBalance(savedKingdomId);
+    SavedKingdomData memory savedKingdom = SavedKingdom.get(savedKingdomId);
+    SavedKingdom.setLosses(savedKingdomId, savedKingdom.losses + 1);
 
-    // If electricitybalance is less than 1.92 kWh, do nothing; this balance is too small to be meaningful
-    if (electricityBalance < 1920) {
+    // If electricitybalance is less than 1.92kWh, do nothing; this balance is too small to be meaningful
+    if (savedKingdom.electricityBalance < 1920) {
       _processPotentialStakeReturn(globalPlayer1Id);
       return;
     }
 
     // Define winningPot as 50% of electricitybalance
-    uint256 winningPot = electricityBalance / 2;
+    uint256 winningPot = savedKingdom.electricityBalance / 2;
+    SavedKingdom.setElectricityBalance(savedKingdomId, savedKingdom.electricityBalance - winningPot);
 
     // Move 50% of winningPot to stakedBalance
     uint256 stakedEarnings = winningPot / 2;
@@ -91,6 +91,14 @@ library BatteryHelpers {
     uint256 activeBalanceEarnings = winningPot / 2;
     activeBalance += activeBalanceEarnings;
 
+    // Get all the towers used in the game
+    address[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, true);
+
+    // If there are no authors, give the player the rest of the winningPot
+    if (allAuthors.length == 0) {
+      activeBalance += activeBalanceEarnings;
+    }
+
     // If activeBalance == BATTERY_STORAGE_LIMIT, then reserveBalance is filled
     if (activeBalance > BATTERY_STORAGE_LIMIT) {
       reserveBalance += activeBalance - BATTERY_STORAGE_LIMIT;
@@ -100,10 +108,11 @@ library BatteryHelpers {
     BatteryDetails.setReserveBalance(globalPlayer1Id, reserveBalance);
     winningPot -= activeBalanceEarnings;
 
-    // Get all the towers used in the game
-    address[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, true);
+    _processPotentialStakeReturn(globalPlayer1Id);
 
     // Move remaining winningPot to authors (their reserveBalance) of all the towers used by winner (player 1)
+    if (allAuthors.length == 0) return;
+
     uint256 authorEarnings = winningPot / allAuthors.length;
     for (uint256 i = 0; i < allAuthors.length; i++) {
       bytes32 authorId = EntityHelpers.globalAddressToKey(allAuthors[i]);
@@ -117,8 +126,6 @@ library BatteryHelpers {
       playerAddress: SavedKingdom.getAuthor(savedKingdomId)
     });
     ExpenseReceipt.set(savedKingdomId, block.timestamp, expenseReceipt);
-
-    _processPotentialStakeReturn(globalPlayer1Id);
   }
 
   /**
@@ -128,6 +135,10 @@ library BatteryHelpers {
    * @param globalPlayer1Id The global ID of the losing player (player 1)
    */
   function loseStake(bytes32 gameId, bytes32 globalPlayer1Id) public {
+    bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(gameId);
+    SavedKingdomData memory savedKingdom = SavedKingdom.get(savedKingdomId);
+    SavedKingdom.setWins(savedKingdomId, savedKingdom.wins + 1);
+
     // Put 50% of stakedBalance in winningPot, and the other 50% is unstaked to activeBalance
     // Any overflow goes to reserveBalance
     uint256 stakedBalance = BatteryDetails.getStakedBalance(globalPlayer1Id);
@@ -153,14 +164,20 @@ library BatteryHelpers {
 
     // Put 50% of winningPot in opponent's SavedKingdom electricityBalance
     uint256 opponentSavedKingdomEarnings = winningPot / 2;
-    bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(gameId);
-    uint256 opponentElectricityBalance = SavedKingdom.getElectricityBalance(savedKingdomId);
-    opponentElectricityBalance += opponentSavedKingdomEarnings;
-    SavedKingdom.setElectricityBalance(savedKingdomId, opponentElectricityBalance);
+    savedKingdom.electricityBalance += opponentSavedKingdomEarnings;
+    SavedKingdom.setElectricityBalance(savedKingdomId, savedKingdom.electricityBalance);
     winningPot -= opponentSavedKingdomEarnings;
 
     // Put 50% of remaining winningPot in opponent's reserveBalance
     uint256 opponentReserveEarnings = winningPot / 2;
+
+    // Get all the towers used in the game
+    address[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, false);
+
+    // If there are no authors, give the player2Address the rest of the winningPot
+    if (allAuthors.length == 0) {
+      opponentReserveEarnings += opponentReserveEarnings;
+    }
     address player2Address = SavedKingdom.getAuthor(savedKingdomId);
     bytes32 globalPlayer2Id = EntityHelpers.globalAddressToKey(player2Address);
     uint256 opponentReserveBalance = BatteryDetails.getReserveBalance(globalPlayer2Id);
@@ -168,13 +185,8 @@ library BatteryHelpers {
     BatteryDetails.setReserveBalance(globalPlayer2Id, opponentReserveBalance);
     winningPot -= opponentReserveEarnings;
 
-    // Get all the towers used in the game
-    address[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, true);
-
     // Move remaining winningPot to authors (their reserveBalance) of all the towers used by winner (player 2)
-    if (allAuthors.length == 0) {
-      return;
-    }
+    if (allAuthors.length == 0) return;
 
     uint256 authorEarnings = winningPot / allAuthors.length;
     for (uint256 i = 0; i < allAuthors.length; i++) {

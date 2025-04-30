@@ -20,9 +20,6 @@ library GameHelpers {
     bytes32 savedKingdomId,
     bytes32 globalPlayer1
   ) public returns (bytes32) {
-    // Stake 8 kWh of electricity
-    BatteryHelpers.stakeElectricity(globalPlayer1);
-
     uint256 timestamp = block.timestamp;
     bytes32 gameId = keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
 
