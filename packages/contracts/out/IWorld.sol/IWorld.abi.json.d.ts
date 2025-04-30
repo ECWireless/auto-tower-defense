@@ -304,6 +304,19 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__updatePlayerCount",
+    "inputs": [
+      {
+        "name": "newPlayerCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__updateSolarFarmElectricityBalance",
     "inputs": [
       {

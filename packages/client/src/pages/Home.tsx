@@ -1,3 +1,4 @@
+import { useComponentValue } from '@latticexyz/react';
 import {
   Entity,
   getComponentValue,
@@ -8,7 +9,7 @@ import {
   encodeEntity,
   singletonEntity,
 } from '@latticexyz/store-sync/recs';
-import { Loader2, Play } from 'lucide-react';
+import { Loader2, Play, Signal } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/MUDContext';
 import { GAMES_PATH } from '@/Routes';
+import { MAX_PLAYERS } from '@/utils/constants';
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
@@ -30,6 +32,7 @@ export const Home = (): JSX.Element => {
       CurrentGame,
       Game,
       KingdomsByLevel,
+      PlayerCount,
       SavedKingdom,
       TopLevel,
       Username,
@@ -48,6 +51,10 @@ export const Home = (): JSX.Element => {
   useEffect(() => {
     document.title = `Auto Tower Defense`;
   }, []);
+
+  const playerCount = Number(
+    useComponentValue(PlayerCount, singletonEntity)?.value ?? 0,
+  );
 
   const onCreateGame = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -153,9 +160,22 @@ export const Home = (): JSX.Element => {
     <div className="bg-black flex flex-col min-h-screen p-4 relative text-white">
       <BackgroundAnimation />
 
-      <h1 className="bg-clip-text bg-gradient-to-r font-bold from-purple-400 my-20 text-center text-transparent text-4xl to-pink-400 via-cyan-400">
+      <h1 className="bg-clip-text bg-gradient-to-r font-bold from-purple-400 mb-6 mt-20 text-center text-transparent text-4xl to-pink-400 via-cyan-400">
         AUTO TOWER DEFENSE
       </h1>
+
+      {/* Player Count Display */}
+      <div className="flex justify-center mb-8">
+        <div className="bg-gray-900/60 border border-cyan-900/30 flex gap-2 items-center px-4 py-2 rounded-full">
+          <Signal className="h-4 text-cyan-400 w-4" />
+          <span className="text-gray-300 text-sm">
+            <span className="font-medium text-cyan-400">{playerCount}</span>
+            <span className="mx-1">/</span>
+            <span className="text-gray-400">{MAX_PLAYERS}</span>
+            <span className="ml-1">players</span>
+          </span>
+        </div>
+      </div>
 
       {usernameSaved && (
         <div className="mb-8 neon-text-cyan text-center text-xl">
