@@ -25,13 +25,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/MUDContext';
 import { GAMES_PATH } from '@/Routes';
 import { BATTERY_STORAGE_LIMIT, MAX_PLAYERS } from '@/utils/constants';
-import { formatWattHours } from '@/utils/helpers';
-
-const getBatteryColor = (charge: number) => {
-  if (charge >= 66) return 'text-green-500';
-  if (charge >= 33) return 'text-yellow-500';
-  return 'text-red-500';
-};
+import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();

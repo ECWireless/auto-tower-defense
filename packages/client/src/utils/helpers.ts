@@ -56,3 +56,9 @@ export const getElapsedTime = (
 
   return formatDuration(elapsedMinutes);
 };
+
+export const getBatteryColor = (charge: number): string => {
+  if (charge >= 66) return 'text-green-500';
+  if (charge >= 33) return 'text-yellow-500';
+  return 'text-red-500';
+};
