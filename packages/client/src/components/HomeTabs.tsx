@@ -1,5 +1,11 @@
 import { useEntityQuery } from '@latticexyz/react';
-import { Entity, getComponentValueStrict, Has } from '@latticexyz/recs';
+import {
+  Entity,
+  getComponentValueStrict,
+  Has,
+  HasValue,
+  runQuery,
+} from '@latticexyz/recs';
 import { decodeEntity, encodeEntity } from '@latticexyz/store-sync/recs';
 import {
   ArrowRight,
@@ -39,6 +45,7 @@ import { GAMES_PATH } from '@/Routes';
 import {
   formatDateFromTimestamp,
   formatTimeFromTimestamp,
+  formatWattHours,
   shortenAddress,
 } from '@/utils/helpers';
 import { type Game } from '@/utils/types';
@@ -166,7 +173,14 @@ export const HomeTabs: React.FC = () => {
   const navigate = useNavigate();
   const { copiedText, copyToClipboard } = useCopy();
   const {
-    components: { Game, KingdomsByLevel, Level, SavedKingdom, Username },
+    components: {
+      Game,
+      KingdomsByLevel,
+      Level,
+      RevenueReceipt,
+      SavedKingdom,
+      Username,
+    },
   } = useMUD();
 
   const games = useEntityQuery([Has(Game)]).map(entity => {
@@ -208,67 +222,85 @@ export const HomeTabs: React.FC = () => {
     };
   }) as Game[];
 
-  const kingdomsByLevel = useEntityQuery([Has(KingdomsByLevel)]).map(entity => {
-    const _kingdomsByLevel = getComponentValueStrict(KingdomsByLevel, entity);
-    const authors = _kingdomsByLevel.savedKingdomIds.map(savedKingdomId => {
-      const savedKingdom = getComponentValueStrict(
-        SavedKingdom,
-        savedKingdomId as Entity,
-      );
-      return savedKingdom.author;
-    });
+  const kingdomsByLevel = useEntityQuery([Has(KingdomsByLevel)])
+    .map(entity => {
+      const _kingdomsByLevel = getComponentValueStrict(KingdomsByLevel, entity);
 
-    const decodedKey = decodeEntity({ level: 'uint256' }, entity);
+      const decodedKey = decodeEntity({ level: 'uint256' }, entity);
 
-    return {
-      level: decodedKey.level,
-      winners: authors,
-    };
-  });
+      return _kingdomsByLevel.savedKingdomIds.map(savedKingdomId => {
+        const _savedKingdom = getComponentValueStrict(
+          SavedKingdom,
+          savedKingdomId as Entity,
+        );
 
-  const leaderboardList: {
-    address: string;
-    level: number;
-    username: string;
-  }[] = useMemo(() => {
-    const fullLeaderboardList = kingdomsByLevel.reduce(
-      (acc, game) => {
-        const { level, winners } = game;
-        const levelWinners = winners.map(winner => ({
-          address: winner,
-          level: Number(level),
-          username: getComponentValueStrict(
-            Username,
-            encodeEntity(
-              { playerAddress: 'address' },
-              { playerAddress: winner as `0x${string}` },
-            ),
-          ).value,
-        }));
+        const authorUsername = getComponentValueStrict(
+          Username,
+          encodeEntity(
+            { playerAddress: 'address' },
+            { playerAddress: _savedKingdom.author as `0x${string}` },
+          ),
+        ).value;
 
-        return [...acc, ...levelWinners];
-      },
-      [] as { address: string; level: number; username: string }[],
+        const revenueReceipts = Array.from(
+          runQuery([
+            HasValue(RevenueReceipt, { savedKingdomId: savedKingdomId }),
+          ]),
+        ).map(entity => {
+          return getComponentValueStrict(RevenueReceipt, entity);
+        });
+
+        const totalEarnings = revenueReceipts.reduce(
+          (acc, receipt) =>
+            acc + receipt.amountToKingdom + receipt.amountToReserve,
+          BigInt(0),
+        );
+
+        return {
+          id: savedKingdomId,
+          author: _savedKingdom.author,
+          authorUsername,
+          electricityBalance: formatWattHours(_savedKingdom.electricityBalance),
+          level: Number(decodedKey.level),
+          losses: Number(_savedKingdom.losses),
+          totalEarnings: formatWattHours(totalEarnings),
+          wins: Number(_savedKingdom.wins),
+        };
+      });
+    })
+    .flat()
+    .sort(
+      (a, b) => Number(b.electricityBalance) - Number(a.electricityBalance),
     );
 
-    const leaderboardNoDuplicates = Object.values(
-      fullLeaderboardList.reduce(
+  const topPlayersList = useMemo(() => {
+    const topPlayersNoDuplicates = Object.values(
+      kingdomsByLevel.reduce(
         (acc, entry) => {
-          const existing = acc[entry.address];
+          const existing = acc[entry.author];
           if (!existing || existing.level < entry.level) {
-            acc[entry.address] = entry;
+            acc[entry.author] = entry;
           }
           return acc;
         },
         {} as Record<
           string,
-          { address: string; level: number; username: string }
+          {
+            id: string;
+            author: string;
+            authorUsername: string;
+            electricityBalance: string;
+            level: number;
+            losses: number;
+            totalEarnings: string;
+            wins: number;
+          }
         >,
       ),
     );
 
-    return leaderboardNoDuplicates.sort((a, b) => b.level - a.level);
-  }, [kingdomsByLevel, Username]);
+    return topPlayersNoDuplicates.sort((a, b) => b.level - a.level);
+  }, [kingdomsByLevel]);
 
   const activeGames = useMemo(
     () =>
@@ -288,13 +320,22 @@ export const HomeTabs: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto w-full">
-      <Tabs className="w-full" defaultValue="leaderboard">
-        <TabsList className="bg-transparent grid grid-cols-3 w-full">
+      <Tabs className="w-full" defaultValue="players">
+        <TabsList className="bg-transparent grid grid-cols-4 w-full">
           <TabsTrigger
             className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 data-[state=active]:rounded-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
-            value="leaderboard"
+            value="players"
           >
-            Leaderboard ({leaderboardList.length})
+            <span className="sm:inline hidden">Top Players</span>
+            <span className="sm:hidden">Players</span> ({topPlayersList.length})
+          </TabsTrigger>
+          <TabsTrigger
+            className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 data-[state=active]:rounded-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
+            value="kingdoms"
+          >
+            <span className="sm:inline hidden">Top Kingdoms</span>
+            <span className="sm:hidden">Kingdoms</span> (
+            {kingdomsByLevel.length})
           </TabsTrigger>
           <TabsTrigger
             className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 data-[state=active]:rounded-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
@@ -310,9 +351,9 @@ export const HomeTabs: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent className="mt-6" value="leaderboard">
+        <TabsContent className="mt-6" value="players">
           <TooltipProvider>
-            {/* Desktop view for leaderboard */}
+            {/* Desktop view for players */}
             <div className="hidden md:block">
               <Table>
                 <TableHeader>
@@ -324,20 +365,20 @@ export const HomeTabs: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leaderboardList.map((player, i) => (
-                    <TableRow key={player.address} className="border-gray-800">
+                  {topPlayersList.map((player, i) => (
+                    <TableRow key={player.author} className="border-gray-800">
                       <TableCell className="font-medium">{i + 1}</TableCell>
-                      <TableCell>{player.username}</TableCell>
+                      <TableCell>{player.authorUsername}</TableCell>
                       <TableCell>{player.level}</TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <span>{shortenAddress(player.address)}</span>
+                          <span>{shortenAddress(player.author)}</span>
                           <Tooltip>
                             <TooltipTrigger
                               className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
-                              onClick={() => copyToClipboard(player.address)}
+                              onClick={() => copyToClipboard(player.author)}
                             >
-                              {copiedText === player.address ? (
+                              {copiedText === player.author ? (
                                 <Check className="h-3 w-3" />
                               ) : (
                                 <Copy className="h-3 w-3" />
@@ -345,7 +386,7 @@ export const HomeTabs: React.FC = () => {
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>
-                                {copiedText === player.address
+                                {copiedText === player.author
                                   ? 'Copied!'
                                   : 'Copy address'}
                               </p>
@@ -359,18 +400,20 @@ export const HomeTabs: React.FC = () => {
               </Table>
             </div>
 
-            {/* Mobile view for leaderboard */}
+            {/* Mobile view for players */}
             <div className="md:hidden">
-              {leaderboardList.map((player, i) => (
+              {topPlayersList.map((player, i) => (
                 <Card
-                  key={player.address}
+                  key={player.author}
                   className="bg-gray-900 border-gray-800 hover:border-cyan-900 mb-3"
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="gap-2 flex items-center">
                         <span className="font-medium text-white">#{i + 1}</span>
-                        <span className="text-white">{player.username}</span>
+                        <span className="text-white">
+                          {player.authorUsername}
+                        </span>
                       </div>
                       <span className="text-sm text-white">
                         Level {player.level}
@@ -378,15 +421,15 @@ export const HomeTabs: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-300">
-                        {shortenAddress(player.address)}
+                        {shortenAddress(player.author)}
                       </span>
                       <Button
                         className="h-6 hover:text-white text-gray-400 w-6"
-                        onClick={() => copyToClipboard(player.address)}
+                        onClick={() => copyToClipboard(player.author)}
                         size="icon"
                         variant="ghost"
                       >
-                        {copiedText === player.address ? (
+                        {copiedText === player.author ? (
                           <Check className="h-3 w-3" />
                         ) : (
                           <Copy className="h-3 w-3" />
@@ -400,18 +443,100 @@ export const HomeTabs: React.FC = () => {
           </TooltipProvider>
         </TabsContent>
 
+        <TabsContent value="kingdoms" className="mt-6">
+          {/* Desktop view for top kingdoms */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-800">
+                  <TableHead className="text-cyan-400">Author</TableHead>
+                  <TableHead className="text-cyan-400">
+                    Current Balance
+                  </TableHead>
+                  <TableHead className="text-cyan-400">
+                    Total Earnings
+                  </TableHead>
+                  <TableHead className="text-cyan-400">Wins</TableHead>
+                  <TableHead className="text-cyan-400">Losses</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {kingdomsByLevel.map(kingdom => (
+                  <TableRow key={kingdom.id} className="border-gray-800">
+                    <TableCell className="font-medium">
+                      {kingdom.authorUsername}
+                    </TableCell>
+                    <TableCell>{kingdom.electricityBalance}</TableCell>
+                    <TableCell>{kingdom.totalEarnings}</TableCell>
+                    <TableCell className="text-green-400">
+                      {kingdom.wins}
+                    </TableCell>
+                    <TableCell className="text-red-400">
+                      {kingdom.losses}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile view for top kingdoms */}
+          <div className="md:hidden">
+            {kingdomsByLevel.map(kingdom => (
+              <Card
+                key={kingdom.id}
+                className="bg-gray-900 border-gray-800 mb-3"
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-medium text-lg text-white">
+                      {kingdom.authorUsername}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <div className="text-gray-400">Current Balance</div>
+                      <div className="font-medium text-white">
+                        {kingdom.electricityBalance}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-400">Total Earnings</div>
+                      <div className="font-medium text-white">
+                        {kingdom.totalEarnings}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-400">Wins</div>
+                      <div className="font-medium text-green-400">
+                        {kingdom.wins}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-400">Losses</div>
+                      <div className="font-medium text-red-400">
+                        {kingdom.losses}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
         <TabsContent value="active" className="mt-6">
           {/* Desktop view for active games */}
           <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow className="border-gray-800">
-                  <TableHead className="text-white">Date</TableHead>
-                  <TableHead className="text-white">Start Time</TableHead>
-                  <TableHead className="text-white">Level</TableHead>
-                  <TableHead className="text-white">Players</TableHead>
-                  <TableHead className="text-white">Round</TableHead>
-                  <TableHead className="text-white w-10" />
+                  <TableHead className="text-cyan-400">Date</TableHead>
+                  <TableHead className="text-cyan-400">Start Time</TableHead>
+                  <TableHead className="text-cyan-400">Level</TableHead>
+                  <TableHead className="text-cyan-400">Players</TableHead>
+                  <TableHead className="text-cyan-400">Round</TableHead>
+                  <TableHead className="text-cyan-400 w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -490,12 +615,12 @@ export const HomeTabs: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow className="border-gray-800">
-                  <TableHead className="text-white">Date</TableHead>
-                  <TableHead className="text-white">Start Time</TableHead>
-                  <TableHead className="text-white">Level</TableHead>
-                  <TableHead className="text-white">Players</TableHead>
-                  <TableHead className="text-white">Winner</TableHead>
-                  <TableHead className="text-white w-10" />
+                  <TableHead className="text-cyan-400">Date</TableHead>
+                  <TableHead className="text-cyan-400">Start Time</TableHead>
+                  <TableHead className="text-cyan-400">Level</TableHead>
+                  <TableHead className="text-cyan-400">Players</TableHead>
+                  <TableHead className="text-cyan-400">Winner</TableHead>
+                  <TableHead className="text-cyan-400 w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>

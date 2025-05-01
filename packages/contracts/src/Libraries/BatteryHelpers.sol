@@ -121,11 +121,17 @@ library BatteryHelpers {
       BatteryDetails.setReserveBalance(authorId, authorReserveBalance);
     }
 
+    _storeExpenseReceipt(savedKingdomId, winningPot);
+  }
+
+  function _storeExpenseReceipt(bytes32 savedKingdomId, uint256 winningPot) internal {
     ExpenseReceiptData memory expenseReceipt = ExpenseReceiptData({
       amount: winningPot,
-      playerAddress: SavedKingdom.getAuthor(savedKingdomId)
+      playerAddress: SavedKingdom.getAuthor(savedKingdomId),
+      savedKingdomId: savedKingdomId,
+      timestamp: block.timestamp
     });
-    ExpenseReceipt.set(savedKingdomId, block.timestamp, expenseReceipt);
+    ExpenseReceipt.set(keccak256(abi.encodePacked(savedKingdomId, block.timestamp)), expenseReceipt);
   }
 
   /**
@@ -196,12 +202,18 @@ library BatteryHelpers {
       BatteryDetails.setReserveBalance(authorId, authorReserveBalance);
     }
 
+    _storeRevenueReceipt(savedKingdomId, winningPot);
+  }
+
+  function _storeRevenueReceipt(bytes32 savedKingdomId, uint256 winningPot) internal {
     RevenueReceiptData memory revenueReceipt = RevenueReceiptData({
-      amountToKingdom: opponentSavedKingdomEarnings,
-      amountToReserve: opponentReserveEarnings,
-      playerAddress: player2Address
+      amountToKingdom: winningPot,
+      amountToReserve: 0,
+      playerAddress: SavedKingdom.getAuthor(savedKingdomId),
+      savedKingdomId: savedKingdomId,
+      timestamp: block.timestamp
     });
-    RevenueReceipt.set(savedKingdomId, block.timestamp, revenueReceipt);
+    RevenueReceipt.set(keccak256(abi.encodePacked(savedKingdomId, block.timestamp)), revenueReceipt);
   }
 
   /**

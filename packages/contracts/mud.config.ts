@@ -55,8 +55,9 @@ export default defineWorld({
     },
     EntityAtPosition: "bytes32",
     ExpenseReceipt: {
-      key: ["savedKingdomId", "timestamp"],
+      key: ["id"],
       schema: {
+        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, timestamp))
         amount: "uint256", // Electricity in watt-hours
         playerAddress: "address",
         savedKingdomId: "bytes32",
@@ -172,8 +173,9 @@ export default defineWorld({
       },
     },
     RevenueReceipt: {
-      key: ["savedKingdomId", "timestamp"],
+      key: ["id"],
       schema: {
+        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, timestamp))
         amountToKingdom: "uint256", // Electricity in watt-hours
         amountToReserve: "uint256", // Electricity in watt-hours
         playerAddress: "address",

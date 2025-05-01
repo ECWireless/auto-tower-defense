@@ -20,6 +20,8 @@ struct RevenueReceiptData {
   uint256 amountToKingdom;
   uint256 amountToReserve;
   address playerAddress;
+  bytes32 savedKingdomId;
+  uint256 timestamp;
 }
 
 library RevenueReceipt {
@@ -27,21 +29,20 @@ library RevenueReceipt {
   ResourceId constant _tableId = ResourceId.wrap(0x6f746170700000000000000000000000526576656e7565526563656970740000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0054030020201400000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0094050020201420200000000000000000000000000000000000000000000000);
 
-  // Hex-encoded key schema of (bytes32, uint256)
-  Schema constant _keySchema = Schema.wrap(0x004002005f1f0000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (uint256, uint256, address)
-  Schema constant _valueSchema = Schema.wrap(0x005403001f1f6100000000000000000000000000000000000000000000000000);
+  // Hex-encoded key schema of (bytes32)
+  Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (uint256, uint256, address, bytes32, uint256)
+  Schema constant _valueSchema = Schema.wrap(0x009405001f1f615f1f0000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
    * @return keyNames An array of strings with the names of key fields.
    */
   function getKeyNames() internal pure returns (string[] memory keyNames) {
-    keyNames = new string[](2);
-    keyNames[0] = "savedKingdomId";
-    keyNames[1] = "timestamp";
+    keyNames = new string[](1);
+    keyNames[0] = "id";
   }
 
   /**
@@ -49,10 +50,12 @@ library RevenueReceipt {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](3);
+    fieldNames = new string[](5);
     fieldNames[0] = "amountToKingdom";
     fieldNames[1] = "amountToReserve";
     fieldNames[2] = "playerAddress";
+    fieldNames[3] = "savedKingdomId";
+    fieldNames[4] = "timestamp";
   }
 
   /**
@@ -72,10 +75,9 @@ library RevenueReceipt {
   /**
    * @notice Set amountToKingdom.
    */
-  function setAmountToKingdom(bytes32 savedKingdomId, uint256 timestamp, uint256 amountToKingdom) internal {
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+  function setAmountToKingdom(bytes32 id, uint256 amountToKingdom) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((amountToKingdom)), _fieldLayout);
   }
@@ -83,10 +85,9 @@ library RevenueReceipt {
   /**
    * @notice Set amountToKingdom.
    */
-  function _setAmountToKingdom(bytes32 savedKingdomId, uint256 timestamp, uint256 amountToKingdom) internal {
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+  function _setAmountToKingdom(bytes32 id, uint256 amountToKingdom) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((amountToKingdom)), _fieldLayout);
   }
@@ -94,10 +95,9 @@ library RevenueReceipt {
   /**
    * @notice Set amountToReserve.
    */
-  function setAmountToReserve(bytes32 savedKingdomId, uint256 timestamp, uint256 amountToReserve) internal {
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+  function setAmountToReserve(bytes32 id, uint256 amountToReserve) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((amountToReserve)), _fieldLayout);
   }
@@ -105,10 +105,9 @@ library RevenueReceipt {
   /**
    * @notice Set amountToReserve.
    */
-  function _setAmountToReserve(bytes32 savedKingdomId, uint256 timestamp, uint256 amountToReserve) internal {
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+  function _setAmountToReserve(bytes32 id, uint256 amountToReserve) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((amountToReserve)), _fieldLayout);
   }
@@ -116,10 +115,9 @@ library RevenueReceipt {
   /**
    * @notice Set playerAddress.
    */
-  function setPlayerAddress(bytes32 savedKingdomId, uint256 timestamp, address playerAddress) internal {
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+  function setPlayerAddress(bytes32 id, address playerAddress) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((playerAddress)), _fieldLayout);
   }
@@ -127,32 +125,71 @@ library RevenueReceipt {
   /**
    * @notice Set playerAddress.
    */
-  function _setPlayerAddress(bytes32 savedKingdomId, uint256 timestamp, address playerAddress) internal {
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+  function _setPlayerAddress(bytes32 id, address playerAddress) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((playerAddress)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set savedKingdomId.
+   */
+  function setSavedKingdomId(bytes32 id, bytes32 savedKingdomId) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((savedKingdomId)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set savedKingdomId.
+   */
+  function _setSavedKingdomId(bytes32 id, bytes32 savedKingdomId) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((savedKingdomId)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set timestamp.
+   */
+  function setTimestamp(bytes32 id, uint256 timestamp) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((timestamp)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set timestamp.
+   */
+  function _setTimestamp(bytes32 id, uint256 timestamp) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((timestamp)), _fieldLayout);
   }
 
   /**
    * @notice Set the full data using individual values.
    */
   function set(
-    bytes32 savedKingdomId,
-    uint256 timestamp,
+    bytes32 id,
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    address playerAddress
+    address playerAddress,
+    bytes32 savedKingdomId,
+    uint256 timestamp
   ) internal {
-    bytes memory _staticData = encodeStatic(amountToKingdom, amountToReserve, playerAddress);
+    bytes memory _staticData = encodeStatic(amountToKingdom, amountToReserve, playerAddress, savedKingdomId, timestamp);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
 
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreSwitch.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData);
   }
@@ -161,20 +198,20 @@ library RevenueReceipt {
    * @notice Set the full data using individual values.
    */
   function _set(
-    bytes32 savedKingdomId,
-    uint256 timestamp,
+    bytes32 id,
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    address playerAddress
+    address playerAddress,
+    bytes32 savedKingdomId,
+    uint256 timestamp
   ) internal {
-    bytes memory _staticData = encodeStatic(amountToKingdom, amountToReserve, playerAddress);
+    bytes memory _staticData = encodeStatic(amountToKingdom, amountToReserve, playerAddress, savedKingdomId, timestamp);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
 
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreCore.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData, _fieldLayout);
   }
@@ -182,15 +219,20 @@ library RevenueReceipt {
   /**
    * @notice Set the full data using the data struct.
    */
-  function set(bytes32 savedKingdomId, uint256 timestamp, RevenueReceiptData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.amountToKingdom, _table.amountToReserve, _table.playerAddress);
+  function set(bytes32 id, RevenueReceiptData memory _table) internal {
+    bytes memory _staticData = encodeStatic(
+      _table.amountToKingdom,
+      _table.amountToReserve,
+      _table.playerAddress,
+      _table.savedKingdomId,
+      _table.timestamp
+    );
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
 
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreSwitch.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData);
   }
@@ -198,15 +240,20 @@ library RevenueReceipt {
   /**
    * @notice Set the full data using the data struct.
    */
-  function _set(bytes32 savedKingdomId, uint256 timestamp, RevenueReceiptData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.amountToKingdom, _table.amountToReserve, _table.playerAddress);
+  function _set(bytes32 id, RevenueReceiptData memory _table) internal {
+    bytes memory _staticData = encodeStatic(
+      _table.amountToKingdom,
+      _table.amountToReserve,
+      _table.playerAddress,
+      _table.savedKingdomId,
+      _table.timestamp
+    );
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
 
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreCore.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData, _fieldLayout);
   }
@@ -216,12 +263,26 @@ library RevenueReceipt {
    */
   function decodeStatic(
     bytes memory _blob
-  ) internal pure returns (uint256 amountToKingdom, uint256 amountToReserve, address playerAddress) {
+  )
+    internal
+    pure
+    returns (
+      uint256 amountToKingdom,
+      uint256 amountToReserve,
+      address playerAddress,
+      bytes32 savedKingdomId,
+      uint256 timestamp
+    )
+  {
     amountToKingdom = (uint256(Bytes.getBytes32(_blob, 0)));
 
     amountToReserve = (uint256(Bytes.getBytes32(_blob, 32)));
 
     playerAddress = (address(Bytes.getBytes20(_blob, 64)));
+
+    savedKingdomId = (Bytes.getBytes32(_blob, 84));
+
+    timestamp = (uint256(Bytes.getBytes32(_blob, 116)));
   }
 
   /**
@@ -235,16 +296,21 @@ library RevenueReceipt {
     EncodedLengths,
     bytes memory
   ) internal pure returns (RevenueReceiptData memory _table) {
-    (_table.amountToKingdom, _table.amountToReserve, _table.playerAddress) = decodeStatic(_staticData);
+    (
+      _table.amountToKingdom,
+      _table.amountToReserve,
+      _table.playerAddress,
+      _table.savedKingdomId,
+      _table.timestamp
+    ) = decodeStatic(_staticData);
   }
 
   /**
    * @notice Delete all data for given keys.
    */
-  function deleteRecord(bytes32 savedKingdomId, uint256 timestamp) internal {
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+  function deleteRecord(bytes32 id) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreSwitch.deleteRecord(_tableId, _keyTuple);
   }
@@ -252,10 +318,9 @@ library RevenueReceipt {
   /**
    * @notice Delete all data for given keys.
    */
-  function _deleteRecord(bytes32 savedKingdomId, uint256 timestamp) internal {
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+  function _deleteRecord(bytes32 id) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     StoreCore.deleteRecord(_tableId, _keyTuple, _fieldLayout);
   }
@@ -267,9 +332,11 @@ library RevenueReceipt {
   function encodeStatic(
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    address playerAddress
+    address playerAddress,
+    bytes32 savedKingdomId,
+    uint256 timestamp
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(amountToKingdom, amountToReserve, playerAddress);
+    return abi.encodePacked(amountToKingdom, amountToReserve, playerAddress, savedKingdomId, timestamp);
   }
 
   /**
@@ -281,9 +348,11 @@ library RevenueReceipt {
   function encode(
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    address playerAddress
+    address playerAddress,
+    bytes32 savedKingdomId,
+    uint256 timestamp
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(amountToKingdom, amountToReserve, playerAddress);
+    bytes memory _staticData = encodeStatic(amountToKingdom, amountToReserve, playerAddress, savedKingdomId, timestamp);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -294,10 +363,9 @@ library RevenueReceipt {
   /**
    * @notice Encode keys as a bytes32 array using this table's field layout.
    */
-  function encodeKeyTuple(bytes32 savedKingdomId, uint256 timestamp) internal pure returns (bytes32[] memory) {
-    bytes32[] memory _keyTuple = new bytes32[](2);
-    _keyTuple[0] = savedKingdomId;
-    _keyTuple[1] = bytes32(uint256(timestamp));
+  function encodeKeyTuple(bytes32 id) internal pure returns (bytes32[] memory) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
 
     return _keyTuple;
   }
