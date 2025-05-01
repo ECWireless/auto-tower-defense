@@ -9,9 +9,9 @@ import {
   encodeEntity,
   singletonEntity,
 } from '@latticexyz/store-sync/recs';
-import { Loader2, Play, Signal } from 'lucide-react';
+import { Battery, Loader2, Play, Signal, Zap } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -24,12 +24,20 @@ import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/MUDContext';
 import { GAMES_PATH } from '@/Routes';
-import { MAX_PLAYERS } from '@/utils/constants';
+import { BATTERY_STORAGE_LIMIT, MAX_PLAYERS } from '@/utils/constants';
+import { formatWattHours } from '@/utils/helpers';
+
+const getBatteryColor = (charge: number) => {
+  if (charge >= 66) return 'text-green-500';
+  if (charge >= 33) return 'text-yellow-500';
+  return 'text-red-500';
+};
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
   const {
     components: {
+      BatteryDetails,
       CurrentGame,
       Game,
       KingdomsByLevel,
@@ -167,6 +175,16 @@ export const Home = (): JSX.Element => {
     }
   }, [Username, playerEntity]);
 
+  const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
+
+  const batteryCharge = useMemo(() => {
+    if (!batteryDetails) return 0;
+    const { activeBalance } = batteryDetails;
+    const percentOfStorage =
+      (Number(activeBalance) / BATTERY_STORAGE_LIMIT) * 100;
+    return Math.round(percentOfStorage);
+  }, [batteryDetails]);
+
   return (
     <div className="bg-black flex flex-col min-h-screen p-4 relative text-white">
       <BackgroundAnimation />
@@ -191,6 +209,40 @@ export const Home = (): JSX.Element => {
       {usernameSaved && (
         <div className="mb-8 neon-text-cyan text-center text-xl">
           Welcome back, {username}!
+        </div>
+      )}
+
+      {/* Battery Information */}
+      {batteryDetails && (
+        <div className="flex justify-center mb-8">
+          <div className="bg-gray-900/60 border border-gray-800 flex gap-2 py-2 items-center rounded-full sm:gap-4 px-3 sm:px-4">
+            {/* Battery Charge */}
+            <div className="flex gap-1 sm:gap-2 sm:items-center">
+              <Battery
+                className={`h-3 sm:h-4 sm:w-4 mt-1 self-start sm:mt-0 sm:self-auto w-3 ${getBatteryColor(batteryCharge)}`}
+              />
+              <div className="flex flex-col sm:flex-row sm:items-center">
+                <span
+                  className={`font-medium sm:text-sm text-xs ${getBatteryColor(batteryCharge)}`}
+                >
+                  {formatWattHours(batteryDetails.activeBalance)} (
+                  {batteryCharge}%)
+                </span>
+                <span className="sm:ml-1 text-gray-400 text-xs">Battery</span>
+              </div>
+            </div>
+            <div className="bg-gray-700 h-8 w-px"></div>
+            {/* Power Reserve */}
+            <div className="flex gap-1 sm:gap-2 sm:items-center">
+              <Zap className="h-3 mt-1 self-start sm:h-4 sm:mt-0 sm:self-auto sm:w-4 text-yellow-400 w-3" />
+              <div className="flex flex-col sm:flex-row sm:items-center">
+                <span className="font-medium sm:text-sm text-xs text-yellow-400">
+                  {formatWattHours(batteryDetails.reserveBalance)}
+                </span>
+                <span className="sm:ml-1 text-gray-400 text-xs">Reserve</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

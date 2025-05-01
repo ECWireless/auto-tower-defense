@@ -32,6 +32,19 @@ const formatDuration = (minutes: number): string => {
   }
 };
 
+export const formatWattHours = (wattHours: bigint): string => {
+  if (wattHours >= BigInt(1_000_000_000)) {
+    return `${(Number(wattHours) / 1_000_000_000).toFixed(2)} GWh`;
+  }
+  if (wattHours >= BigInt(1_000_000)) {
+    return `${(Number(wattHours) / 1_000_000).toFixed(2)} MWh`;
+  }
+  if (wattHours >= BigInt(1_000)) {
+    return `${(Number(wattHours) / 1_000).toFixed(2)} kWh`;
+  }
+  return `${wattHours.toString()} Wh`;
+};
+
 export const getElapsedTime = (
   startTimestamp: bigint,
   endTimestamp: bigint,
