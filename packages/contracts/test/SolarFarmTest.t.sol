@@ -8,7 +8,7 @@ import { IWorld } from "../src/codegen/world/IWorld.sol";
 import { _solarFarmSystemAddress } from "../src/utils.sol";
 import { BATTERY_STORAGE_LIMIT } from "../constants.sol";
 
-import { BatteryDetails, SolarFarmDetails, TokenAddresses } from "../src/codegen/index.sol";
+import { AddressBook, BatteryDetails, SolarFarmDetails } from "../src/codegen/index.sol";
 import "../mocks/MockUSDC.sol";
 
 contract SolarFarmTest is MudTest {
@@ -16,7 +16,7 @@ contract SolarFarmTest is MudTest {
   address bobAddress = vm.addr(2);
 
   function _mintUsdc(address to, uint256 amount) internal returns (MockUSDC) {
-    address mockUsdcAddress = TokenAddresses.getUsdcAddress();
+    address mockUsdcAddress = AddressBook.getUsdcAddress();
     MockUSDC usdc = MockUSDC(mockUsdcAddress);
     usdc.mint(to, amount);
     return usdc;

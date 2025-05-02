@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { KingdomsByLevel, Level, PlayerCount, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData, SolarFarmDetails, TokenAddresses } from "../codegen/index.sol";
+import { AddressBook, KingdomsByLevel, Level, PlayerCount, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData, SolarFarmDetails } from "../codegen/index.sol";
 import "../../mocks/MockUSDC.sol";
 
 contract AdminSystem is System {
@@ -48,7 +48,7 @@ contract AdminSystem is System {
   }
 
   function addUsdcTokenAddress(address usdcTokenAddress) external {
-    TokenAddresses.setUsdcAddress(usdcTokenAddress);
+    AddressBook.setUsdcAddress(usdcTokenAddress);
   }
 
   function updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external {
@@ -60,7 +60,7 @@ contract AdminSystem is System {
   }
 
   function mintUsdcToPlayer(address player, uint256 amount) external {
-    address usdcTokenAddress = TokenAddresses.getUsdcAddress();
+    address usdcTokenAddress = AddressBook.getUsdcAddress();
     require(usdcTokenAddress != address(0), "USDC token address not set");
     MockUSDC usdc = MockUSDC(usdcTokenAddress);
     usdc.mint(player, amount);

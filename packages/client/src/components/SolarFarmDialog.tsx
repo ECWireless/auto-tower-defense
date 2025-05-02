@@ -4,12 +4,13 @@ import { decodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
 import {
   ArrowRightLeft,
   DollarSign,
+  Loader2,
   StoreIcon as BuildingStore,
   Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { formatUnits } from 'viem';
+import { formatUnits, parseUnits } from 'viem';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -22,18 +23,22 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/MUDContext';
 import { formatWattHours } from '@/utils/helpers';
 
 export const SolarFarmDialog: React.FC = () => {
   const {
-    components: { BatteryDetails, SolarFarmDetails, TokenAddresses },
-    network: { playerEntity, publicClient },
+    components: { AddressBook, BatteryDetails, SolarFarmDetails },
+    network: { playerEntity, publicClient, walletClient },
+    systemCalls: { buyElectricity, sellElectricity },
   } = useMUD();
+  const { playSfx } = useSettings();
 
   const [showSolarFarmDialog, setShowSolarFarmDialog] =
     useState<boolean>(false);
   const [isBuying, setIsBuying] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [electricityAmount, setElectricityAmount] = useState<string>('0');
 
   const [playerUSDCBalance, setPlayerUSDCBalance] = useState<bigint>(BigInt(0));
@@ -44,7 +49,7 @@ export const SolarFarmDialog: React.FC = () => {
   const getUsdcBalance = useCallback(async () => {
     try {
       const usdcAddress = getComponentValue(
-        TokenAddresses,
+        AddressBook,
         singletonEntity,
       )?.usdcAddress;
 
@@ -84,7 +89,7 @@ export const SolarFarmDialog: React.FC = () => {
       });
       return BigInt(0);
     }
-  }, [playerEntity, publicClient, TokenAddresses]);
+  }, [AddressBook, playerEntity, publicClient]);
 
   useEffect(() => {
     const fetchUsdcBalance = async () => {
@@ -130,45 +135,101 @@ export const SolarFarmDialog: React.FC = () => {
     if (transactionCost < 0.01) {
       return 0;
     }
-    return transactionCost.toFixed(2);
+    return Number(transactionCost.toFixed(2));
   }, [electricityAmount, solarFarmDetails?.whPerCentPrice]);
 
-  // Handle transaction (buy or sell)
-  const handleTransaction = () => {
-    // const transactionCost = calculateTransactionCost();
-    // if (isBuying) {
-    //   // Check if player has enough USDC
-    //   if (playerUSDCBalance >= transactionCost) {
-    //     setPlayerUSDCBalance(prev =>
-    //       Number.parseFloat((prev - transactionCost).toFixed(2)),
-    //     );
-    //     setShopUSDCBalance(prev =>
-    //       Number.parseFloat((prev + transactionCost).toFixed(2)),
-    //     );
-    //     setPowerReserve(prev => prev + electricityAmount);
-    //     // Show success message or notification
-    //   } else {
-    //     // Show error message - not enough funds
-    //     alert('Not enough USDC to complete purchase');
-    //   }
-    // } else {
-    // Selling electricity
-    // Check if player has enough electricity
-    // if (powerReserve >= electricityAmount) {
-    // setPlayerUSDCBalance(prev =>
-    //   Number.parseFloat((prev + transactionCost).toFixed(2)),
-    // );
-    // setShopUSDCBalance(prev =>
-    //   Number.parseFloat((prev - transactionCost).toFixed(2)),
-    // );
-    // setPowerReserve(prev => prev - electricityAmount);
-    // Show success message or notification
-    // } else {
-    //   // Show error message - not enough electricity
-    //   alert('Not enough electricity in your Power Reserve');
-    // }
-    // }
-  };
+  const onApprove = useCallback(async () => {
+    try {
+      const { solarFarmAddress, usdcAddress } =
+        getComponentValue(AddressBook, singletonEntity) ?? {};
+
+      if (!usdcAddress) {
+        throw new Error('USDC address not found');
+      }
+
+      const txHash = await walletClient.writeContract({
+        address: usdcAddress as `0x${string}`,
+        abi: [
+          {
+            constant: false,
+            inputs: [
+              { name: 'spender', type: 'address' },
+              { name: 'amount', type: 'uint256' },
+            ],
+            name: 'approve',
+            outputs: [{ name: '', type: 'bool' }],
+            type: 'function',
+          },
+        ],
+        functionName: 'approve',
+        args: [solarFarmAddress, parseUnits(electricityAmount, 6)],
+      });
+      const txResult = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+        confirmations: 1,
+      });
+      const { status } = txResult;
+      const success = status === 'success';
+      if (!success) {
+        throw new Error('Failed to approve USDC transfer');
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+      toast.error('Error approving USDC transfer', {
+        description: (error as Error).message,
+      });
+    }
+  }, [AddressBook, electricityAmount, publicClient, walletClient]);
+
+  const onHandleTransaction = useCallback(async () => {
+    try {
+      setIsProcessing(true);
+      playSfx('click2');
+
+      if (isBuying) {
+        await onApprove();
+      }
+
+      const { error, success } = isBuying
+        ? await buyElectricity(
+            parseUnits(electricityAmount, 3), // Convert kWh to watt-hours
+          )
+        : await sellElectricity(
+            parseUnits(electricityAmount, 3), // Convert kWh to watt-hours
+          );
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast.success(
+        `${
+          isBuying ? 'Bought' : 'Sold'
+        } ${electricityAmount} kWh of electricity!`,
+      );
+      const usdcBalance = await getUsdcBalance();
+      setPlayerUSDCBalance(usdcBalance);
+      setElectricityAmount('0');
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Buying Electricity', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [
+    buyElectricity,
+    electricityAmount,
+    getUsdcBalance,
+    isBuying,
+    onApprove,
+    playSfx,
+    sellElectricity,
+  ]);
 
   return (
     <>
@@ -241,7 +302,7 @@ export const SolarFarmDialog: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-2">
                 <div className="text-gray-300 text-sm">Current Price:</div>
                 <div className="font-medium text-sm text-white">
                   $0.01{' '}
@@ -251,6 +312,16 @@ export const SolarFarmDialog: React.FC = () => {
                       solarFarmDetails?.whPerCentPrice ?? BigInt(0),
                     )}
                   </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-gray-300 text-sm">
+                  Available Electricity:
+                </div>
+                <div className="font-medium text-sm text-yellow-300">
+                  {formatWattHours(
+                    solarFarmDetails?.electricityBalance ?? BigInt(0),
+                  )}
                 </div>
               </div>
 
@@ -333,8 +404,15 @@ export const SolarFarmDialog: React.FC = () => {
                   ? 'bg-green-800 hover:bg-green-700 text-white'
                   : 'bg-red-800 hover:bg-red-700 text-white'
               }
-              onClick={handleTransaction}
+              disabled={
+                isProcessing ||
+                !electricityAmount ||
+                Number(electricityAmount) <= 0 ||
+                calculateTransactionCost() > Number(playerUSDCBalance)
+              }
+              onClick={onHandleTransaction}
             >
+              {isProcessing && <Loader2 className="animate-spin h-6 w-6" />}
               {isBuying ? 'Buy Electricity' : 'Sell Electricity'}
             </Button>
           </DialogFooter>

@@ -3,9 +3,10 @@ pragma solidity >=0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { System } from "@latticexyz/world/src/System.sol";
-import { BatteryDetails, SolarFarmDetails, TokenAddresses, Username } from "../codegen/index.sol";
+import { AddressBook, BatteryDetails, SolarFarmDetails, Username } from "../codegen/index.sol";
 import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
+import "forge-std/console.sol";
 
 contract SolarFarmSystem is System {
   /**
@@ -29,14 +30,14 @@ contract SolarFarmSystem is System {
     uint256 whPerCentPrice = SolarFarmDetails.getWhPerCentPrice();
     require(electricityAmount >= whPerCentPrice, "SolarFarmSystem: amount must be greater than 0.01 USDC");
     uint256 usdcAmountCents = electricityAmount / whPerCentPrice;
-    uint256 usdcAmount = usdcAmountCents * 10000; // Convert to unformatted USDC
+    uint256 usdcAmount = usdcAmountCents * 100000; // Convert to unformatted USDC
     require(usdcAmount > 0, "SolarFarmSystem: USDC amount must be greater than 0");
 
     uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
     require(solarFarmElectricityBalance >= electricityAmount, "SolarFarmSystem: not enough electricity in Solar Farm");
 
     // Transfer USDC from player to Solar Farm
-    address usdcAddress = TokenAddresses.getUsdcAddress();
+    address usdcAddress = AddressBook.getUsdcAddress();
     IERC20 usdc = IERC20(usdcAddress);
     usdc.transferFrom(playerAddress, address(this), usdcAmount);
 
@@ -80,13 +81,13 @@ contract SolarFarmSystem is System {
     require(whPerCentPrice > 0, "SolarFarmSystem: whPerCentPrice must be greater than 0");
     require(electricityAmount >= whPerCentPrice, "SolarFarmSystem: amount must be greater than 0.01 USDC");
     uint256 usdcAmountCents = electricityAmount / whPerCentPrice;
-    uint256 usdcAmount = usdcAmountCents * 10000; // Convert to unformatted USDC
+    uint256 usdcAmount = usdcAmountCents * 100000; // Convert to unformatted USDC
 
     uint256 solarFarmFiatBalance = SolarFarmDetails.getFiatBalance();
     require(solarFarmFiatBalance >= usdcAmount, "SolarFarmSystem: not enough USDC in Solar Farm");
 
     // Transfer USDC from Solar Farm to player
-    address usdcAddress = TokenAddresses.getUsdcAddress();
+    address usdcAddress = AddressBook.getUsdcAddress();
     IERC20 usdc = IERC20(usdcAddress);
     usdc.transfer(playerAddress, usdcAmount);
 

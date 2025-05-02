@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
-import { DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedModification, SolarFarmDetails, SolarFarmDetailsData, TokenAddresses, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { AddressBook, DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedModification, SolarFarmDetails, SolarFarmDetailsData, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { ActionType } from "../src/codegen/common.sol";
 import { _solarFarmSystemAddress } from "../src/utils.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
@@ -44,7 +44,8 @@ contract PostDeploy is Script {
       // Send USDC to the Solar Farm System
       address solarFarmSystemAddress = _solarFarmSystemAddress();
       address mockUsdcAddress = _deployMockUSDC(solarFarmSystemAddress, solarFarmerStartingBalance);
-      TokenAddresses.setUsdcAddress(mockUsdcAddress);
+      AddressBook.setSolarFarmAddress(solarFarmSystemAddress);
+      AddressBook.setUsdcAddress(mockUsdcAddress);
       MockUSDC usdc = MockUSDC(mockUsdcAddress);
       uint256 balance = usdc.balanceOf(solarFarmSystemAddress);
       console.logString("Solar Farm System MockUSDC balance:");

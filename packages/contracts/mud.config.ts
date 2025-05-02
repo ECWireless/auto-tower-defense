@@ -26,6 +26,13 @@ export default defineWorld({
       },
       key: ["id"],
     },
+    AddressBook: {
+      schema: {
+        solarFarmAddress: "address",
+        usdcAddress: "address",
+      },
+      key: [],
+    },
     BatteryDetails: {
       key: ["id"],
       schema: {
@@ -237,12 +244,6 @@ export default defineWorld({
         fiatBalance: "uint256", // Unformatted balance of USDC with 6 decimals
         msPerWh: "uint256", // Number of milliseconds per watt hour; start at 3600ms
         whPerCentPrice: "uint256", // Electricity in watt-hours per 1 cent in USDC; 1.92kWh/cent; start at 1920
-      },
-      key: [],
-    },
-    TokenAddresses: {
-      schema: {
-        usdcAddress: "address",
       },
       key: [],
     },
