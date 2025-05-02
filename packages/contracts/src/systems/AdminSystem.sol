@@ -3,6 +3,7 @@ pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
 import { KingdomsByLevel, Level, PlayerCount, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData, SolarFarmDetails, TokenAddresses } from "../codegen/index.sol";
+import "../../mocks/MockUSDC.sol";
 
 contract AdminSystem is System {
   function addSavedKingdomRow(bytes32 savedGameId, uint256 level) external returns (bool added) {
@@ -56,5 +57,12 @@ contract AdminSystem is System {
 
   function updatePlayerCount(uint256 newPlayerCount) external {
     PlayerCount.set(newPlayerCount);
+  }
+
+  function mintUsdcToPlayer(address player, uint256 amount) external {
+    address usdcTokenAddress = TokenAddresses.getUsdcAddress();
+    require(usdcTokenAddress != address(0), "USDC token address not set");
+    MockUSDC usdc = MockUSDC(usdcTokenAddress);
+    usdc.mint(player, amount);
   }
 }

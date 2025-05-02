@@ -157,6 +157,24 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__mintUsdcToPlayer",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__nextTurn",
     "inputs": [
       {

@@ -45,7 +45,7 @@ contract PostDeploy is Script {
       address solarFarmSystemAddress = _solarFarmSystemAddress();
       address mockUsdcAddress = _deployMockUSDC(solarFarmSystemAddress, solarFarmerStartingBalance);
       TokenAddresses.setUsdcAddress(mockUsdcAddress);
-      IERC20 usdc = IERC20(mockUsdcAddress);
+      MockUSDC usdc = MockUSDC(mockUsdcAddress);
       uint256 balance = usdc.balanceOf(solarFarmSystemAddress);
       console.logString("Solar Farm System MockUSDC balance:");
       console.logUint(balance);
