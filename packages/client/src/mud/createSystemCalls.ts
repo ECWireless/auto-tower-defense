@@ -42,6 +42,26 @@ export function createSystemCalls(
    */
   { publicClient, worldContract, waitForTransaction }: SetupNetworkResult,
 ) {
+  const claimRecharge = async () => {
+    try {
+      const tx = await worldContract.write.app__claimRecharge();
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to claim recharge.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const createGame = async (username: string, resetLevel: boolean) => {
     try {
       const tx = await worldContract.write.app__createGame(
@@ -281,6 +301,7 @@ export function createSystemCalls(
   };
 
   return {
+    claimRecharge,
     createGame,
     deleteModification,
     editModification,

@@ -8,10 +8,11 @@ import {
 } from '@dnd-kit/core';
 import { useComponentValue } from '@latticexyz/react';
 import { Entity } from '@latticexyz/recs';
-import { decodeEntity } from '@latticexyz/store-sync/recs';
-import { Battery, Flag, Home, Zap } from 'lucide-react';
+import { decodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
+import { Battery, Flag, Home, Loader2, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { zeroAddress } from 'viem';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
@@ -47,8 +48,9 @@ export const GamePage = (): JSX.Element => {
 export const InnerGamePage = (): JSX.Element => {
   const navigate = useNavigate();
   const {
-    components: { BatteryDetails },
+    components: { BatteryDetails, SolarFarmDetails },
     network: { playerEntity },
+    systemCalls: { claimRecharge },
   } = useMUD();
   const {
     activeTowerId,
@@ -71,6 +73,8 @@ export const InnerGamePage = (): JSX.Element => {
     },
   });
   const sensors = useSensors(pointerSensor);
+
+  const [isClaimingRecharge, setIsClaimingRecharge] = useState(false);
 
   // Add game ID to tab title
   useEffect(() => {
@@ -117,6 +121,30 @@ export const InnerGamePage = (): JSX.Element => {
       setIsHelpDialogOpen(true);
     }
   }, []);
+
+  const onClaimRecharge = useCallback(async () => {
+    try {
+      setIsClaimingRecharge(true);
+      playSfx('click2');
+
+      const { error, success } = await claimRecharge();
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast.success('Recharge Claimed!');
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Claiming Recharge', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsClaimingRecharge(false);
+    }
+  }, [claimRecharge, playSfx]);
 
   const onDragStart = (event: DragStartEvent) => {
     if (!isPlayer1) return;
@@ -165,6 +193,7 @@ export const InnerGamePage = (): JSX.Element => {
   };
 
   const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
+  const solarFarmDetails = useComponentValue(SolarFarmDetails, singletonEntity);
 
   const batteryCharge = useMemo(() => {
     if (!batteryDetails) return 0;
@@ -173,6 +202,17 @@ export const InnerGamePage = (): JSX.Element => {
       (Number(activeBalance) / BATTERY_STORAGE_LIMIT) * 100;
     return Math.round(percentOfStorage);
   }, [batteryDetails]);
+
+  const claimableRecharge = useMemo(() => {
+    if (!(batteryDetails && solarFarmDetails)) return BigInt(0);
+    const { lastRechargeTimestamp } = batteryDetails;
+    const currentTime = Date.now();
+    const timeSinceLastRecharge =
+      currentTime - Number(lastRechargeTimestamp) * 1000;
+    return BigInt(
+      Math.floor(timeSinceLastRecharge / Number(solarFarmDetails.msPerWh)),
+    );
+  }, [batteryDetails, solarFarmDetails]);
 
   if (isRefreshing) {
     return <LoadingScreen width={100} />;
@@ -257,12 +297,19 @@ export const InnerGamePage = (): JSX.Element => {
               </div>
             </div>
             {/* Claim Recharge Button */}
-            <Button
-              className="mt-2 bg-green-800/80 hover:bg-green-700/90 text-green-100 text-xs border border-green-600/50 shadow-md shadow-green-900/20"
-              size="sm"
-            >
-              Claim Recharge (+5 kWh)
-            </Button>
+            {claimableRecharge > BigInt(1_000) && (
+              <Button
+                className="mt-2 bg-green-800/80 hover:bg-green-700/90 text-green-100 text-xs border border-green-600/50 shadow-md shadow-green-900/20"
+                disabled={isClaimingRecharge}
+                onClick={onClaimRecharge}
+                size="sm"
+              >
+                {isClaimingRecharge && (
+                  <Loader2 className="animate-spin h-6 w-6" />
+                )}
+                Claim Recharge (+{formatWattHours(claimableRecharge)})
+              </Button>
+            )}
           </div>
         )}
 
@@ -304,12 +351,19 @@ export const InnerGamePage = (): JSX.Element => {
                   </div>
                 </div>
                 {/* Claim Recharge Button */}
-                <Button
-                  className="bg-green-800/80 border border-green-600/50 mt-2 h-7 hover:bg-green-700/90 px-3 py-1 shadow-green-900/20 shadow-md text-green-100 text-xs"
-                  size="sm"
-                >
-                  Claim Recharge (+5 kWh)
-                </Button>
+                {claimableRecharge > BigInt(1_000) && (
+                  <Button
+                    className="bg-green-800/80 border border-green-600/50 mt-2 h-7 hover:bg-green-700/90 px-3 py-1 shadow-green-900/20 shadow-md text-green-100 text-xs"
+                    disabled={isClaimingRecharge}
+                    onClick={onClaimRecharge}
+                    size="sm"
+                  >
+                    {isClaimingRecharge && (
+                      <Loader2 className="animate-spin h-6 w-6" />
+                    )}
+                    Claim Recharge (+{formatWattHours(claimableRecharge)})
+                  </Button>
+                )}
               </div>
             )}
             <GameStatusBar
