@@ -1,13 +1,15 @@
-'use client';
-
+import { useComponentValue } from '@latticexyz/react';
+import { getComponentValue } from '@latticexyz/recs';
+import { decodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
 import {
   ArrowRightLeft,
   DollarSign,
   StoreIcon as BuildingStore,
   Zap,
 } from 'lucide-react';
-import type React from 'react';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { formatUnits } from 'viem';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,69 +22,152 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useMUD } from '@/MUDContext';
+import { formatWattHours } from '@/utils/helpers';
 
 export const SolarFarmDialog: React.FC = () => {
-  const [showSolarFarmDialog, setShowSolarFarmDialog] = useState(false);
+  const {
+    components: { BatteryDetails, SolarFarmDetails, TokenAddresses },
+    network: { playerEntity, publicClient },
+  } = useMUD();
+
+  const [showSolarFarmDialog, setShowSolarFarmDialog] =
+    useState<boolean>(false);
   const [isBuying, setIsBuying] = useState(true);
-  const [electricityAmount, setElectricityAmount] = useState(10);
+  const [electricityAmount, setElectricityAmount] = useState<string>('0');
 
-  const [playerUSDCBalance, setPlayerUSDCBalance] = useState(250.75);
-  const [shopUSDCBalance, setShopUSDCBalance] = useState(10000);
-  const [powerReserve, setPowerReserve] = useState(1250);
+  const [playerUSDCBalance, setPlayerUSDCBalance] = useState<bigint>(BigInt(0));
 
-  const electricityPrice = 0.05;
+  const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
+  const solarFarmDetails = useComponentValue(SolarFarmDetails, singletonEntity);
 
-  // Handle electricity amount change
-  const handleElectricityAmountChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = Number.parseInt(e.target.value);
-    if (!isNaN(value) && value >= 0) {
-      setElectricityAmount(value);
+  const getUsdcBalance = useCallback(async () => {
+    try {
+      const usdcAddress = getComponentValue(
+        TokenAddresses,
+        singletonEntity,
+      )?.usdcAddress;
+
+      if (!usdcAddress) {
+        throw new Error('USDC address not found');
+      }
+
+      const playerAddress = decodeEntity(
+        {
+          address: 'address',
+        },
+        playerEntity,
+      ).address;
+
+      const balance = await publicClient.readContract({
+        address: usdcAddress as `0x${string}`,
+        abi: [
+          {
+            constant: true,
+            inputs: [{ name: 'account', type: 'address' }],
+            name: 'balanceOf',
+            outputs: [{ name: 'balance', type: 'uint256' }],
+            type: 'function',
+          },
+        ],
+        functionName: 'balanceOf',
+        args: [playerAddress],
+      });
+
+      return balance as bigint;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Fetching USDC Balance', {
+        description: (error as Error).message,
+      });
+      return BigInt(0);
     }
-  };
+  }, [playerEntity, publicClient, TokenAddresses]);
 
-  // Calculate transaction cost
-  const calculateTransactionCost = () => {
-    return (electricityAmount * electricityPrice).toFixed(2);
-  };
+  useEffect(() => {
+    const fetchUsdcBalance = async () => {
+      const usdcBalance = await getUsdcBalance();
+      setPlayerUSDCBalance(usdcBalance);
+    };
+
+    if (showSolarFarmDialog) {
+      fetchUsdcBalance();
+    }
+  }, [getUsdcBalance, showSolarFarmDialog]);
+
+  const handleElectricityAmountChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const amount = e.target.value;
+      if (amount === '') {
+        setElectricityAmount('');
+        return;
+      }
+      const value = Number(e.target.value);
+      if (!isNaN(value) && value >= 0) {
+        setElectricityAmount(e.target.value);
+      } else {
+        setElectricityAmount('0');
+      }
+    },
+    [],
+  );
+
+  const calculateTransactionCost = useCallback(() => {
+    if (!electricityAmount) {
+      return 0;
+    }
+    const whAmountNumber = Number(electricityAmount) * 1000; // Convert kWh to watt-hours
+    if (whAmountNumber <= 0) {
+      return 0;
+    }
+    const whPerCentPrice = Number(
+      solarFarmDetails?.whPerCentPrice ?? BigInt(0),
+    );
+    const electricityPrice = 0.01 / whPerCentPrice; // Convert to price per watt-hour
+    const transactionCost = whAmountNumber * electricityPrice;
+    if (transactionCost < 0.01) {
+      return 0;
+    }
+    return transactionCost.toFixed(2);
+  }, [electricityAmount, solarFarmDetails?.whPerCentPrice]);
 
   // Handle transaction (buy or sell)
   const handleTransaction = () => {
-    const transactionCost = Number.parseFloat(calculateTransactionCost());
-
-    if (isBuying) {
-      // Check if player has enough USDC
-      if (playerUSDCBalance >= transactionCost) {
-        setPlayerUSDCBalance(prev =>
-          Number.parseFloat((prev - transactionCost).toFixed(2)),
-        );
-        setShopUSDCBalance(prev =>
-          Number.parseFloat((prev + transactionCost).toFixed(2)),
-        );
-        setPowerReserve(prev => prev + electricityAmount);
-        // Show success message or notification
-      } else {
-        // Show error message - not enough funds
-        alert('Not enough USDC to complete purchase');
-      }
-    } else {
-      // Selling electricity
-      // Check if player has enough electricity
-      if (powerReserve >= electricityAmount) {
-        setPlayerUSDCBalance(prev =>
-          Number.parseFloat((prev + transactionCost).toFixed(2)),
-        );
-        setShopUSDCBalance(prev =>
-          Number.parseFloat((prev - transactionCost).toFixed(2)),
-        );
-        setPowerReserve(prev => prev - electricityAmount);
-        // Show success message or notification
-      } else {
-        // Show error message - not enough electricity
-        alert('Not enough electricity in your Power Reserve');
-      }
-    }
+    // const transactionCost = calculateTransactionCost();
+    // if (isBuying) {
+    //   // Check if player has enough USDC
+    //   if (playerUSDCBalance >= transactionCost) {
+    //     setPlayerUSDCBalance(prev =>
+    //       Number.parseFloat((prev - transactionCost).toFixed(2)),
+    //     );
+    //     setShopUSDCBalance(prev =>
+    //       Number.parseFloat((prev + transactionCost).toFixed(2)),
+    //     );
+    //     setPowerReserve(prev => prev + electricityAmount);
+    //     // Show success message or notification
+    //   } else {
+    //     // Show error message - not enough funds
+    //     alert('Not enough USDC to complete purchase');
+    //   }
+    // } else {
+    // Selling electricity
+    // Check if player has enough electricity
+    // if (powerReserve >= electricityAmount) {
+    // setPlayerUSDCBalance(prev =>
+    //   Number.parseFloat((prev + transactionCost).toFixed(2)),
+    // );
+    // setShopUSDCBalance(prev =>
+    //   Number.parseFloat((prev - transactionCost).toFixed(2)),
+    // );
+    // setPowerReserve(prev => prev - electricityAmount);
+    // Show success message or notification
+    // } else {
+    //   // Show error message - not enough electricity
+    //   alert('Not enough electricity in your Power Reserve');
+    // }
+    // }
   };
 
   return (
@@ -121,7 +206,7 @@ export const SolarFarmDialog: React.FC = () => {
                   <span className="text-gray-300 text-sm">Your Balance</span>
                 </div>
                 <div className="font-bold text-green-400 text-xl">
-                  ${playerUSDCBalance.toFixed(2)}
+                  ${formatUnits(playerUSDCBalance, 6)}
                 </div>
                 <div className="mt-1 text-gray-400 text-xs">USDC</div>
               </div>
@@ -132,7 +217,7 @@ export const SolarFarmDialog: React.FC = () => {
                   <span className="text-gray-300 text-sm">Your Reserve</span>
                 </div>
                 <div className="font-bold text-xl text-yellow-400">
-                  {powerReserve} kWh
+                  {formatWattHours(batteryDetails?.reserveBalance ?? BigInt(0))}
                 </div>
                 <div className="mt-1 text-gray-400 text-xs">Electricity</div>
               </div>
@@ -150,7 +235,8 @@ export const SolarFarmDialog: React.FC = () => {
                 <div className="text-gray-400 text-sm">
                   Balance:{' '}
                   <span className="text-green-400">
-                    ${shopUSDCBalance.toFixed(2)}
+                    $
+                    {formatUnits(solarFarmDetails?.fiatBalance ?? BigInt(0), 6)}
                   </span>
                 </div>
               </div>
@@ -158,8 +244,13 @@ export const SolarFarmDialog: React.FC = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="text-gray-300 text-sm">Current Price:</div>
                 <div className="font-medium text-sm text-white">
-                  ${electricityPrice.toFixed(2)}{' '}
-                  <span className="text-gray-400">per kWh</span>
+                  $0.01{' '}
+                  <span className="text-gray-400">
+                    per{' '}
+                    {formatWattHours(
+                      solarFarmDetails?.whPerCentPrice ?? BigInt(0),
+                    )}
+                  </span>
                 </div>
               </div>
 
