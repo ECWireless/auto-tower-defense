@@ -8,7 +8,7 @@ import {
   StoreIcon as BuildingStore,
   Zap,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { formatUnits, parseUnits } from 'viem';
 
@@ -39,7 +39,7 @@ export const SolarFarmDialog: React.FC = () => {
     useState<boolean>(false);
   const [isBuying, setIsBuying] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [electricityAmount, setElectricityAmount] = useState<string>('0');
+  const [electricityAmount, setElectricityAmount] = useState<string>('1.92');
 
   const [playerUSDCBalance, setPlayerUSDCBalance] = useState<bigint>(BigInt(0));
 
@@ -210,7 +210,7 @@ export const SolarFarmDialog: React.FC = () => {
       );
       const usdcBalance = await getUsdcBalance();
       setPlayerUSDCBalance(usdcBalance);
-      setElectricityAmount('0');
+      setElectricityAmount('1.92');
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -229,6 +229,40 @@ export const SolarFarmDialog: React.FC = () => {
     onApprove,
     playSfx,
     sellElectricity,
+  ]);
+
+  const disabledMessage = useMemo(() => {
+    if (Number(electricityAmount) < 1.92) {
+      return 'Amount must be greater than 1.92 kWh';
+    }
+
+    if (isBuying) {
+      const bigIntTxCost = parseUnits(calculateTransactionCost().toString(), 6);
+      if (bigIntTxCost > playerUSDCBalance) {
+        return 'Insufficient USDC balance';
+      }
+      if (
+        parseUnits(electricityAmount, 3) >
+        (solarFarmDetails?.electricityBalance ?? BigInt(0))
+      ) {
+        return 'Not enough electricity available in Solar Farm';
+      }
+    } else {
+      if (
+        parseUnits(electricityAmount, 3) >
+        (batteryDetails?.reserveBalance ?? BigInt(0))
+      ) {
+        return 'Not enough electricity in your reserve';
+      }
+    }
+    return '';
+  }, [
+    batteryDetails,
+    calculateTransactionCost,
+    electricityAmount,
+    isBuying,
+    playerUSDCBalance,
+    solarFarmDetails,
   ]);
 
   return (
@@ -363,13 +397,15 @@ export const SolarFarmDialog: React.FC = () => {
                   <Input
                     className="bg-gray-800 border-gray-700 text-white"
                     id="electricity-amount"
-                    min="0"
                     onChange={handleElectricityAmountChange}
                     type="number"
                     value={electricityAmount}
                   />
                   <span className="ml-2 text-gray-400 text-sm">kWh</span>
                 </div>
+                {!!disabledMessage && (
+                  <p className="text-red-500 text-xs mt-1">{disabledMessage}</p>
+                )}
               </div>
 
               {/* Transaction Summary */}
@@ -404,12 +440,7 @@ export const SolarFarmDialog: React.FC = () => {
                   ? 'bg-green-800 hover:bg-green-700 text-white'
                   : 'bg-red-800 hover:bg-red-700 text-white'
               }
-              disabled={
-                isProcessing ||
-                !electricityAmount ||
-                Number(electricityAmount) <= 0 ||
-                calculateTransactionCost() > Number(playerUSDCBalance)
-              }
+              disabled={isProcessing || !!disabledMessage}
               onClick={onHandleTransaction}
             >
               {isProcessing && <Loader2 className="animate-spin h-6 w-6" />}
