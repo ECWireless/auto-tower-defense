@@ -24,6 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/MUDContext';
 import { formatWattHours } from '@/utils/helpers';
 
@@ -34,9 +35,8 @@ export const SolarFarmDialog: React.FC = () => {
     systemCalls: { buyElectricity, sellElectricity },
   } = useMUD();
   const { playSfx } = useSettings();
+  const { isSolarFarmDialogOpen, setIsSolarFarmDialogOpen } = useSolarFarm();
 
-  const [showSolarFarmDialog, setShowSolarFarmDialog] =
-    useState<boolean>(false);
   const [isBuying, setIsBuying] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [electricityAmount, setElectricityAmount] = useState<string>('1.92');
@@ -97,10 +97,10 @@ export const SolarFarmDialog: React.FC = () => {
       setPlayerUSDCBalance(usdcBalance);
     };
 
-    if (showSolarFarmDialog) {
+    if (isSolarFarmDialogOpen) {
       fetchUsdcBalance();
     }
-  }, [getUsdcBalance, showSolarFarmDialog]);
+  }, [getUsdcBalance, isSolarFarmDialogOpen]);
 
   const handleElectricityAmountChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -272,7 +272,7 @@ export const SolarFarmDialog: React.FC = () => {
         <Button
           aria-label="Solar Farm"
           className="bg-gray-900/80 border-yellow-500 h-10 hover:bg-yellow-950/80 hover:text-yellow-300 rounded-full text-yellow-400 w-10"
-          onClick={() => setShowSolarFarmDialog(true)}
+          onClick={() => setIsSolarFarmDialogOpen(true)}
           size="icon"
           variant="outline"
         >
@@ -281,7 +281,10 @@ export const SolarFarmDialog: React.FC = () => {
       </div>
 
       {/* Solar Farm dialog */}
-      <Dialog open={showSolarFarmDialog} onOpenChange={setShowSolarFarmDialog}>
+      <Dialog
+        open={isSolarFarmDialogOpen}
+        onOpenChange={setIsSolarFarmDialogOpen}
+      >
         <DialogContent className="bg-gray-900/95 border border-yellow-900/50 max-h-[90vh] overflow-y-auto text-white">
           <DialogHeader>
             <DialogTitle className="font-bold text-yellow-400 text-2xl">
@@ -429,7 +432,7 @@ export const SolarFarmDialog: React.FC = () => {
           <DialogFooter className="gap-2">
             <Button
               className="border-gray-700 text-gray-400"
-              onClick={() => setShowSolarFarmDialog(false)}
+              onClick={() => setIsSolarFarmDialogOpen(false)}
               variant="outline"
             >
               Cancel

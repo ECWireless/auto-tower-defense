@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { zeroAddress } from 'viem';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
+import { BatteryInfoDialog } from '@/components/BatteryInfoDialog';
 import { CastleHitDialog } from '@/components/CastleHitDialog';
 import { ForfeitDialog } from '@/components/ForfeitDialog';
 import { GameBoard, INSTALLABLE_TOWERS } from '@/components/GameBoard';
@@ -86,6 +87,7 @@ export const InnerGamePage = (): JSX.Element => {
   const [isForfeitDialogOpen, setShowForfeitDialog] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isGameOverDialogOpen, setIsGameOverDialogOpen] = useState(false);
+  const [isBatteryInfoDialogOpen, setIsBatteryInfoDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!game) return;
@@ -267,7 +269,7 @@ export const InnerGamePage = (): JSX.Element => {
           >
             <div
               className="bg-gray-900/80 border border-gray-800 cursor-pointer flex gap-4 hover:bg-gray-800/80 items-center px-4 py-1.5 rounded-full transition-colors"
-              // onClick={handleBatteryInfoClick}
+              onClick={() => setIsBatteryInfoDialogOpen(true)}
             >
               {/* Battery Charge */}
               <div className="flex gap-2 items-center">
@@ -321,7 +323,7 @@ export const InnerGamePage = (): JSX.Element => {
               <div className="flex flex-col items-center mb-2 sm:hidden">
                 <div
                   className="bg-gray-900/80 border border-gray-800 cursor-pointer flex gap-2 hover:bg-gray-800/80 items-center px-3 py-1.5 rounded-full transition-colors"
-                  // onClick={handleBatteryInfoClick}
+                  onClick={() => setIsBatteryInfoDialogOpen(true)}
                 >
                   {/* Battery Charge */}
                   <div className="flex gap-1">
@@ -404,6 +406,10 @@ export const InnerGamePage = (): JSX.Element => {
         <HowToPlayDialog
           onChangeHowToDialog={onChangeHowToDialog}
           isHelpDialogOpen={isHelpDialogOpen}
+        />
+        <BatteryInfoDialog
+          isBatteryInfoDialogOpen={isBatteryInfoDialogOpen}
+          setIsBatteryInfoDialogOpen={setIsBatteryInfoDialogOpen}
         />
         <PlayAgainDialog
           isGameOverDialogOpen={isGameOverDialogOpen}
