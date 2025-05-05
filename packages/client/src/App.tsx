@@ -2,6 +2,7 @@ import { useComponentValue } from '@latticexyz/react';
 import { Analytics } from '@vercel/analytics/react';
 import { BrowserRouter as Router } from 'react-router-dom';
 
+import { AsyncRevenueDialog } from '@/components/AsyncRevenueDialog';
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { SolarFarmDialog } from '@/components/SolarFarmDialog';
 import { Toaster } from '@/components/ui/sonner';
@@ -21,6 +22,7 @@ export const App = (): JSX.Element => {
       <AppRoutes />
       <SettingsDialog />
       {savedUsername && <SolarFarmDialog />}
+      <AsyncRevenueDialog />
       <Toaster />
     </Router>
   );
