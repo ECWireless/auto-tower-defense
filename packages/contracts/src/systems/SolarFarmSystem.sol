@@ -30,7 +30,7 @@ contract SolarFarmSystem is System {
     uint256 whPerCentPrice = SolarFarmDetails.getWhPerCentPrice();
     require(electricityAmount >= whPerCentPrice, "SolarFarmSystem: amount must be greater than 0.01 USDC");
     uint256 usdcAmountCents = electricityAmount / whPerCentPrice;
-    uint256 usdcAmount = usdcAmountCents * 100000; // Convert to unformatted USDC
+    uint256 usdcAmount = usdcAmountCents * 10000; // Convert to unformatted USDC
     require(usdcAmount > 0, "SolarFarmSystem: USDC amount must be greater than 0");
 
     uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
@@ -81,7 +81,7 @@ contract SolarFarmSystem is System {
     require(whPerCentPrice > 0, "SolarFarmSystem: whPerCentPrice must be greater than 0");
     require(electricityAmount >= whPerCentPrice, "SolarFarmSystem: amount must be greater than 0.01 USDC");
     uint256 usdcAmountCents = electricityAmount / whPerCentPrice;
-    uint256 usdcAmount = usdcAmountCents * 100000; // Convert to unformatted USDC
+    uint256 usdcAmount = usdcAmountCents * 10000; // Convert to unformatted USDC
 
     uint256 solarFarmFiatBalance = SolarFarmDetails.getFiatBalance();
     require(solarFarmFiatBalance >= usdcAmount, "SolarFarmSystem: not enough USDC in Solar Farm");
