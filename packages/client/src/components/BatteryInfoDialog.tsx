@@ -13,17 +13,17 @@ import { useSolarFarm } from '@/contexts/SolarFarmContext';
 
 type BatteryInfoDialogProps = {
   isBatteryInfoDialogOpen: boolean;
-  setIsBatteryInfoDialogOpen: (show: boolean) => void;
+  onChangeBatteryInfoDialog: (show: boolean) => void;
 };
 
 export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
   isBatteryInfoDialogOpen,
-  setIsBatteryInfoDialogOpen,
+  onChangeBatteryInfoDialog,
 }) => {
   const { setIsSolarFarmDialogOpen } = useSolarFarm();
   return (
     <Dialog
-      onOpenChange={setIsBatteryInfoDialogOpen}
+      onOpenChange={onChangeBatteryInfoDialog}
       open={isBatteryInfoDialogOpen}
     >
       <DialogContent className="bg-gray-900/95 border border-cyan-900/50 max-h-[90vh] overflow-y-auto text-white">
@@ -90,7 +90,7 @@ export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
                   <span
                     className="font-semibold hover:cursor-pointer hover:underline text-green-400"
                     onClick={() => {
-                      setIsBatteryInfoDialogOpen(false);
+                      onChangeBatteryInfoDialog(false);
                       setIsSolarFarmDialogOpen(true);
                     }}
                   >
@@ -114,7 +114,7 @@ export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
 
         <DialogFooter>
           <Button
-            onClick={() => setIsBatteryInfoDialogOpen(false)}
+            onClick={() => onChangeBatteryInfoDialog(false)}
             className="bg-cyan-800 hover:bg-cyan-700 text-white w-full"
           >
             Got it

@@ -35,7 +35,7 @@ import { useMUD } from '@/MUDContext';
 import { BATTERY_STORAGE_LIMIT } from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
-const HOW_TO_SEEN_KEY = 'how-to-seen';
+const BATTERY_INFO_SEEN_KEY = 'battery-info-seen';
 
 export const GamePage = (): JSX.Element => {
   const { id } = useParams();
@@ -108,19 +108,19 @@ export const InnerGamePage = (): JSX.Element => {
     setIsGameOverDialogOpen(true);
   }, [game, playerEntity, playSfx]);
 
-  // Open How To info dialog if this is the first time the user is playing a game.
+  // Open Battery Info Dialog if this is the first time the user is playing a game.
   useEffect(() => {
-    const hasSeenHowToInfo = localStorage.getItem(HOW_TO_SEEN_KEY);
-    if (hasSeenHowToInfo) return;
-    setIsHelpDialogOpen(true);
+    const hasSeenBatteryInfo = localStorage.getItem(BATTERY_INFO_SEEN_KEY);
+    if (hasSeenBatteryInfo) return;
+    setIsBatteryInfoDialogOpen(true);
   }, []);
 
-  const onChangeHowToDialog = useCallback((open: boolean) => {
+  const onChangeBatteryInfoDialog = useCallback((open: boolean) => {
     if (!open) {
-      setIsHelpDialogOpen(false);
-      localStorage.setItem(HOW_TO_SEEN_KEY, 'true');
+      setIsBatteryInfoDialogOpen(false);
+      localStorage.setItem(BATTERY_INFO_SEEN_KEY, 'true');
     } else {
-      setIsHelpDialogOpen(true);
+      setIsBatteryInfoDialogOpen(true);
     }
   }, []);
 
@@ -404,12 +404,12 @@ export const InnerGamePage = (): JSX.Element => {
           setIsForfeitDialogOpen={setShowForfeitDialog}
         />
         <HowToPlayDialog
-          onChangeHowToDialog={onChangeHowToDialog}
           isHelpDialogOpen={isHelpDialogOpen}
+          setIsHelpDialogOpen={setIsHelpDialogOpen}
         />
         <BatteryInfoDialog
           isBatteryInfoDialogOpen={isBatteryInfoDialogOpen}
-          setIsBatteryInfoDialogOpen={setIsBatteryInfoDialogOpen}
+          onChangeBatteryInfoDialog={onChangeBatteryInfoDialog}
         />
         <PlayAgainDialog
           isGameOverDialogOpen={isGameOverDialogOpen}
