@@ -64,11 +64,14 @@ export default defineWorld({
     ExpenseReceipt: {
       key: ["id"],
       schema: {
-        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, timestamp))
-        amount: "uint256", // Electricity in watt-hours
+        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, gameId))
+        amountToBattery: "uint256", // Electricity in watt-hours
+        amountToKingdom: "uint256", // Electricity in watt-hours
+        gameId: "bytes32", // The gameId of the game that generated this expense
         playerAddress: "address",
         savedKingdomId: "bytes32",
         timestamp: "uint256",
+        authors: "address[]", // Authors of all the tower modifications used in the game
       },
       type: "offchainTable",
     },
@@ -182,12 +185,14 @@ export default defineWorld({
     RevenueReceipt: {
       key: ["id"],
       schema: {
-        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, timestamp))
+        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, gameId))
         amountToKingdom: "uint256", // Electricity in watt-hours
         amountToReserve: "uint256", // Electricity in watt-hours
+        gameId: "bytes32", // The gameId of the game that generated this revenue
         playerAddress: "address",
         savedKingdomId: "bytes32",
         timestamp: "uint256",
+        authors: "address[]", // Authors of all the tower modifications used in the game
       },
       type: "offchainTable",
     },

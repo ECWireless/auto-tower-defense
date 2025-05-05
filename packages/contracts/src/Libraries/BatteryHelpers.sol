@@ -89,15 +89,16 @@ library BatteryHelpers {
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayer1Id);
     uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayer1Id);
     uint256 activeBalanceEarnings = winningPot / 2;
-    activeBalance += activeBalanceEarnings;
 
     // Get all the towers used in the game
     address[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, true);
 
     // If there are no authors, give the player the rest of the winningPot
     if (allAuthors.length == 0) {
-      activeBalance += activeBalanceEarnings;
+      activeBalanceEarnings += activeBalanceEarnings;
     }
+
+    activeBalance += activeBalanceEarnings;
 
     // If activeBalance == BATTERY_STORAGE_LIMIT, then reserveBalance is filled
     if (activeBalance > BATTERY_STORAGE_LIMIT) {
@@ -109,27 +110,19 @@ library BatteryHelpers {
     winningPot -= activeBalanceEarnings;
 
     _processPotentialStakeReturn(globalPlayer1Id);
-
-    // Move remaining winningPot to authors (their reserveBalance) of all the towers used by winner (player 1)
-    if (allAuthors.length == 0) return;
-
-    uint256 authorEarnings = winningPot / allAuthors.length;
-    for (uint256 i = 0; i < allAuthors.length; i++) {
-      bytes32 authorId = EntityHelpers.globalAddressToKey(allAuthors[i]);
-      uint256 authorReserveBalance = BatteryDetails.getReserveBalance(authorId);
-      authorReserveBalance += authorEarnings;
-      BatteryDetails.setReserveBalance(authorId, authorReserveBalance);
-    }
-
-    _storeExpenseReceipt(savedKingdomId, winningPot);
+    _distributeAuthorEarnings(allAuthors, winningPot);
+    _storeExpenseReceipt(savedKingdomId, gameId, stakedEarnings, activeBalanceEarnings, allAuthors);
   }
 
-  function _storeExpenseReceipt(bytes32 savedKingdomId, uint256 winningPot) internal {
+  function _storeExpenseReceipt(bytes32 savedKingdomId, bytes32 gameId, uint256 amountToKingdom, uint256 amountToBattery, address[] memory authors) internal {
     ExpenseReceiptData memory expenseReceipt = ExpenseReceiptData({
-      amount: winningPot,
+      amountToBattery: amountToBattery,
+      amountToKingdom: amountToKingdom,
+      gameId: gameId,
       playerAddress: SavedKingdom.getAuthor(savedKingdomId),
       savedKingdomId: savedKingdomId,
-      timestamp: block.timestamp
+      timestamp: block.timestamp,
+      authors: authors
     });
     ExpenseReceipt.set(keccak256(abi.encodePacked(savedKingdomId, block.timestamp)), expenseReceipt);
   }
@@ -184,13 +177,20 @@ library BatteryHelpers {
     if (allAuthors.length == 0) {
       opponentReserveEarnings += opponentReserveEarnings;
     }
-    address player2Address = SavedKingdom.getAuthor(savedKingdomId);
-    bytes32 globalPlayer2Id = EntityHelpers.globalAddressToKey(player2Address);
+    bytes32 globalPlayer2Id = EntityHelpers.globalAddressToKey(savedKingdom.author);
     uint256 opponentReserveBalance = BatteryDetails.getReserveBalance(globalPlayer2Id);
     opponentReserveBalance += opponentReserveEarnings;
     BatteryDetails.setReserveBalance(globalPlayer2Id, opponentReserveBalance);
     winningPot -= opponentReserveEarnings;
 
+    _distributeAuthorEarnings(allAuthors, winningPot);
+    _storeRevenueReceipt(savedKingdomId, gameId, opponentSavedKingdomEarnings, opponentReserveEarnings, allAuthors);
+  }
+
+  function _distributeAuthorEarnings(
+    address[] memory allAuthors,
+    uint256 winningPot
+  ) internal {
     // Move remaining winningPot to authors (their reserveBalance) of all the towers used by winner (player 2)
     if (allAuthors.length == 0) return;
 
@@ -201,17 +201,17 @@ library BatteryHelpers {
       authorReserveBalance += authorEarnings;
       BatteryDetails.setReserveBalance(authorId, authorReserveBalance);
     }
-
-    _storeRevenueReceipt(savedKingdomId, winningPot);
   }
 
-  function _storeRevenueReceipt(bytes32 savedKingdomId, uint256 winningPot) internal {
+  function _storeRevenueReceipt(bytes32 savedKingdomId, bytes32 gameId, uint256 amountToKingdom, uint256 amountToReserve, address[] memory authors) internal {
     RevenueReceiptData memory revenueReceipt = RevenueReceiptData({
-      amountToKingdom: winningPot,
-      amountToReserve: 0,
+      amountToKingdom: amountToKingdom,
+      amountToReserve: amountToReserve,
+      gameId: gameId,
       playerAddress: SavedKingdom.getAuthor(savedKingdomId),
       savedKingdomId: savedKingdomId,
-      timestamp: block.timestamp
+      timestamp: block.timestamp,
+      authors: authors
     });
     RevenueReceipt.set(keccak256(abi.encodePacked(savedKingdomId, block.timestamp)), revenueReceipt);
   }

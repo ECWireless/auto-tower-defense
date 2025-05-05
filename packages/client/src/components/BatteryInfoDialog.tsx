@@ -21,6 +21,7 @@ export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
   onChangeBatteryInfoDialog,
 }) => {
   const { setIsSolarFarmDialogOpen } = useSolarFarm();
+
   return (
     <Dialog
       onOpenChange={onChangeBatteryInfoDialog}
