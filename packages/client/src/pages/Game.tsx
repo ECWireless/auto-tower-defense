@@ -372,6 +372,7 @@ export const InnerGamePage = (): JSX.Element => {
               enemyCastlePosition={enemyCastlePosition}
               game={game}
               myCastlePosition={myCastlePosition}
+              stakedBalance={batteryDetails?.stakedBalance ?? BigInt(0)}
             />
 
             {/* Control Buttons - Desktop */}
