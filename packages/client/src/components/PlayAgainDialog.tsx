@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { useGame } from '@/contexts/GameContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/MUDContext';
 import { GAMES_PATH } from '@/Routes';
 import { MAX_ROUNDS } from '@/utils/constants';
@@ -42,6 +43,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   const navigate = useNavigate();
   const {
     components: {
+      BatteryDetails,
       CurrentGame,
       ExpenseReceipt,
       KingdomsByLevel,
@@ -56,6 +58,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     systemCalls: { createGame },
   } = useMUD();
   const { playSfx } = useSettings();
+  const { setIsSolarFarmDialogOpen } = useSolarFarm();
   const { game } = useGame();
 
   const [isCreatingGame, setIsCreatingGame] = useState(false);
@@ -97,6 +100,17 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
         game.winner !== game.player1Address ||
         (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0);
 
+      const savedUsername = getComponentValue(Username, playerEntity)?.value;
+      const batteryDetails = getComponentValue(BatteryDetails, playerEntity);
+      const activeBalance = batteryDetails?.activeBalance ?? BigInt(0);
+      const reserveBalance = batteryDetails?.reserveBalance ?? BigInt(0);
+      const totalBalance = activeBalance + reserveBalance;
+
+      if (totalBalance < BigInt(8000) && !!savedUsername && resetLevel) {
+        setIsSolarFarmDialogOpen(true);
+        return;
+      }
+
       const { error, success } = await createGame(
         game.player1Username,
         resetLevel,
@@ -126,6 +140,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
       setIsCreatingGame(false);
     }
   }, [
+    BatteryDetails,
     createGame,
     CurrentGame,
     game,
@@ -133,8 +148,10 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     playerEntity,
     playSfx,
     setIsGameOverDialogOpen,
+    setIsSolarFarmDialogOpen,
     topLevel,
     topLevelKingdomsICanPlay,
+    Username,
     winStreak,
   ]);
 

@@ -265,6 +265,20 @@ export const SolarFarmDialog: React.FC = () => {
     solarFarmDetails,
   ]);
 
+  const lowElectricityBalanceMessage = useMemo(() => {
+    const activeBalance = batteryDetails?.activeBalance ?? BigInt(0);
+    const reserveBalance = batteryDetails?.reserveBalance ?? BigInt(0);
+    const totalBalance = activeBalance + reserveBalance;
+    const requiredAmount = BigInt(8000) - activeBalance;
+
+    if (totalBalance < BigInt(8000)) {
+      return `You do not have enough electricity to start a new battle run. Please purchase at least ${formatWattHours(
+        requiredAmount,
+      )} of electricity.`;
+    }
+    return '';
+  }, [batteryDetails]);
+
   return (
     <>
       {/* Solar Farm dialog button */}
@@ -294,6 +308,14 @@ export const SolarFarmDialog: React.FC = () => {
               Buy or sell electricity for USDC
             </DialogDescription>
           </DialogHeader>
+
+          {lowElectricityBalanceMessage && (
+            <div className="bg-red-900/20 border border-red-800/30 p-4 rounded-lg mb-4">
+              <p className="text-red-400 text-sm">
+                {lowElectricityBalanceMessage}
+              </p>
+            </div>
+          )}
 
           <div className="my-4 space-y-6">
             {/* Balance Information */}

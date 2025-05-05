@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/MUDContext';
 import { GAMES_PATH } from '@/Routes';
 import { BATTERY_STORAGE_LIMIT, MAX_PLAYERS } from '@/utils/constants';
@@ -45,6 +46,7 @@ export const Home = (): JSX.Element => {
     systemCalls: { createGame },
   } = useMUD();
   const { playSfx } = useSettings();
+  const { setIsSolarFarmDialogOpen } = useSolarFarm();
 
   const [username, setUsername] = useState('');
   const [usernameSaved, setUsernameSaved] = useState(false);
@@ -61,18 +63,22 @@ export const Home = (): JSX.Element => {
     useComponentValue(PlayerCount, singletonEntity)?.value ?? 0,
   );
 
+  const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
+
+  const batteryCharge = useMemo(() => {
+    if (!batteryDetails) return 0;
+    const { activeBalance } = batteryDetails;
+    const percentOfStorage =
+      (Number(activeBalance) / BATTERY_STORAGE_LIMIT) * 100;
+    return Math.round(percentOfStorage);
+  }, [batteryDetails]);
+
   const onCreateGame = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       try {
         setIsCreatingGame(true);
         playSfx('click1');
-
-        const savedUsername = getComponentValue(Username, playerEntity)?.value;
-        if (playerCount >= MAX_PLAYERS && !savedUsername) {
-          setIsMaxPlayersDialogOpen(true);
-          return;
-        }
 
         let currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
         if (currentGame) {
@@ -81,6 +87,12 @@ export const Home = (): JSX.Element => {
             navigate(`${GAMES_PATH}/${currentGame}`);
             return;
           }
+        }
+
+        const savedUsername = getComponentValue(Username, playerEntity)?.value;
+        if (playerCount >= MAX_PLAYERS && !savedUsername) {
+          setIsMaxPlayersDialogOpen(true);
+          return;
         }
 
         const winStreak =
@@ -118,6 +130,14 @@ export const Home = (): JSX.Element => {
           winStreak === 0n ||
           (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0);
 
+        const activeBalance = batteryDetails?.activeBalance ?? BigInt(0);
+        const reserveBalance = batteryDetails?.reserveBalance ?? BigInt(0);
+        const totalBalance = activeBalance + reserveBalance;
+        if (totalBalance < BigInt(8000) && !!savedUsername && resetLevel) {
+          setIsSolarFarmDialogOpen(true);
+          return;
+        }
+
         const { error, success } = await createGame(username, resetLevel);
 
         if (error && !success) {
@@ -145,6 +165,7 @@ export const Home = (): JSX.Element => {
       }
     },
     [
+      batteryDetails,
       createGame,
       CurrentGame,
       Game,
@@ -154,6 +175,7 @@ export const Home = (): JSX.Element => {
       playSfx,
       playerCount,
       SavedKingdom,
+      setIsSolarFarmDialogOpen,
       TopLevel,
       Username,
       username,
@@ -168,16 +190,6 @@ export const Home = (): JSX.Element => {
       setUsernameSaved(true);
     }
   }, [Username, playerEntity]);
-
-  const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
-
-  const batteryCharge = useMemo(() => {
-    if (!batteryDetails) return 0;
-    const { activeBalance } = batteryDetails;
-    const percentOfStorage =
-      (Number(activeBalance) / BATTERY_STORAGE_LIMIT) * 100;
-    return Math.round(percentOfStorage);
-  }, [batteryDetails]);
 
   return (
     <div className="bg-black flex flex-col min-h-screen p-4 relative text-white">
