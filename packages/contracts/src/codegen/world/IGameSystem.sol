@@ -13,5 +13,7 @@ interface IGameSystem {
 
   function app__createGame(string memory username, bool resetLevel) external returns (bytes32);
 
+  function app__forfeitRun() external;
+
   function app__nextTurn(bytes32 gameId) external;
 }

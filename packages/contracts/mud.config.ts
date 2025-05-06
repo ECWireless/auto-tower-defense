@@ -8,6 +8,11 @@ export default defineWorld({
   enums: {
     ActionType: ["Skip", "Install", "Move", "Modify"],
   },
+  systems: {
+    AdminSystem: {
+      openAccess: false,
+    },
+  },
   tables: {
     Action: {
       schema: {
@@ -20,6 +25,23 @@ export default defineWorld({
         projectile: "bool",
       },
       key: ["id"],
+    },
+    AddressBook: {
+      schema: {
+        solarFarmAddress: "address",
+        usdcAddress: "address",
+      },
+      key: [],
+    },
+    BatteryDetails: {
+      key: ["id"],
+      schema: {
+        id: "bytes32", // This is the globalPlayerId
+        activeBalance: "uint256", // Electricity in watt-hours
+        lastRechargeTimestamp: "uint256",
+        reserveBalance: "uint256", // Electricity in watt-hours
+        stakedBalance: "uint256", // Electricity in watt-hours
+      },
     },
     Castle: "bool",
     Counter: {
@@ -39,6 +61,20 @@ export default defineWorld({
       },
     },
     EntityAtPosition: "bytes32",
+    ExpenseReceipt: {
+      key: ["id"],
+      schema: {
+        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, gameId))
+        amountToBattery: "uint256", // Electricity in watt-hours
+        amountToKingdom: "uint256", // Electricity in watt-hours
+        gameId: "bytes32", // The gameId of the game that generated this expense
+        playerAddress: "address",
+        savedKingdomId: "bytes32",
+        timestamp: "uint256",
+        authors: "address[]", // Authors of all the tower modifications used in the game
+      },
+      type: "offchainTable",
+    },
     Game: {
       schema: {
         id: "bytes32", // keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
@@ -53,6 +89,7 @@ export default defineWorld({
       },
       key: ["id"],
     },
+    // TODO: Remove in the future
     GamesByLevel: {
       key: ["level"],
       schema: {
@@ -71,8 +108,24 @@ export default defineWorld({
         dataStruct: false,
       },
     },
+    KingdomsByLevel: {
+      key: ["level"],
+      schema: {
+        level: "uint256",
+        savedKingdomIds: "bytes32[]",
+      },
+    },
     LastGameWonInRun: "bytes32", // ID is global player ID; value is savedGameId
     Level: "uint256",
+    LoadedKingdomActions: {
+      // When a game is created, the enemy SavedKingdom's actions are loaded into the game
+      schema: {
+        id: "bytes32", // gameId of the game being played
+        savedKingdomId: "bytes32", // The SavedKindom the actions are loaded from
+        actions: "bytes32[]",
+      },
+      key: ["id"],
+    },
     LogicSystemAddress: {
       schema: {
         value: "address",
@@ -91,6 +144,12 @@ export default defineWorld({
     },
     Owner: "address",
     OwnerTowers: "bytes32[]",
+    PlayerCount: {
+      schema: {
+        value: "uint256",
+      },
+      key: [],
+    },
     Position: {
       schema: {
         id: "bytes32",
@@ -123,11 +182,39 @@ export default defineWorld({
         dataStruct: false,
       },
     },
-    SavedGame: {
+    RevenueReceipt: {
+      key: ["id"],
       schema: {
-        id: "bytes32", // keccak256(abi.encodePacked(gameId, playerId)) when the template is saved; gameId when the template is loaded for a game
+        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, gameId))
+        amountToKingdom: "uint256", // Electricity in watt-hours
+        amountToReserve: "uint256", // Electricity in watt-hours
+        gameId: "bytes32", // The gameId of the game that generated this revenue
+        playerAddress: "address",
+        savedKingdomId: "bytes32",
+        timestamp: "uint256",
+        authors: "address[]", // Authors of all the tower modifications used in the game
+      },
+      type: "offchainTable",
+    },
+    SavedGame: {
+      // This is the table that accumulates actions throughout a game; at the end of a run, it is copied to SavedKingdom
+      schema: {
+        id: "bytes32", // gameId of the game being played
         gameId: "bytes32",
         winner: "address",
+        actions: "bytes32[]",
+      },
+      key: ["id"],
+    },
+    SavedKingdom: {
+      // This is the table accumulates revenue for each player (author)
+      schema: {
+        id: "bytes32", // This is a deterministic hash of all actions by the author in the game; keccak256(abi.encodePacked(actions[]))
+        author: "address",
+        createdAtTimestamp: "uint256",
+        electricityBalance: "uint256",
+        losses: "uint256",
+        wins: "uint256",
         actions: "bytes32[]",
       },
       key: ["id"],
@@ -156,6 +243,15 @@ export default defineWorld({
         dataStruct: false,
       },
     },
+    SolarFarmDetails: {
+      schema: {
+        electricityBalance: "uint256", // 16.8 gWh (16800000000 watt-hours) to start
+        fiatBalance: "uint256", // Unformatted balance of USDC with 6 decimals
+        msPerWh: "uint256", // Number of milliseconds per watt hour; start at 3600ms
+        whPerCentPrice: "uint256", // Electricity in watt-hours per 1 cent in USDC; 1.92kWh/cent; start at 1920
+      },
+      key: [],
+    },
     TopLevel: {
       schema: {
         level: "uint256",
@@ -172,7 +268,7 @@ export default defineWorld({
       },
       key: [],
     },
-    Username: "string",
+    Username: "string", // ID is globalPlayerId
     UsernameTaken: {
       schema: {
         usernameBytes: "bytes32",

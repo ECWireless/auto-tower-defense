@@ -32,6 +32,19 @@ const formatDuration = (minutes: number): string => {
   }
 };
 
+export const formatWattHours = (wattHours: bigint): string => {
+  if (wattHours >= BigInt(1_000_000_000)) {
+    return `${(Number(wattHours) / 1_000_000_000).toFixed(2)} GWh`;
+  }
+  if (wattHours >= BigInt(1_000_000)) {
+    return `${(Number(wattHours) / 1_000_000).toFixed(2)} MWh`;
+  }
+  if (wattHours >= BigInt(1_000)) {
+    return `${(Number(wattHours) / 1_000).toFixed(2)} kWh`;
+  }
+  return `${wattHours.toString()} Wh`;
+};
+
 export const getElapsedTime = (
   startTimestamp: bigint,
   endTimestamp: bigint,
@@ -42,4 +55,10 @@ export const getElapsedTime = (
   const elapsedMinutes = Math.floor(elapsedMs / (1000 * 60));
 
   return formatDuration(elapsedMinutes);
+};
+
+export const getBatteryColor = (charge: number): string => {
+  if (charge >= 66) return 'text-green-500';
+  if (charge >= 33) return 'text-yellow-500';
+  return 'text-red-500';
 };

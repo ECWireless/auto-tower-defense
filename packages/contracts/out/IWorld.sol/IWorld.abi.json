@@ -1,6 +1,76 @@
 [
   {
     "type": "function",
+    "name": "app__addSavedKingdomRow",
+    "inputs": [
+      {
+        "name": "savedGameId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "level",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "added",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__addSolarFarmAddress",
+    "inputs": [
+      {
+        "name": "solarFarmAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__addUsdcTokenAddress",
+    "inputs": [
+      {
+        "name": "usdcTokenAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__buyElectricity",
+    "inputs": [
+      {
+        "name": "electricityAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__claimRecharge",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__createGame",
     "inputs": [
       {
@@ -61,6 +131,13 @@
   },
   {
     "type": "function",
+    "name": "app__forfeitRun",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__getContractSize",
     "inputs": [
       {
@@ -90,6 +167,24 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "app__mintUsdcToPlayer",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -223,6 +318,70 @@
         "internalType": "bytes32"
       }
     ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__sellElectricity",
+    "inputs": [
+      {
+        "name": "electricityAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updatePlayerCount",
+    "inputs": [
+      {
+        "name": "newPlayerCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateSolarFarmDetails",
+    "inputs": [
+      {
+        "name": "msPerWh",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "whPerCentPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateSolarFarmElectricityBalance",
+    "inputs": [
+      {
+        "name": "newElectricityBalance",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateSolarFarmFiatBalance",
+    "inputs": [],
+    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {

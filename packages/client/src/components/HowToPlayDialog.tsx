@@ -1,17 +1,17 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 type HowToPlayDialogProps = {
-  onChangeHowToDialog: (open: boolean) => void;
   isHelpDialogOpen: boolean;
+  setIsHelpDialogOpen: (open: boolean) => void;
 };
 
 export const HowToPlayDialog: React.FC<HowToPlayDialogProps> = ({
-  onChangeHowToDialog,
+  setIsHelpDialogOpen,
   isHelpDialogOpen,
 }) => {
   return (
     <Dialog
-      onOpenChange={open => onChangeHowToDialog(open)}
+      onOpenChange={open => setIsHelpDialogOpen(open)}
       open={isHelpDialogOpen}
     >
       <DialogContent className="bg-gray-900/95 border border-purple-900/50 h-[90vh] max-w-lg text-white">

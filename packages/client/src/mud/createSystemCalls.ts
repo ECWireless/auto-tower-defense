@@ -42,6 +42,46 @@ export function createSystemCalls(
    */
   { publicClient, worldContract, waitForTransaction }: SetupNetworkResult,
 ) {
+  const buyElectricity = async (electricityAmount: bigint) => {
+    try {
+      const tx = await worldContract.write.app__buyElectricity([
+        electricityAmount,
+      ]);
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to buy electricity.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
+  const claimRecharge = async () => {
+    try {
+      const tx = await worldContract.write.app__claimRecharge();
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to claim recharge.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const createGame = async (username: string, resetLevel: boolean) => {
     try {
       const tx = await worldContract.write.app__createGame(
@@ -53,7 +93,6 @@ export function createSystemCalls(
       );
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
-
       const success = status === 'success';
 
       return {
@@ -75,7 +114,6 @@ export function createSystemCalls(
       ]);
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
-
       const success = status === 'success';
 
       return {
@@ -103,11 +141,29 @@ export function createSystemCalls(
       ]);
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
-
       const success = status === 'success';
 
       return {
         error: success ? undefined : 'Failed to edit system.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
+  const forfeitRun = async () => {
+    try {
+      const tx = await worldContract.write.app__forfeitRun();
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to forfeit run.',
         success,
       };
     } catch (error) {
@@ -143,7 +199,6 @@ export function createSystemCalls(
       ]);
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
-
       const success = status === 'success';
 
       return {
@@ -171,7 +226,6 @@ export function createSystemCalls(
       ]);
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
-
       const success = status === 'success';
 
       return {
@@ -195,7 +249,6 @@ export function createSystemCalls(
       ]);
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
-
       const success = status === 'success';
 
       return {
@@ -217,7 +270,6 @@ export function createSystemCalls(
       ]);
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
-
       const success = status === 'success';
 
       return {
@@ -247,7 +299,6 @@ export function createSystemCalls(
       ]);
       const txResult = await waitForTransaction(tx);
       const { status } = txResult;
-
       const success = status === 'success';
 
       return {
@@ -262,15 +313,40 @@ export function createSystemCalls(
     }
   };
 
+  const sellElectricity = async (electricityAmount: bigint) => {
+    try {
+      const tx = await worldContract.write.app__sellElectricity([
+        electricityAmount,
+      ]);
+      const txResult = await waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to sell electricity.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   return {
+    buyElectricity,
+    claimRecharge,
     createGame,
     deleteModification,
     editModification,
+    forfeitRun,
     getContractSize,
     installTower,
     modifyTowerSystem,
     moveTower,
     nextTurn,
     saveModification,
+    sellElectricity,
   };
 }
