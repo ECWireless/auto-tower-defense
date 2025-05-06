@@ -170,6 +170,19 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__givePlayerBattery",
+    "inputs": [
+      {
+        "name": "playerId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__mintUsdcToPlayer",
     "inputs": [
       {

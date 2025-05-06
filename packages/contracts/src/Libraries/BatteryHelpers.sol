@@ -114,7 +114,13 @@ library BatteryHelpers {
     _storeExpenseReceipt(savedKingdomId, gameId, stakedEarnings, activeBalanceEarnings, allAuthors);
   }
 
-  function _storeExpenseReceipt(bytes32 savedKingdomId, bytes32 gameId, uint256 amountToKingdom, uint256 amountToBattery, address[] memory authors) internal {
+  function _storeExpenseReceipt(
+    bytes32 savedKingdomId,
+    bytes32 gameId,
+    uint256 amountToKingdom,
+    uint256 amountToBattery,
+    address[] memory authors
+  ) internal {
     ExpenseReceiptData memory expenseReceipt = ExpenseReceiptData({
       amountToBattery: amountToBattery,
       amountToKingdom: amountToKingdom,
@@ -187,10 +193,7 @@ library BatteryHelpers {
     _storeRevenueReceipt(savedKingdomId, gameId, opponentSavedKingdomEarnings, opponentReserveEarnings, allAuthors);
   }
 
-  function _distributeAuthorEarnings(
-    address[] memory allAuthors,
-    uint256 winningPot
-  ) internal {
+  function _distributeAuthorEarnings(address[] memory allAuthors, uint256 winningPot) internal {
     // Move remaining winningPot to authors (their reserveBalance) of all the towers used by winner (player 2)
     if (allAuthors.length == 0) return;
 
@@ -203,7 +206,13 @@ library BatteryHelpers {
     }
   }
 
-  function _storeRevenueReceipt(bytes32 savedKingdomId, bytes32 gameId, uint256 amountToKingdom, uint256 amountToReserve, address[] memory authors) internal {
+  function _storeRevenueReceipt(
+    bytes32 savedKingdomId,
+    bytes32 gameId,
+    uint256 amountToKingdom,
+    uint256 amountToReserve,
+    address[] memory authors
+  ) internal {
     RevenueReceiptData memory revenueReceipt = RevenueReceiptData({
       amountToKingdom: amountToKingdom,
       amountToReserve: amountToReserve,
