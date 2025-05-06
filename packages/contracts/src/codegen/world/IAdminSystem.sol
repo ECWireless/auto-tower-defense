@@ -24,4 +24,6 @@ interface IAdminSystem {
   function app__updatePlayerCount(uint256 newPlayerCount) external;
 
   function app__mintUsdcToPlayer(address player, uint256 amount) external;
+
+  function app__givePlayerBattery(bytes32 playerId) external;
 }
