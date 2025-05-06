@@ -8,6 +8,7 @@ import { setup } from '@/mud/setup';
 import { MUDProvider } from '@/MUDContext';
 
 import { SettingsProvider } from './contexts/SettingsContext';
+import { SolarFarmProvider } from './contexts/SolarFarmContext';
 
 const rootElement = document.getElementById('react-root');
 if (!rootElement) throw new Error('React root not found');
@@ -18,7 +19,9 @@ setup().then(async result => {
   root.render(
     <MUDProvider value={result}>
       <SettingsProvider>
-        <App />
+        <SolarFarmProvider>
+          <App />
+        </SolarFarmProvider>
       </SettingsProvider>
     </MUDProvider>,
   );

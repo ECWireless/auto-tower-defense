@@ -6,7 +6,6 @@ import { RESOURCE_SYSTEM } from "@latticexyz/world/src/worldResourceTypes.sol";
 import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
 import { Systems } from "@latticexyz/world/src/codegen/tables/Systems.sol";
 
-import { _gameSystemAddress } from "../utils.sol";
 import { CurrentGame, SavedModification, SavedModNameTaken } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_MOD_DESCRIPTION_LENGTH, MAX_MOD_NAME_LENGTH } from "../../constants.sol";

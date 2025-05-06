@@ -1,3 +1,4 @@
+import { useComponentValue } from '@latticexyz/react';
 import {
   Entity,
   getComponentValue,
@@ -8,29 +9,35 @@ import {
   encodeEntity,
   singletonEntity,
 } from '@latticexyz/store-sync/recs';
-import { Loader2, Play } from 'lucide-react';
+import { Battery, Loader2, Play, Signal, Zap } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { HomeTabs } from '@/components/HomeTabs';
+import { MaxPlayersDialog } from '@/components/MaxPlayersDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/MUDContext';
 import { GAMES_PATH } from '@/Routes';
+import { BATTERY_STORAGE_LIMIT, MAX_PLAYERS } from '@/utils/constants';
+import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
   const {
     components: {
+      BatteryDetails,
       CurrentGame,
       Game,
-      GamesByLevel,
-      SavedGame,
+      KingdomsByLevel,
+      PlayerCount,
+      SavedKingdom,
       TopLevel,
       Username,
       WinStreak,
@@ -39,15 +46,32 @@ export const Home = (): JSX.Element => {
     systemCalls: { createGame },
   } = useMUD();
   const { playSfx } = useSettings();
+  const { setIsSolarFarmDialogOpen } = useSolarFarm();
 
   const [username, setUsername] = useState('');
   const [usernameSaved, setUsernameSaved] = useState(false);
   const [isCreatingGame, setIsCreatingGame] = useState(false);
 
+  const [isMaxPlayersDialogOpen, setIsMaxPlayersDialogOpen] = useState(false);
+
   // Ensure home page title is always "Auto Tower Defense"
   useEffect(() => {
     document.title = `Auto Tower Defense`;
   }, []);
+
+  const playerCount = Number(
+    useComponentValue(PlayerCount, singletonEntity)?.value ?? 0,
+  );
+
+  const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
+
+  const batteryCharge = useMemo(() => {
+    if (!batteryDetails) return 0;
+    const { activeBalance } = batteryDetails;
+    const percentOfStorage =
+      (Number(activeBalance) / BATTERY_STORAGE_LIMIT) * 100;
+    return Math.round(percentOfStorage);
+  }, [batteryDetails]);
 
   const onCreateGame = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -65,6 +89,12 @@ export const Home = (): JSX.Element => {
           }
         }
 
+        const savedUsername = getComponentValue(Username, playerEntity)?.value;
+        if (playerCount >= MAX_PLAYERS && !savedUsername) {
+          setIsMaxPlayersDialogOpen(true);
+          return;
+        }
+
         const winStreak =
           getComponentValue(WinStreak, playerEntity)?.value ?? BigInt(0);
         const topLevel =
@@ -75,8 +105,9 @@ export const Home = (): JSX.Element => {
           { level: topLevel ?? 0n },
         );
 
-        const topLevelGames =
-          getComponentValue(GamesByLevel, levelAsEntity)?.gameIds ?? [];
+        const topLevelKingdoms =
+          getComponentValue(KingdomsByLevel, levelAsEntity)?.savedKingdomIds ??
+          [];
 
         const playerAddress = decodeEntity(
           {
@@ -85,21 +116,27 @@ export const Home = (): JSX.Element => {
           playerEntity,
         ).address;
 
-        const topLevelGamesICanPlay = topLevelGames.filter(gameId => {
-          const savedTopLevelGame = getComponentValueStrict(
-            SavedGame,
-            gameId as Entity,
-          );
-          const topLevelGame = getComponentValueStrict(
-            Game,
-            savedTopLevelGame.gameId as Entity,
-          );
-          return topLevelGame.player1Address !== playerAddress;
-        });
+        const topLevelKingdomsICanPlay = topLevelKingdoms.filter(
+          savedKingdomId => {
+            const savedTopLevelKingdom = getComponentValueStrict(
+              SavedKingdom,
+              savedKingdomId as Entity,
+            );
+            return savedTopLevelKingdom.author !== playerAddress;
+          },
+        );
 
         const resetLevel =
           winStreak === 0n ||
-          (topLevel === winStreak && topLevelGamesICanPlay.length === 0);
+          (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0);
+
+        const activeBalance = batteryDetails?.activeBalance ?? BigInt(0);
+        const reserveBalance = batteryDetails?.reserveBalance ?? BigInt(0);
+        const totalBalance = activeBalance + reserveBalance;
+        if (totalBalance < BigInt(8000) && !!savedUsername && resetLevel) {
+          setIsSolarFarmDialogOpen(true);
+          return;
+        }
 
         const { error, success } = await createGame(username, resetLevel);
 
@@ -128,15 +165,19 @@ export const Home = (): JSX.Element => {
       }
     },
     [
+      batteryDetails,
       createGame,
       CurrentGame,
       Game,
-      GamesByLevel,
+      KingdomsByLevel,
       navigate,
       playerEntity,
       playSfx,
-      SavedGame,
+      playerCount,
+      SavedKingdom,
+      setIsSolarFarmDialogOpen,
       TopLevel,
+      Username,
       username,
       WinStreak,
     ],
@@ -154,13 +195,60 @@ export const Home = (): JSX.Element => {
     <div className="bg-black flex flex-col min-h-screen p-4 relative text-white">
       <BackgroundAnimation />
 
-      <h1 className="bg-clip-text bg-gradient-to-r font-bold from-purple-400 my-20 text-center text-transparent text-4xl to-pink-400 via-cyan-400">
+      <h1 className="bg-clip-text bg-gradient-to-r font-bold from-purple-400 mb-6 mt-20 text-center text-transparent text-4xl to-pink-400 via-cyan-400">
         AUTO TOWER DEFENSE
       </h1>
+
+      {/* Player Count Display */}
+      <div className="flex justify-center mb-8">
+        <div className="bg-gray-900/60 border border-cyan-900/30 flex gap-2 items-center px-4 py-2 rounded-full">
+          <Signal className="h-4 text-cyan-400 w-4" />
+          <span className="text-gray-300 text-sm">
+            <span className="font-medium text-cyan-400">{playerCount}</span>
+            <span className="mx-1">/</span>
+            <span className="text-gray-400">{MAX_PLAYERS}</span>
+            <span className="ml-1">players</span>
+          </span>
+        </div>
+      </div>
 
       {usernameSaved && (
         <div className="mb-8 neon-text-cyan text-center text-xl">
           Welcome back, {username}!
+        </div>
+      )}
+
+      {/* Battery Information */}
+      {batteryDetails && (
+        <div className="flex justify-center mb-8">
+          <div className="bg-gray-900/60 border border-gray-800 flex gap-2 py-2 items-center rounded-full sm:gap-4 px-3 sm:px-4">
+            {/* Battery Charge */}
+            <div className="flex gap-1 sm:gap-2 sm:items-center">
+              <Battery
+                className={`h-3 sm:h-4 sm:w-4 mt-1 self-start sm:mt-0 sm:self-auto w-3 ${getBatteryColor(batteryCharge)}`}
+              />
+              <div className="flex flex-col sm:flex-row sm:items-center">
+                <span
+                  className={`font-medium sm:text-sm text-xs ${getBatteryColor(batteryCharge)}`}
+                >
+                  {formatWattHours(batteryDetails.activeBalance)} (
+                  {batteryCharge}%)
+                </span>
+                <span className="sm:ml-1 text-gray-400 text-xs">Battery</span>
+              </div>
+            </div>
+            <div className="bg-gray-700 h-8 w-px"></div>
+            {/* Power Reserve */}
+            <div className="flex gap-1 sm:gap-2 sm:items-center">
+              <Zap className="h-3 mt-1 self-start sm:h-4 sm:mt-0 sm:self-auto sm:w-4 text-yellow-400 w-3" />
+              <div className="flex flex-col sm:flex-row sm:items-center">
+                <span className="font-medium sm:text-sm text-xs text-yellow-400">
+                  {formatWattHours(batteryDetails.reserveBalance)}
+                </span>
+                <span className="sm:ml-1 text-gray-400 text-xs">Reserve</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -204,6 +292,11 @@ export const Home = (): JSX.Element => {
       <div className="mb-20 z-1">
         <HomeTabs />
       </div>
+
+      <MaxPlayersDialog
+        isMaxPlayersDialogOpen={isMaxPlayersDialogOpen}
+        setIsMaxPlayersDialogOpen={setIsMaxPlayersDialogOpen}
+      />
     </div>
   );
 };

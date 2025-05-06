@@ -1,19 +1,39 @@
+import { useComponentValue } from '@latticexyz/react';
+import { Entity } from '@latticexyz/recs';
+import { Zap } from 'lucide-react';
 import { GiCastle } from 'react-icons/gi';
+import { zeroHash } from 'viem';
 
 import { Badge } from '@/components/ui/badge';
+import { useMUD } from '@/MUDContext';
+import { formatWattHours } from '@/utils/helpers';
 import { Castle, type Game } from '@/utils/types';
 
 type GameStatusBarProps = {
   enemyCastlePosition?: Castle;
   game: Game;
   myCastlePosition?: Castle;
+  stakedBalance: bigint;
 };
 
 export const GameStatusBar: React.FC<GameStatusBarProps> = ({
   enemyCastlePosition,
   game,
   myCastlePosition,
+  stakedBalance,
 }) => {
+  const {
+    components: { LoadedKingdomActions, SavedKingdom },
+  } = useMUD();
+
+  const savedKingdomId =
+    useComponentValue(LoadedKingdomActions, game.id)?.savedKingdomId ??
+    zeroHash;
+
+  const savedKingdomBalance =
+    useComponentValue(SavedKingdom, savedKingdomId as Entity)
+      ?.electricityBalance ?? BigInt(0);
+
   return (
     <div className="bg-gray-900 border border-purple-900/50 grid grid-cols-7 items-center mb-1 p-2 rounded-t-md sm:p-4 text-center">
       {/* Player 1 */}
@@ -30,6 +50,12 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({
               Turn
             </Badge>
           )}
+        </div>
+        <div className="flex gap-1 items-center mt-1">
+          <Zap className="h-2 sm:h-3 sm:w-3 text-yellow-400 w-2" />
+          <div className="sm:text-xs text-yellow-300 text-[8px]">
+            Staked: {formatWattHours(stakedBalance)}
+          </div>
         </div>
         <div className="flex gap-2 items-center">
           <GiCastle className="h-4 sm:h-4 sm:w-4 w-4 text-purple-400" />
@@ -105,6 +131,12 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({
           <div className="sm:text-sm text-[10px] text-pink-300">
             {game.player2Username}
           </div>
+        </div>
+        <div className="flex gap-1 items-center justify-end mt-1">
+          <div className="sm:text-xs text-yellow-300 text-[8px]">
+            Staked: {formatWattHours(savedKingdomBalance)}
+          </div>
+          <Zap className="h-2 sm:h-3 sm:w-3 text-yellow-400 w-2" />
         </div>
         <div className="flex gap-2 items-center justify-end">
           <div className="font-medium sm:text-lg text-pink-400 text-xs">

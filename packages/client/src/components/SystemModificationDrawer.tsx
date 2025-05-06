@@ -836,6 +836,7 @@ export const SystemModificationDrawer: React.FC<
                 </Button>
                 <Button
                   className="bg-pink-800 hover:bg-pink-700 text-white"
+                  disabled={isSaving}
                   onClick={
                     canEditSystem ? onEditModification : onSaveModification
                   }

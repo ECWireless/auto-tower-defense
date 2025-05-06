@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Castle, CurrentGame, EntityAtPosition, Game, GamesByLevel, GameData, Health, LastGameWonInRun, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, TopLevel, WinStreak } from "../codegen/index.sol";
+import { Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, KingdomsByLevel, LastGameWonInRun, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, SavedKingdom, SavedKingdomData, TopLevel, WinStreak } from "../codegen/index.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
+import { BatteryHelpers } from "./BatteryHelpers.sol";
 import { MAX_ROUNDS, MAX_TICKS, MAX_HEALTH_WALL } from "../../constants.sol";
 
 /**
@@ -294,73 +295,93 @@ library ProjectileHelpers {
 
     (int16 mapHeight, int16 mapWidth) = MapConfig.get();
 
-    bytes32 player1CastleId = EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2);
-    bytes32 player2CastleId = EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2);
-
-    bool isWinnerPlayer1 = Game.get(gameId).player1Address == winner;
-    bytes32 loserCastleId = isWinnerPlayer1 ? player2CastleId : player1CastleId;
+    GameData memory game = Game.get(gameId);
+    bool isWinnerPlayer1 = game.player1Address == winner;
+    bytes32 loserCastleId = isWinnerPlayer1
+      ? EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2)
+      : EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2);
 
     uint8 loserCastleHealth = Health.getCurrentHealth(loserCastleId);
     require(loserCastleHealth == 0, "GameSystem: loser castle health is not zero");
 
-    GameData memory game = Game.get(gameId);
-    address loserAddress = game.player1Address == winner ? game.player2Address : game.player1Address;
+    bytes32 globalPlayer1Id = EntityHelpers.globalAddressToKey(game.player1Address);
+    uint256 winStreak = WinStreak.get(globalPlayer1Id);
 
-    // Only save the game in GamesByLevel if the loser is player 1, and they have a last game won in run
-    if (loserAddress == game.player1Address) {
-      bytes32 globalLoserId = EntityHelpers.globalAddressToKey(loserAddress);
+    if (isWinnerPlayer1) {
+      // If they win, save their last game won in run, but don't save to KingdomsByLevel
+      // However, if they have the highest level, set won game in KingdomsByLevel
 
-      bytes32 savedGameId = LastGameWonInRun.get(globalLoserId);
-      uint256 winStreak = WinStreak.get(globalLoserId);
+      winStreak++;
+      WinStreak.set(globalPlayer1Id, winStreak);
+      bytes32[] memory savedGameActions = SavedGame.getActions(gameId);
 
-      if (savedGameId != bytes32(0) && winStreak > 0) {
-        bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
+      // Create ID by hashing all actions
+      bytes32 savedKingdomId = keccak256(abi.encode(savedGameActions));
+      uint256 savedKingdomTimestamp = SavedKingdom.getCreatedAtTimestamp(savedKingdomId);
 
-        bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
-        for (uint256 i = 0; i < gamesByLevel.length; i++) {
-          updatedGamesByLevel[i] = gamesByLevel[i];
+      BatteryHelpers.winStake(gameId, globalPlayer1Id);
 
-          if (gamesByLevel[i] == savedGameId) {
-            return;
-          }
-        }
-
-        updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
-        GamesByLevel.set(winStreak, updatedGamesByLevel);
-
-        LastGameWonInRun.set(globalLoserId, bytes32(0));
+      // If this saved kingdom already exists, skip everything below
+      if (savedKingdomTimestamp != 0) {
+        return;
       }
 
-      WinStreak.set(globalLoserId, 0);
+      _saveKingdom(winner, savedGameActions, savedKingdomId);
 
-      // If they win, save their last game won in run, but don't save to GamesByLevel
-      // However, if they have the highest level, set won game in GamesByLevel
-    } else {
-      bytes32 globalWinnerId = EntityHelpers.globalAddressToKey(winner);
-      uint256 winStreak = WinStreak.get(globalWinnerId) + 1;
-      WinStreak.set(globalWinnerId, winStreak);
-
-      bytes32[] memory gamesByLevel = GamesByLevel.get(winStreak);
-      bytes32 savedGameId = keccak256(abi.encodePacked(gameId, globalWinnerId));
-
-      if (gamesByLevel.length == 0) {
+      bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(winStreak);
+      if (kingdomsByLevel.length == 0) {
         TopLevel.set(winStreak);
-
-        bytes32[] memory updatedGamesByLevel = new bytes32[](gamesByLevel.length + 1);
-        for (uint256 i = 0; i < gamesByLevel.length; i++) {
-          updatedGamesByLevel[i] = gamesByLevel[i];
-
-          if (gamesByLevel[i] == savedGameId) {
-            return;
-          }
-        }
-        updatedGamesByLevel[updatedGamesByLevel.length - 1] = savedGameId;
-        GamesByLevel.set(winStreak, updatedGamesByLevel);
-
-        LastGameWonInRun.set(globalWinnerId, bytes32(0));
+        _updateKingdomsByLevel(kingdomsByLevel, savedKingdomId, winStreak, globalPlayer1Id);
       } else {
-        LastGameWonInRun.set(globalWinnerId, savedGameId);
+        LastGameWonInRun.set(globalPlayer1Id, savedKingdomId);
+      }
+
+      // Only save the game in KingdomsByLevel if the loser is player 1, and they have a LastGameWonInRun
+    } else {
+      bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(winStreak);
+      bytes32 savedKingdomId = LastGameWonInRun.get(globalPlayer1Id);
+
+      if (savedKingdomId != bytes32(0) && winStreak > 0) {
+        _updateKingdomsByLevel(kingdomsByLevel, savedKingdomId, winStreak, globalPlayer1Id);
+      }
+
+      WinStreak.set(globalPlayer1Id, 0);
+
+      BatteryHelpers.loseStake(gameId, globalPlayer1Id);
+    }
+  }
+
+  function _updateKingdomsByLevel(
+    bytes32[] memory kingdomsByLevel,
+    bytes32 savedKingdomId,
+    uint winStreak,
+    bytes32 globalPlayer1Id
+  ) internal {
+    bytes32[] memory updatedKingdomsByLevel = new bytes32[](kingdomsByLevel.length + 1);
+    for (uint256 i = 0; i < kingdomsByLevel.length; i++) {
+      updatedKingdomsByLevel[i] = kingdomsByLevel[i];
+
+      if (kingdomsByLevel[i] == savedKingdomId) {
+        return;
       }
     }
+
+    updatedKingdomsByLevel[updatedKingdomsByLevel.length - 1] = savedKingdomId;
+    KingdomsByLevel.set(winStreak, updatedKingdomsByLevel);
+    Level.set(savedKingdomId, winStreak);
+
+    LastGameWonInRun.set(globalPlayer1Id, bytes32(0));
+  }
+
+  function _saveKingdom(address winner, bytes32[] memory savedGameActions, bytes32 savedKingdomId) internal {
+    SavedKingdomData memory savedKingdom = SavedKingdomData({
+      author: winner,
+      createdAtTimestamp: block.timestamp,
+      electricityBalance: 0,
+      losses: 0,
+      wins: 0,
+      actions: savedGameActions
+    });
+    SavedKingdom.set(savedKingdomId, savedKingdom);
   }
 }
