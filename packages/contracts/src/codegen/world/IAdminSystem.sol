@@ -13,7 +13,13 @@ interface IAdminSystem {
 
   function app__addUsdcTokenAddress(address usdcTokenAddress) external;
 
+  function app__addSolarFarmAddress(address solarFarmAddress) external;
+
   function app__updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external;
+
+  function app__updateSolarFarmDetails(uint256 msPerWh, uint256 whPerCentPrice) external;
+
+  function app__updateSolarFarmFiatBalance() external;
 
   function app__updatePlayerCount(uint256 newPlayerCount) external;
 

@@ -25,6 +25,19 @@
   },
   {
     "type": "function",
+    "name": "app__addSolarFarmAddress",
+    "inputs": [
+      {
+        "name": "solarFarmAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__addUsdcTokenAddress",
     "inputs": [
       {
@@ -335,6 +348,24 @@
   },
   {
     "type": "function",
+    "name": "app__updateSolarFarmDetails",
+    "inputs": [
+      {
+        "name": "msPerWh",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "whPerCentPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__updateSolarFarmElectricityBalance",
     "inputs": [
       {
@@ -343,6 +374,13 @@
         "internalType": "uint256"
       }
     ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateSolarFarmFiatBalance",
+    "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
