@@ -1,5 +1,5 @@
 import { useDndContext } from '@dnd-kit/core';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Wrench } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   GiCannon,
@@ -250,6 +250,17 @@ export const GameBoard: React.FC = () => {
                             className="flex items-center h-full justify-center"
                           >
                             <div>
+                              {isTowerSelected && (
+                                <div
+                                  className="absolute bg-gray-800 border border-cyan-500 hover:bg-gray-700 p-1.5 rounded-full shadow-lg top-1/2 transition-colors z-20 -left-[35px]"
+                                  onClick={() => onViewTower(towerOnTile)}
+                                  style={{
+                                    transform: 'translateY(-50%)',
+                                  }}
+                                >
+                                  <Wrench className="h-4 text-cyan-400 w-4" />
+                                </div>
+                              )}
                               <Draggable
                                 id={towerOnTile.id}
                                 disabled={!(isLeftSide && isPlayer1)}
