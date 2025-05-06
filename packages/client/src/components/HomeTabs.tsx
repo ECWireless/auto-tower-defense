@@ -260,10 +260,10 @@ export const HomeTabs: React.FC = () => {
           id: savedKingdomId,
           author: _savedKingdom.author,
           authorUsername,
-          electricityBalance: formatWattHours(_savedKingdom.electricityBalance),
+          electricityBalance: _savedKingdom.electricityBalance,
           level: Number(decodedKey.level),
           losses: Number(_savedKingdom.losses),
-          totalEarnings: formatWattHours(totalEarnings),
+          totalEarnings: totalEarnings,
           wins: Number(_savedKingdom.wins),
         };
       });
@@ -289,10 +289,10 @@ export const HomeTabs: React.FC = () => {
             id: string;
             author: string;
             authorUsername: string;
-            electricityBalance: string;
+            electricityBalance: bigint;
             level: number;
             losses: number;
-            totalEarnings: string;
+            totalEarnings: bigint;
             wins: number;
           }
         >,
@@ -466,8 +466,12 @@ export const HomeTabs: React.FC = () => {
                     <TableCell className="font-medium">
                       {kingdom.authorUsername}
                     </TableCell>
-                    <TableCell>{kingdom.electricityBalance}</TableCell>
-                    <TableCell>{kingdom.totalEarnings}</TableCell>
+                    <TableCell>
+                      {formatWattHours(kingdom.electricityBalance)}
+                    </TableCell>
+                    <TableCell>
+                      {formatWattHours(kingdom.totalEarnings)}
+                    </TableCell>
                     <TableCell className="text-green-400">
                       {kingdom.wins}
                     </TableCell>
@@ -497,13 +501,13 @@ export const HomeTabs: React.FC = () => {
                     <div>
                       <div className="text-gray-400">Current Balance</div>
                       <div className="font-medium text-white">
-                        {kingdom.electricityBalance}
+                        {formatWattHours(kingdom.electricityBalance)}
                       </div>
                     </div>
                     <div>
                       <div className="text-gray-400">Total Earnings</div>
                       <div className="font-medium text-white">
-                        {kingdom.totalEarnings}
+                        {formatWattHours(kingdom.totalEarnings)}
                       </div>
                     </div>
                     <div>
