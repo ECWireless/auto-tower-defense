@@ -48,44 +48,10 @@ contract AdminSystem is System {
     return true;
   }
 
-  function addUsdcTokenAddress(address usdcTokenAddress) external {
-    AddressBook.setUsdcAddress(usdcTokenAddress);
-  }
-
-  function addSolarFarmAddress(address solarFarmAddress) external {
-    AddressBook.setSolarFarmAddress(solarFarmAddress);
-  }
-
-  function updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external {
-    SolarFarmDetails.setElectricityBalance(newElectricityBalance);
-  }
-
-  function updateSolarFarmDetails(uint256 msPerWh, uint256 whPerCentPrice) external {
-    SolarFarmDetails.setMsPerWh(msPerWh);
-    SolarFarmDetails.setWhPerCentPrice(whPerCentPrice);
-  }
-
-  function updateSolarFarmFiatBalance() external {
-    address usdcTokenAddress = AddressBook.getUsdcAddress();
-    require(usdcTokenAddress != address(0), "USDC token address not set");
-    MockUSDC usdc = MockUSDC(usdcTokenAddress);
-    address solarFarmAddress = AddressBook.getSolarFarmAddress();
-    uint256 usdcBalance = usdc.balanceOf(solarFarmAddress);
-    SolarFarmDetails.setFiatBalance(usdcBalance);
-  }
-
-  function updatePlayerCount(uint256 newPlayerCount) external {
-    PlayerCount.set(newPlayerCount);
-  }
-
   function mintUsdcToPlayer(address player, uint256 amount) external {
     address usdcTokenAddress = AddressBook.getUsdcAddress();
     require(usdcTokenAddress != address(0), "USDC token address not set");
     MockUSDC usdc = MockUSDC(usdcTokenAddress);
     usdc.mint(player, amount);
-  }
-
-  function givePlayerBattery(bytes32 playerId) external {
-    BatteryHelpers.grantBattery(playerId);
   }
 }
