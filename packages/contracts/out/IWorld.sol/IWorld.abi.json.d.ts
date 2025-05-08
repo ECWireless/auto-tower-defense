@@ -1,56 +1,6 @@
 declare const abi: [
   {
     "type": "function",
-    "name": "app__addSavedKingdomRow",
-    "inputs": [
-      {
-        "name": "savedGameId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "level",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "added",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__addSolarFarmAddress",
-    "inputs": [
-      {
-        "name": "solarFarmAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__addUsdcTokenAddress",
-    "inputs": [
-      {
-        "name": "usdcTokenAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "app__buyElectricity",
     "inputs": [
       {
@@ -167,19 +117,6 @@ declare const abi: [
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "app__givePlayerBattery",
-    "inputs": [
-      {
-        "name": "playerId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -348,37 +285,6 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__updatePlayerCount",
-    "inputs": [
-      {
-        "name": "newPlayerCount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__updateSolarFarmDetails",
-    "inputs": [
-      {
-        "name": "msPerWh",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "whPerCentPrice",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "app__updateSolarFarmElectricityBalance",
     "inputs": [
       {
@@ -387,13 +293,6 @@ declare const abi: [
         "internalType": "uint256"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__updateSolarFarmFiatBalance",
-    "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },

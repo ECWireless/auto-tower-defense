@@ -13,7 +13,6 @@ import { DefaultLogic } from "./tables/DefaultLogic.sol";
 import { EntityAtPosition } from "./tables/EntityAtPosition.sol";
 import { ExpenseReceipt, ExpenseReceiptData } from "./tables/ExpenseReceipt.sol";
 import { Game, GameData } from "./tables/Game.sol";
-import { GamesByLevel } from "./tables/GamesByLevel.sol";
 import { Health } from "./tables/Health.sol";
 import { KingdomsByLevel } from "./tables/KingdomsByLevel.sol";
 import { LastGameWonInRun } from "./tables/LastGameWonInRun.sol";
