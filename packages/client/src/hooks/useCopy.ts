@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-const useCopy = (): {
+export const useCopy = (): {
   copiedText: string | null;
   copyToClipboard: (address: string) => void;
 } => {
@@ -14,5 +14,3 @@ const useCopy = (): {
 
   return { copiedText, copyToClipboard };
 };
-
-export default useCopy;
