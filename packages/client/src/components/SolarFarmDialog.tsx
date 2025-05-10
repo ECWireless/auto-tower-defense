@@ -11,7 +11,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { createPublicClient, formatUnits, http, parseUnits } from 'viem';
-import { useAccount, useWalletClient } from 'wagmi';
+import { useAccount, useSwitchChain, useWalletClient } from 'wagmi';
 
 import { getChain } from '@/common';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,8 @@ import { useMUD } from '@/hooks/useMUD';
 import { formatWattHours } from '@/utils/helpers';
 
 export const SolarFarmDialog: React.FC = () => {
-  const { address: playerAddress } = useAccount();
+  const { address: playerAddress, chainId } = useAccount();
+  const { switchChain } = useSwitchChain();
   const {
     components: { AddressBook, BatteryDetails, SolarFarmDetails },
     network: { playerEntity },
@@ -154,6 +155,14 @@ export const SolarFarmDialog: React.FC = () => {
         throw new Error('Wallet client not found');
       }
 
+      const gameChain = getChain();
+      if (chainId !== gameChain.id) {
+        switchChain({ chainId: gameChain.id });
+
+        // wait 1 second for the chain to switch
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
       const publicClient = createPublicClient({
         batch: { multicall: false },
         chain: getChain(),
@@ -193,7 +202,7 @@ export const SolarFarmDialog: React.FC = () => {
         description: (error as Error).message,
       });
     }
-  }, [AddressBook, electricityAmount, walletClient]);
+  }, [AddressBook, chainId, electricityAmount, switchChain, walletClient]);
 
   const onHandleTransaction = useCallback(async () => {
     try {
