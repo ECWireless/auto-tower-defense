@@ -1,3 +1,4 @@
+import { AccountButton } from '@latticexyz/entrykit/internal';
 import { useComponentValue } from '@latticexyz/react';
 import { Analytics } from '@vercel/analytics/react';
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -6,7 +7,7 @@ import { AsyncRevenueDialog } from '@/components/AsyncRevenueDialog';
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { SolarFarmDialog } from '@/components/SolarFarmDialog';
 import { Toaster } from '@/components/ui/sonner';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import AppRoutes from '@/Routes';
 
 export const App = (): JSX.Element => {
@@ -24,6 +25,9 @@ export const App = (): JSX.Element => {
       {savedUsername && <SolarFarmDialog />}
       <AsyncRevenueDialog />
       <Toaster />
+      <div className="fixed right-2 top-2">
+        <AccountButton />
+      </div>
     </Router>
   );
 };

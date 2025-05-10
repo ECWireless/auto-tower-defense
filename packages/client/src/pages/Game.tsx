@@ -8,12 +8,13 @@ import {
 } from '@dnd-kit/core';
 import { useComponentValue } from '@latticexyz/react';
 import { Entity } from '@latticexyz/recs';
-import { decodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
+import { singletonEntity } from '@latticexyz/store-sync/recs';
 import { Battery, Flag, Home, Loader2, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { zeroAddress } from 'viem';
+import { useAccount } from 'wagmi';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { BatteryInfoDialog } from '@/components/BatteryInfoDialog';
@@ -31,7 +32,7 @@ import { TowerSelection } from '@/components/TowerSelection';
 import { Button } from '@/components/ui/button';
 import { GameProvider, useGame } from '@/contexts/GameContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import { BATTERY_STORAGE_LIMIT } from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
@@ -48,6 +49,7 @@ export const GamePage = (): JSX.Element => {
 
 export const InnerGamePage = (): JSX.Element => {
   const navigate = useNavigate();
+  const { address: playerAddress } = useAccount();
   const {
     components: { BatteryDetails, SolarFarmDetails },
     network: { playerEntity },
@@ -93,20 +95,13 @@ export const InnerGamePage = (): JSX.Element => {
     if (!game) return;
     if (game.winner === zeroAddress && game.endTimestamp === BigInt(0)) return;
 
-    const playerAddress = decodeEntity(
-      {
-        address: 'address',
-      },
-      playerEntity,
-    ).address;
-
     if (playerAddress !== game.player1Address) return;
 
     if (game.winner === playerAddress) {
       playSfx('win');
     }
     setIsGameOverDialogOpen(true);
-  }, [game, playerEntity, playSfx]);
+  }, [game, playerAddress, playSfx]);
 
   // Open Battery Info Dialog if this is the first time the user is playing a game.
   useEffect(() => {

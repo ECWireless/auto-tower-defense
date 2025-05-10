@@ -24,7 +24,7 @@ import {
 import { useGame } from '@/contexts/GameContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import { GAMES_PATH } from '@/Routes';
 import { MAX_ROUNDS } from '@/utils/constants';
 import { formatWattHours } from '@/utils/helpers';
@@ -94,6 +94,10 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
 
       if (!game) {
         throw new Error('Game not found.');
+      }
+
+      if (!playerEntity) {
+        throw new Error('Player entity not found.');
       }
 
       const resetLevel =

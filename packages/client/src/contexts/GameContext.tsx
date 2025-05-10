@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { Address, zeroAddress, zeroHash } from 'viem';
 
 import { useSettings } from '@/contexts/SettingsContext';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import { MAX_TICKS } from '@/utils/constants';
 import type { Castle, Game, Tower } from '@/utils/types';
 

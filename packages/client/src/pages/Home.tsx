@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import { GAMES_PATH } from '@/Routes';
 import { BATTERY_STORAGE_LIMIT, MAX_PLAYERS } from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
@@ -79,6 +79,10 @@ export const Home = (): JSX.Element => {
       try {
         setIsCreatingGame(true);
         playSfx('click1');
+
+        if (!playerEntity) {
+          throw new Error('Player entity not found');
+        }
 
         let currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
         if (currentGame) {
@@ -184,6 +188,7 @@ export const Home = (): JSX.Element => {
   );
 
   useEffect(() => {
+    if (!playerEntity) return;
     const savedUsername = getComponentValue(Username, playerEntity)?.value;
     if (savedUsername) {
       setUsername(savedUsername);
@@ -261,6 +266,7 @@ export const Home = (): JSX.Element => {
               </Label>
               <Input
                 className="bg-transparent border-cyan-800 focus:border-cyan-100 text-cyan-100"
+                disabled={isCreatingGame}
                 id="username"
                 onChange={e => setUsername(e.target.value)}
                 placeholder="ROB"

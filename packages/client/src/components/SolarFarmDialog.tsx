@@ -1,6 +1,6 @@
 import { useComponentValue } from '@latticexyz/react';
 import { getComponentValue } from '@latticexyz/recs';
-import { decodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
+import { singletonEntity } from '@latticexyz/store-sync/recs';
 import {
   ArrowRightLeft,
   DollarSign,
@@ -10,8 +10,10 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { formatUnits, parseUnits } from 'viem';
+import { createPublicClient, formatUnits, http, parseUnits } from 'viem';
+import { useAccount, useWalletClient } from 'wagmi';
 
+import { getChain } from '@/common';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -25,15 +27,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import { formatWattHours } from '@/utils/helpers';
 
 export const SolarFarmDialog: React.FC = () => {
+  const { address: playerAddress } = useAccount();
   const {
     components: { AddressBook, BatteryDetails, SolarFarmDetails },
-    network: { playerEntity, publicClient, walletClient },
+    network: { playerEntity },
     systemCalls: { buyElectricity, sellElectricity },
   } = useMUD();
+  const { data: walletClient } = useWalletClient();
   const { playSfx } = useSettings();
   const { isSolarFarmDialogOpen, setIsSolarFarmDialogOpen } = useSolarFarm();
 
@@ -57,12 +61,11 @@ export const SolarFarmDialog: React.FC = () => {
         throw new Error('USDC address not found');
       }
 
-      const playerAddress = decodeEntity(
-        {
-          address: 'address',
-        },
-        playerEntity,
-      ).address;
+      const publicClient = createPublicClient({
+        batch: { multicall: false },
+        chain: getChain(),
+        transport: http(),
+      });
 
       const balance = await publicClient.readContract({
         address: usdcAddress as `0x${string}`,
@@ -89,7 +92,7 @@ export const SolarFarmDialog: React.FC = () => {
       });
       return BigInt(0);
     }
-  }, [AddressBook, playerEntity, publicClient]);
+  }, [AddressBook, playerAddress]);
 
   useEffect(() => {
     const fetchUsdcBalance = async () => {
@@ -147,6 +150,16 @@ export const SolarFarmDialog: React.FC = () => {
         throw new Error('USDC address not found');
       }
 
+      if (!walletClient) {
+        throw new Error('Wallet client not found');
+      }
+
+      const publicClient = createPublicClient({
+        batch: { multicall: false },
+        chain: getChain(),
+        transport: http(),
+      });
+
       const txHash = await walletClient.writeContract({
         address: usdcAddress as `0x${string}`,
         abi: [
@@ -180,7 +193,7 @@ export const SolarFarmDialog: React.FC = () => {
         description: (error as Error).message,
       });
     }
-  }, [AddressBook, electricityAmount, publicClient, walletClient]);
+  }, [AddressBook, electricityAmount, walletClient]);
 
   const onHandleTransaction = useCallback(async () => {
     try {

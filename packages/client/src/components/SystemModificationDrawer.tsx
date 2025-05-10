@@ -50,7 +50,7 @@ import {
 } from '@/components/ui/tooltip';
 import { NO_ACTIONS_ERROR, useGame } from '@/contexts/GameContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import type { SavedModification, Tower } from '@/utils/types';
 
 import { Button } from './ui/button';

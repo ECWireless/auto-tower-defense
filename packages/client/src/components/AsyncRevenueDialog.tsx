@@ -1,8 +1,8 @@
 import { useEntityQuery } from '@latticexyz/react';
 import { getComponentValueStrict, HasValue } from '@latticexyz/recs';
-import { decodeEntity } from '@latticexyz/store-sync/recs';
 import { Zap } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import { formatWattHours } from '@/utils/helpers';
 
 const ASYNC_REVENUE_TIMESTAMP_KEY = 'async-kingdom-revenue-timestamp';
@@ -36,26 +36,15 @@ const formatTime = (time: number): string => {
 };
 
 export const AsyncRevenueDialog: React.FC = () => {
+  const { address: playerAddress } = useAccount();
   const {
     components: { RevenueReceipt },
-    network: { playerEntity },
   } = useMUD();
 
   const [isAsyncRevenueDialogOpen, setIsAsyncRevenueDialogOpen] =
     useState(false);
   const [revenueSinceTimestamp, setRevenueSinceTimestamp] = useState(BigInt(0));
   const [timeSinceLastCheck, setTimeSinceLastCheck] = useState<string>('');
-
-  const playerAddress = useMemo(
-    () =>
-      decodeEntity(
-        {
-          address: 'address',
-        },
-        playerEntity,
-      ).address,
-    [playerEntity],
-  );
 
   const revenueReceipts = useEntityQuery([
     HasValue(RevenueReceipt, {
