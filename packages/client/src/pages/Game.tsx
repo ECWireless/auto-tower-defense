@@ -6,6 +6,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import { useSessionClient } from '@latticexyz/entrykit/internal';
 import { useComponentValue } from '@latticexyz/react';
 import { Entity } from '@latticexyz/recs';
 import { singletonEntity } from '@latticexyz/store-sync/recs';
@@ -49,7 +50,8 @@ export const GamePage = (): JSX.Element => {
 
 export const InnerGamePage = (): JSX.Element => {
   const navigate = useNavigate();
-  const { address: playerAddress } = useAccount();
+  const { address: playerAddress, isConnected, isReconnecting } = useAccount();
+  const { data: sessionClient } = useSessionClient();
   const {
     components: { BatteryDetails, SolarFarmDetails },
     network: { playerEntity },
@@ -85,6 +87,12 @@ export const InnerGamePage = (): JSX.Element => {
       document.title = `Game ${game.id} - Auto Tower Defense`;
     }
   }, [game]);
+
+  useEffect(() => {
+    if (!isReconnecting && !(isConnected && sessionClient)) {
+      navigate('/');
+    }
+  }, [isConnected, isReconnecting, navigate, sessionClient]);
 
   const [isForfeitDialogOpen, setShowForfeitDialog] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
