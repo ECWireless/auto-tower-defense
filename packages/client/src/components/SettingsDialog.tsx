@@ -38,29 +38,32 @@ export const SettingsDialog: React.FC = () => {
     }
   }, []);
 
-  // Save settings to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('audioSettings', JSON.stringify(settings));
-  }, [settings]);
-
   const handleMusicToggle = (enabled: boolean) => {
-    setSettings(prev => ({ ...prev, musicEnabled: enabled }));
+    const _newSettings = { ...settings, musicEnabled: enabled };
+    setSettings(_newSettings);
+    localStorage.setItem('audioSettings', JSON.stringify(_newSettings));
     toggleMusic();
   };
 
   const handleSfxToggle = (enabled: boolean) => {
-    setSettings(prev => ({ ...prev, sfxEnabled: enabled }));
+    const _newSettings = { ...settings, sfxEnabled: enabled };
+    setSettings(_newSettings);
+    localStorage.setItem('audioSettings', JSON.stringify(_newSettings));
     setSfxMuted(!enabled);
   };
 
   const handleMusicVolumeChange = (value: number[]) => {
-    setSettings(prev => ({ ...prev, musicVolume: value[0] }));
+    const _newSettings = { ...settings, musicVolume: value[0] };
+    setSettings(_newSettings);
+    localStorage.setItem('audioSettings', JSON.stringify(_newSettings));
     const volumeAsDecimal = value[0] / 100; // Convert percentage to decimal
     setMusicVolume(volumeAsDecimal);
   };
 
   const handleSfxVolumeChange = (value: number[]) => {
-    setSettings(prev => ({ ...prev, sfxVolume: value[0] }));
+    const _newSettings = { ...settings, sfxVolume: value[0] };
+    setSettings(_newSettings);
+    localStorage.setItem('audioSettings', JSON.stringify(_newSettings));
     const volumeAsDecimal = value[0] / 100; // Convert percentage to decimal
     setSfxVolume(volumeAsDecimal);
   };
