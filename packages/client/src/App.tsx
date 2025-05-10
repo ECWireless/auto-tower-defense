@@ -1,4 +1,3 @@
-import { AccountButton } from '@latticexyz/entrykit/internal';
 import { useComponentValue } from '@latticexyz/react';
 import { Analytics } from '@vercel/analytics/react';
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -25,9 +24,6 @@ export const App = (): JSX.Element => {
       {savedUsername && <SolarFarmDialog />}
       <AsyncRevenueDialog />
       <Toaster />
-      <div className="fixed right-2 top-2">
-        <AccountButton />
-      </div>
     </Router>
   );
 };

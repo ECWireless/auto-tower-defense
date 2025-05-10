@@ -1,3 +1,4 @@
+import { AccountButton } from '@latticexyz/entrykit/internal';
 import { Music, Settings, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -92,6 +93,13 @@ export const SettingsDialog: React.FC = () => {
           </DialogHeader>
 
           <div className="mt-4 space-y-6">
+            <div
+              className="flex justify-center mb-8"
+              onClick={() => setOpen(false)}
+            >
+              <AccountButton />
+            </div>
+
             {/* Music Settings */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">

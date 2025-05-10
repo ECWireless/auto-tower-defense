@@ -1,3 +1,4 @@
+import { AccountButton, useSessionClient } from '@latticexyz/entrykit/internal';
 import { useComponentValue } from '@latticexyz/react';
 import {
   Entity,
@@ -14,6 +15,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAccount } from 'wagmi';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { HomeTabs } from '@/components/HomeTabs';
@@ -30,6 +32,8 @@ import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
+  const { isConnected } = useAccount();
+  const { data: sessionClient } = useSessionClient();
   const {
     components: {
       BatteryDetails,
@@ -217,83 +221,109 @@ export const Home = (): JSX.Element => {
         </div>
       </div>
 
-      {usernameSaved && (
-        <div className="mb-8 neon-text-cyan text-center text-xl">
-          Welcome back, {username}!
+      {!isConnected && (
+        <div className="mb-4 neon-text-cyan text-center text-xl">
+          Connect your wallet to play!
         </div>
       )}
 
-      {/* Battery Information */}
-      {batteryDetails && (
-        <div className="flex justify-center mb-8">
-          <div className="bg-gray-900/60 border border-gray-800 flex gap-2 py-2 items-center rounded-full sm:gap-4 px-3 sm:px-4">
-            {/* Battery Charge */}
-            <div className="flex gap-1 sm:gap-2 sm:items-center">
-              <Battery
-                className={`h-3 sm:h-4 sm:w-4 mt-1 self-start sm:mt-0 sm:self-auto w-3 ${getBatteryColor(batteryCharge)}`}
-              />
-              <div className="flex flex-col sm:flex-row sm:items-center">
-                <span
-                  className={`font-medium sm:text-sm text-xs ${getBatteryColor(batteryCharge)}`}
-                >
-                  {formatWattHours(batteryDetails.activeBalance)} (
-                  {batteryCharge}%)
-                </span>
-                <span className="sm:ml-1 text-gray-400 text-xs">Battery</span>
-              </div>
-            </div>
-            <div className="bg-gray-700 h-8 w-px"></div>
-            {/* Power Reserve */}
-            <div className="flex gap-1 sm:gap-2 sm:items-center">
-              <Zap className="h-3 mt-1 self-start sm:h-4 sm:mt-0 sm:self-auto sm:w-4 text-yellow-400 w-3" />
-              <div className="flex flex-col sm:flex-row sm:items-center">
-                <span className="font-medium sm:text-sm text-xs text-yellow-400">
-                  {formatWattHours(batteryDetails.reserveBalance)}
-                </span>
-                <span className="sm:ml-1 text-gray-400 text-xs">Reserve</span>
-              </div>
-            </div>
-          </div>
+      {!sessionClient && isConnected && (
+        <div className="mb-4 neon-text-cyan text-center text-xl">
+          Complete session setup to play!
         </div>
       )}
 
-      <div className="max-w-md mb-8 mx-auto w-full">
-        <form className="space-y-6" onSubmit={onCreateGame}>
-          {!usernameSaved && (
-            <div className="space-y-2">
-              <Label className="text-lg text-cyan-300" htmlFor="username">
-                Username
-              </Label>
-              <Input
-                className="bg-transparent border-cyan-800 focus:border-cyan-100 text-cyan-100"
-                disabled={isCreatingGame}
-                id="username"
-                onChange={e => setUsername(e.target.value)}
-                placeholder="ROB"
-                required
-                type="text"
-                value={username}
-              />
+      <div
+        className={`flex justify-center ${!isConnected || !sessionClient ? 'mb-20' : 'mb-8'}`}
+      >
+        <AccountButton />
+      </div>
+
+      {!!sessionClient && (
+        <>
+          {usernameSaved && (
+            <div className="mb-8 neon-text-cyan text-center text-xl">
+              Welcome back, {username}!
             </div>
           )}
-          <div className="flex justify-center mb-16">
-            <Button
-              aria-label="Submit username and play"
-              className="active:bg-cyan-900 active:scale-95 bg-cyan-900/20 border-cyan-500 duration-200 focus:bg-cyan-900/30 focus:text-cyan-300 h-16 rounded-full text-cyan-400 w-16 hover:bg-cyan-900/50 hover:border-cyan-400 hover:text-cyan-300 neon-border transition-all"
-              disabled={isCreatingGame}
-              size="icon"
-              type="submit"
-              variant="outline"
-            >
-              {isCreatingGame ? (
-                <Loader2 className="animate-spin h-8 w-8" />
-              ) : (
-                <Play className="h-8 w-8" />
+
+          {/* Battery Information */}
+          {batteryDetails && (
+            <div className="flex justify-center mb-8">
+              <div className="bg-gray-900/60 border border-gray-800 flex gap-2 py-2 items-center rounded-full sm:gap-4 px-3 sm:px-4">
+                {/* Battery Charge */}
+                <div className="flex gap-1 sm:gap-2 sm:items-center">
+                  <Battery
+                    className={`h-3 sm:h-4 sm:w-4 mt-1 self-start sm:mt-0 sm:self-auto w-3 ${getBatteryColor(batteryCharge)}`}
+                  />
+                  <div className="flex flex-col sm:flex-row sm:items-center">
+                    <span
+                      className={`font-medium sm:text-sm text-xs ${getBatteryColor(batteryCharge)}`}
+                    >
+                      {formatWattHours(batteryDetails.activeBalance)} (
+                      {batteryCharge}%)
+                    </span>
+                    <span className="sm:ml-1 text-gray-400 text-xs">
+                      Battery
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gray-700 h-8 w-px"></div>
+                {/* Power Reserve */}
+                <div className="flex gap-1 sm:gap-2 sm:items-center">
+                  <Zap className="h-3 mt-1 self-start sm:h-4 sm:mt-0 sm:self-auto sm:w-4 text-yellow-400 w-3" />
+                  <div className="flex flex-col sm:flex-row sm:items-center">
+                    <span className="font-medium sm:text-sm text-xs text-yellow-400">
+                      {formatWattHours(batteryDetails.reserveBalance)}
+                    </span>
+                    <span className="sm:ml-1 text-gray-400 text-xs">
+                      Reserve
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="max-w-md mb-8 mx-auto w-full">
+            <form className="space-y-6" onSubmit={onCreateGame}>
+              {!usernameSaved && (
+                <div className="space-y-2">
+                  <Label className="text-lg text-cyan-300" htmlFor="username">
+                    Username
+                  </Label>
+                  <Input
+                    className="bg-transparent border-cyan-800 focus:border-cyan-100 text-cyan-100"
+                    disabled={isCreatingGame}
+                    id="username"
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="ROB"
+                    required
+                    type="text"
+                    value={username}
+                  />
+                </div>
               )}
-            </Button>
+              <div className="flex justify-center mb-16">
+                <Button
+                  aria-label="Submit username and play"
+                  className="active:bg-cyan-900 active:scale-95 bg-cyan-900/20 border-cyan-500 duration-200 focus:bg-cyan-900/30 focus:text-cyan-300 h-16 rounded-full text-cyan-400 w-16 hover:bg-cyan-900/50 hover:border-cyan-400 hover:text-cyan-300 neon-border transition-all"
+                  disabled={isCreatingGame}
+                  size="icon"
+                  type="submit"
+                  variant="outline"
+                >
+                  {isCreatingGame ? (
+                    <Loader2 className="animate-spin h-8 w-8" />
+                  ) : (
+                    <Play className="h-8 w-8" />
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
+        </>
+      )}
 
       <div className="mb-20 z-1">
         <HomeTabs />
