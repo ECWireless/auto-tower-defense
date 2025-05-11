@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { zeroHash } from 'viem';
 
 import { Button } from '@/components/ui/button';
+import { useMUD } from '@/hooks/useMUD';
 import { cn } from '@/lib/utils';
-import { useMUD } from '@/MUDContext';
 import { formatDateFromTimestamp, shortenAddress } from '@/utils/helpers';
 import { type SavedModification } from '@/utils/types';
 
@@ -27,6 +27,7 @@ export const SystemsList: React.FC<SystemsListProps> = ({
   const [systemsTab, setSystemsTab] = useState<'your' | 'other'>('your');
 
   const myUsername = useMemo(() => {
+    if (!playerEntity) return '';
     return getComponentValue(Username, playerEntity)?.value ?? '';
   }, [playerEntity, Username]);
 

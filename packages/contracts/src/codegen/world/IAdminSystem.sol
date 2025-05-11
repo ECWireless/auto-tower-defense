@@ -9,21 +9,7 @@ pragma solidity >=0.8.24;
  * @dev This interface is automatically generated from the corresponding system contract. Do not edit manually.
  */
 interface IAdminSystem {
-  function app__addSavedKingdomRow(bytes32 savedGameId, uint256 level) external returns (bool added);
-
-  function app__addUsdcTokenAddress(address usdcTokenAddress) external;
-
-  function app__addSolarFarmAddress(address solarFarmAddress) external;
-
-  function app__updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external;
-
-  function app__updateSolarFarmDetails(uint256 msPerWh, uint256 whPerCentPrice) external;
-
-  function app__updateSolarFarmFiatBalance() external;
-
-  function app__updatePlayerCount(uint256 newPlayerCount) external;
-
   function app__mintUsdcToPlayer(address player, uint256 amount) external;
 
-  function app__givePlayerBattery(bytes32 playerId) external;
+  function app__updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external;
 }

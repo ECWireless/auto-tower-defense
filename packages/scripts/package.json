@@ -17,10 +17,10 @@
     "typescript": "5.4.2"
   },
   "dependencies": {
-    "@latticexyz/common": "2.2.14",
-    "@latticexyz/recs": "2.2.14",
-    "@latticexyz/store-sync": "2.2.14",
-    "@latticexyz/world": "2.2.14",
+    "@latticexyz/common": "2.2.21",
+    "@latticexyz/recs": "2.2.21",
+    "@latticexyz/store-sync": "2.2.21",
+    "@latticexyz/world": "2.2.21",
     "dotenv": "^16.4.7",
     "rxjs": "7.5.5",
     "viem": "2.21.19"

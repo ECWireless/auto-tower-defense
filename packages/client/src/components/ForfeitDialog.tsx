@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { useGame } from '@/contexts/GameContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import { HOME_PATH } from '@/Routes';
 
 import { Button } from './ui/button';

@@ -5,7 +5,7 @@ import { GiCastle } from 'react-icons/gi';
 import { zeroHash } from 'viem';
 
 import { Badge } from '@/components/ui/badge';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import { formatWattHours } from '@/utils/helpers';
 import { Castle, type Game } from '@/utils/types';
 

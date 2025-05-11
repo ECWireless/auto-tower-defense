@@ -6,7 +6,7 @@ import { AsyncRevenueDialog } from '@/components/AsyncRevenueDialog';
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { SolarFarmDialog } from '@/components/SolarFarmDialog';
 import { Toaster } from '@/components/ui/sonner';
-import { useMUD } from '@/MUDContext';
+import { useMUD } from '@/hooks/useMUD';
 import AppRoutes from '@/Routes';
 
 export const App = (): JSX.Element => {

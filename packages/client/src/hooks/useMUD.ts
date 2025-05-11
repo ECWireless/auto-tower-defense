@@ -1,12 +1,18 @@
-import { BaseError, ContractFunctionRevertedError } from 'viem';
+import { Entity } from '@latticexyz/recs';
+import { useSync } from '@latticexyz/store-sync/react';
+import { encodeEntity } from '@latticexyz/store-sync/recs';
+import { useMemo } from 'react';
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  createPublicClient,
+  http,
+} from 'viem';
+import { useAccount } from 'wagmi';
 
-/*
- * Create the system calls that the client can use to ask
- * for changes in the World state (using the System contracts).
- */
-import { SetupNetworkResult } from './setupNetwork';
-
-export type SystemCalls = ReturnType<typeof createSystemCalls>;
+import { getChain } from '@/common';
+import { components } from '@/mud/recs';
+import { useWorldContract } from '@/mud/useWorldContract';
 
 const getContractError = (error: BaseError): string => {
   const revertError = error.walk(
@@ -19,35 +25,110 @@ const getContractError = (error: BaseError): string => {
   return 'An error occurred calling the contract.';
 };
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function createSystemCalls(
-  /*
-   * The parameter list informs TypeScript that:
-   *
-   * - The first parameter is expected to be a
-   *   SetupNetworkResult, as defined in setupNetwork.ts
-   *
-   *   Out of this parameter, we only care about two fields:
-   *   - worldContract (which comes from getContract, see
-   *     https://github.com/latticexyz/mud/blob/main/templates/react/packages/client/src/mud/setupNetwork.ts#L63-L69).
-   *
-   *   - waitForTransaction (which comes from syncToRecs, see
-   *     https://github.com/latticexyz/mud/blob/main/templates/react/packages/client/src/mud/setupNetwork.ts#L77-L83).
-   *
-   * - From the second parameter, which is a ClientComponent,
-   *   we only care about Counter. This parameter comes to use
-   *   through createClientComponents.ts, but it originates in
-   *   syncToRecs
-   *   (https://github.com/latticexyz/mud/blob/main/templates/react/packages/client/src/mud/setupNetwork.ts#L77-L83).
-   */
-  { publicClient, worldContract, waitForTransaction }: SetupNetworkResult,
-) {
+export const useMUD = (): {
+  components: typeof components;
+  network: { playerEntity: Entity | undefined };
+  systemCalls: {
+    buyElectricity: (electricityAmount: bigint) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    claimRecharge: () => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    createGame: (
+      username: string,
+      resetLevel: boolean,
+    ) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    deleteModification: (savedModificationId: string) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    editModification: (
+      savedModificationId: string,
+      description: string,
+      name: string,
+    ) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    forfeitRun: () => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    getContractSize: (bytecode: string) => Promise<bigint | false>;
+    installTower: (
+      projectile: boolean,
+      x: number,
+      y: number,
+    ) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    modifyTowerSystem: (
+      towerId: string,
+      bytecode: string,
+      sourceCode: string,
+    ) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    moveTower: (
+      towerId: string,
+      x: number,
+      y: number,
+    ) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    nextTurn: (gameId: string) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    saveModification: (
+      bytecode: string,
+      description: string,
+      name: string,
+      sourceCode: string,
+    ) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
+    sellElectricity: (
+      electricityAmount: bigint,
+    ) => Promise<{ error: string | undefined; success: boolean }>;
+  };
+} => {
+  const { address: playerAddress } = useAccount();
+  const sync = useSync();
+  const worldContract = useWorldContract();
+
+  const playerEntity = useMemo(() => {
+    if (!playerAddress) return undefined;
+    return encodeEntity(
+      {
+        address: 'address',
+      },
+      {
+        address: playerAddress,
+      },
+    );
+  }, [playerAddress]);
+
   const buyElectricity = async (electricityAmount: bigint) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__buyElectricity([
         electricityAmount,
       ]);
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -65,8 +146,12 @@ export function createSystemCalls(
 
   const claimRecharge = async () => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__claimRecharge();
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -84,6 +169,10 @@ export function createSystemCalls(
 
   const createGame = async (username: string, resetLevel: boolean) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__createGame(
         [username, resetLevel],
         // Because the system function uses prevrandao and a loop, automatic gas estimation can be wrong
@@ -91,7 +180,7 @@ export function createSystemCalls(
           gas: BigInt('10000000'),
         },
       );
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -109,10 +198,14 @@ export function createSystemCalls(
 
   const deleteModification = async (savedModificationId: string) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__deleteModification([
         savedModificationId as `0x${string}`,
       ]);
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -134,12 +227,16 @@ export function createSystemCalls(
     name: string,
   ) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__editModification([
         savedModificationId as `0x${string}`,
         description,
         name,
       ]);
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -157,8 +254,12 @@ export function createSystemCalls(
 
   const forfeitRun = async () => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__forfeitRun();
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -176,6 +277,16 @@ export function createSystemCalls(
 
   const getContractSize = async (bytecode: string) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
+      const publicClient = createPublicClient({
+        chain: getChain(),
+        transport: http(),
+        batch: { multicall: false },
+      });
+
       const simulatedTx = await publicClient.simulateContract({
         abi: worldContract.abi,
         address: worldContract.address,
@@ -192,12 +303,16 @@ export function createSystemCalls(
 
   const installTower = async (projectile: boolean, x: number, y: number) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__playerInstallTower([
         projectile,
         x,
         y,
       ]);
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -219,12 +334,16 @@ export function createSystemCalls(
     sourceCode: string,
   ) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__playerModifyTowerSystem([
         towerId as `0x${string}`,
         bytecode as `0x${string}`,
         sourceCode,
       ]);
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -242,12 +361,16 @@ export function createSystemCalls(
 
   const moveTower = async (towerId: string, x: number, y: number) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__playerMoveTower([
         towerId as `0x${string}`,
         x,
         y,
       ]);
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -265,10 +388,14 @@ export function createSystemCalls(
 
   const nextTurn = async (gameId: string) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__nextTurn([
         gameId as `0x${string}`,
       ]);
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -291,13 +418,17 @@ export function createSystemCalls(
     sourceCode: string,
   ) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__saveModification([
         bytecode as `0x${string}`,
         description,
         name,
         sourceCode,
       ]);
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -315,10 +446,14 @@ export function createSystemCalls(
 
   const sellElectricity = async (electricityAmount: bigint) => {
     try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
       const tx = await worldContract.write.app__sellElectricity([
         electricityAmount,
       ]);
-      const txResult = await waitForTransaction(tx);
+      const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
@@ -334,7 +469,11 @@ export function createSystemCalls(
     }
   };
 
-  return {
+  const network = {
+    playerEntity,
+  };
+
+  const systemCalls = {
     buyElectricity,
     claimRecharge,
     createGame,
@@ -349,4 +488,5 @@ export function createSystemCalls(
     saveModification,
     sellElectricity,
   };
-}
+  return { components, network, systemCalls };
+};

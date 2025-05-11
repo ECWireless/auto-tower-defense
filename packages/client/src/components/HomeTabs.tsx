@@ -39,8 +39,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import useCopy from '@/hooks/useCopy';
-import { useMUD } from '@/MUDContext';
+import { useCopy } from '@/hooks/useCopy';
+import { useMUD } from '@/hooks/useMUD';
 import { GAMES_PATH } from '@/Routes';
 import {
   formatDateFromTimestamp,

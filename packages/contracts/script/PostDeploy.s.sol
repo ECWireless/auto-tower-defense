@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
-import { AddressBook, DefaultLogic, MapConfig, SavedGame, SavedGameData, SavedModification, SolarFarmDetails, SolarFarmDetailsData, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { AddressBook, DefaultLogic, MapConfig, SavedKingdom, SavedKingdomData, SavedModification, SolarFarmDetails, SolarFarmDetailsData, Username, UsernameTaken } from "../src/codegen/index.sol";
 import { ActionType } from "../src/codegen/common.sol";
 import { _solarFarmSystemAddress } from "../src/utils.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
@@ -59,14 +59,17 @@ contract PostDeploy is Script {
     bytes32[] memory defaultActionIds = new bytes32[](0);
 
     bytes32 globalPlayerId;
-    bytes32 savedGameId = keccak256(abi.encodePacked(bytes32(0), globalPlayerId));
+    bytes32 savedKingdomId = keccak256(abi.encode(defaultActionIds));
 
-    SavedGameData memory savedGame = SavedGameData({
-      gameId: bytes32(0),
-      winner: address(0),
+    SavedKingdomData memory savedKingdom = SavedKingdomData({
+      author: address(0),
+      createdAtTimestamp: block.timestamp,
+      electricityBalance: 0,
+      losses: 0,
+      wins: 0,
       actions: defaultActionIds
     });
-    SavedGame.set(savedGameId, savedGame);
+    SavedKingdom.set(savedKingdomId, savedKingdom);
 
     // Set template system modifications
     bytes
