@@ -1,4 +1,4 @@
-import { garnet, redstone, rhodolite } from '@latticexyz/common/chains';
+import { garnet, pyrope, redstone, rhodolite } from '@latticexyz/common/chains';
 import { Chain, Hex } from 'viem';
 import { anvil } from 'viem/chains';
 
@@ -13,6 +13,7 @@ export type Entity = Hex;
 export const chains: readonly [Chain, ...Chain[]] = [
   redstone,
   garnet,
+  pyrope,
   rhodolite,
   {
     ...anvil,
