@@ -175,6 +175,7 @@ export const HomeTabs: React.FC = () => {
   const {
     components: {
       Game,
+      HighestLevel,
       KingdomsByLevel,
       Level,
       RevenueReceipt,
@@ -221,6 +222,23 @@ export const HomeTabs: React.FC = () => {
       winner: _game.winner as Address,
     };
   }) as Game[];
+
+  const topPlayers = useEntityQuery([Has(HighestLevel)])
+    .map(entity => {
+      const playerLevel = getComponentValueStrict(HighestLevel, entity).value;
+      const playerAddress = decodeEntity(
+        { playerAddress: 'address' },
+        entity,
+      ).playerAddress;
+      const playerUsername = getComponentValueStrict(Username, entity).value;
+
+      return {
+        playerAddress,
+        playerLevel: Number(playerLevel),
+        playerUsername,
+      };
+    })
+    .sort((a, b) => b.playerLevel - a.playerLevel);
 
   const kingdomsByLevel = useEntityQuery([Has(KingdomsByLevel)])
     .map(entity => {
@@ -273,35 +291,6 @@ export const HomeTabs: React.FC = () => {
       (a, b) => Number(b.electricityBalance) - Number(a.electricityBalance),
     );
 
-  const topPlayersList = useMemo(() => {
-    const topPlayersNoDuplicates = Object.values(
-      kingdomsByLevel.reduce(
-        (acc, entry) => {
-          const existing = acc[entry.author];
-          if (!existing || existing.level < entry.level) {
-            acc[entry.author] = entry;
-          }
-          return acc;
-        },
-        {} as Record<
-          string,
-          {
-            id: string;
-            author: string;
-            authorUsername: string;
-            electricityBalance: bigint;
-            level: number;
-            losses: number;
-            totalEarnings: bigint;
-            wins: number;
-          }
-        >,
-      ),
-    );
-
-    return topPlayersNoDuplicates.sort((a, b) => b.level - a.level);
-  }, [kingdomsByLevel]);
-
   const activeGames = useMemo(
     () =>
       games
@@ -327,7 +316,7 @@ export const HomeTabs: React.FC = () => {
             value="players"
           >
             <span className="sm:inline hidden">Top Players</span>
-            <span className="sm:hidden">Players</span> ({topPlayersList.length})
+            <span className="sm:hidden">Players</span> ({topPlayers.length})
           </TabsTrigger>
           <TabsTrigger
             className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 data-[state=active]:rounded-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
@@ -360,25 +349,32 @@ export const HomeTabs: React.FC = () => {
                   <TableRow className="border-gray-800">
                     <TableHead className="text-cyan-400">Rank</TableHead>
                     <TableHead className="text-cyan-400">Player</TableHead>
-                    <TableHead className="text-cyan-400">Level</TableHead>
+                    <TableHead className="text-cyan-400">
+                      Highest Level
+                    </TableHead>
                     <TableHead className="text-cyan-400">Address</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {topPlayersList.map((player, i) => (
-                    <TableRow key={player.author} className="border-gray-800">
+                  {topPlayers.map((player, i) => (
+                    <TableRow
+                      key={player.playerAddress}
+                      className="border-gray-800"
+                    >
                       <TableCell className="font-medium">{i + 1}</TableCell>
-                      <TableCell>{player.authorUsername}</TableCell>
-                      <TableCell>{player.level}</TableCell>
+                      <TableCell>{player.playerUsername}</TableCell>
+                      <TableCell>{player.playerLevel}</TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <span>{shortenAddress(player.author)}</span>
+                          <span>{shortenAddress(player.playerAddress)}</span>
                           <Tooltip>
                             <TooltipTrigger
                               className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
-                              onClick={() => copyToClipboard(player.author)}
+                              onClick={() =>
+                                copyToClipboard(player.playerAddress)
+                              }
                             >
-                              {copiedText === player.author ? (
+                              {copiedText === player.playerAddress ? (
                                 <Check className="h-3 w-3" />
                               ) : (
                                 <Copy className="h-3 w-3" />
@@ -386,7 +382,7 @@ export const HomeTabs: React.FC = () => {
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>
-                                {copiedText === player.author
+                                {copiedText === player.playerAddress
                                   ? 'Copied!'
                                   : 'Copy address'}
                               </p>
@@ -402,9 +398,9 @@ export const HomeTabs: React.FC = () => {
 
             {/* Mobile view for players */}
             <div className="md:hidden">
-              {topPlayersList.map((player, i) => (
+              {topPlayers.map((player, i) => (
                 <Card
-                  key={player.author}
+                  key={player.playerAddress}
                   className="bg-gray-900 border-gray-800 hover:border-cyan-900 mb-3"
                 >
                   <CardContent className="p-4">
@@ -412,24 +408,24 @@ export const HomeTabs: React.FC = () => {
                       <div className="gap-2 flex items-center">
                         <span className="font-medium text-white">#{i + 1}</span>
                         <span className="text-white">
-                          {player.authorUsername}
+                          {player.playerUsername}
                         </span>
                       </div>
                       <span className="text-sm text-white">
-                        Level {player.level}
+                        Highets Level: {player.playerLevel}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-300">
-                        {shortenAddress(player.author)}
+                        {shortenAddress(player.playerAddress)}
                       </span>
                       <Button
                         className="h-6 hover:text-white text-gray-400 w-6"
-                        onClick={() => copyToClipboard(player.author)}
+                        onClick={() => copyToClipboard(player.playerAddress)}
                         size="icon"
                         variant="ghost"
                       >
-                        {copiedText === player.author ? (
+                        {copiedText === player.playerAddress ? (
                           <Check className="h-3 w-3" />
                         ) : (
                           <Copy className="h-3 w-3" />

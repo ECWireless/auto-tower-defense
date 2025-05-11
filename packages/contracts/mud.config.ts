@@ -91,6 +91,7 @@ export default defineWorld({
         dataStruct: false,
       },
     },
+    HighestLevel: "uint256", // ID is global player ID; value is level
     KingdomsByLevel: {
       key: ["level"],
       schema: {

@@ -15,7 +15,7 @@ export const Explorer = (): JSX.Element | null => {
   return (
     <div className="bottom-0 fixed flex flex-col hover:opacity-100 inset-x-0 opacity-80 transition z-100">
       <button
-        className="flex font-medium gap-2 justify-end leading-none outline-none p-2 text-white"
+        className="flex font-medium gap-2 hover:cursor-pointer justify-end leading-none outline-none p-2 text-white"
         onClick={() => setOpen(!open)}
         type="button"
       >

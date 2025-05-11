@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, KingdomsByLevel, LastGameWonInRun, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, SavedKingdom, SavedKingdomData, TopLevel, WinStreak } from "../codegen/index.sol";
+import { Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, HighestLevel, KingdomsByLevel, LastGameWonInRun, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, SavedKingdom, SavedKingdomData, TopLevel, WinStreak } from "../codegen/index.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { BatteryHelpers } from "./BatteryHelpers.sol";
@@ -311,6 +311,7 @@ library ProjectileHelpers {
       // If they win, save their last game won in run, but don't save to KingdomsByLevel
       // However, if they have the highest level, set won game in KingdomsByLevel
 
+      _setHighestLevel(globalPlayer1Id, winStreak);
       winStreak++;
       WinStreak.set(globalPlayer1Id, winStreak);
       bytes32[] memory savedGameActions = SavedGame.getActions(gameId);
@@ -348,6 +349,13 @@ library ProjectileHelpers {
       WinStreak.set(globalPlayer1Id, 0);
 
       BatteryHelpers.loseStake(gameId, globalPlayer1Id);
+    }
+  }
+
+  function _setHighestLevel(bytes32 globalPlayer1, uint256 level) internal {
+    uint256 highestLevel = HighestLevel.get(globalPlayer1);
+    if (level > highestLevel) {
+      HighestLevel.set(globalPlayer1, level);
     }
   }
 
