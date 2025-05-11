@@ -302,19 +302,20 @@ export const InnerGamePage = (): JSX.Element => {
               </div>
             </div>
             {/* Claim Recharge Button */}
-            {claimableRecharge > BigInt(1_000) && (
-              <Button
-                className="mt-2 bg-green-800/80 hover:bg-green-700/90 text-green-100 text-xs border border-green-600/50 shadow-md shadow-green-900/20"
-                disabled={isClaimingRecharge}
-                onClick={onClaimRecharge}
-                size="sm"
-              >
-                {isClaimingRecharge && (
-                  <Loader2 className="animate-spin h-6 w-6" />
-                )}
-                Claim Recharge (+{formatWattHours(claimableRecharge)})
-              </Button>
-            )}
+            {claimableRecharge > BigInt(1_000) &&
+              batteryDetails.activeBalance < BATTERY_STORAGE_LIMIT && (
+                <Button
+                  className="mt-2 bg-green-800/80 hover:bg-green-700/90 text-green-100 text-xs border border-green-600/50 shadow-md shadow-green-900/20"
+                  disabled={isClaimingRecharge}
+                  onClick={onClaimRecharge}
+                  size="sm"
+                >
+                  {isClaimingRecharge && (
+                    <Loader2 className="animate-spin h-6 w-6" />
+                  )}
+                  Claim Recharge (+{formatWattHours(claimableRecharge)})
+                </Button>
+              )}
           </div>
         )}
 
@@ -356,19 +357,20 @@ export const InnerGamePage = (): JSX.Element => {
                   </div>
                 </div>
                 {/* Claim Recharge Button */}
-                {claimableRecharge > BigInt(1_000) && (
-                  <Button
-                    className="bg-green-800/80 border border-green-600/50 mt-2 h-7 hover:bg-green-700/90 px-3 py-1 shadow-green-900/20 shadow-md text-green-100 text-xs"
-                    disabled={isClaimingRecharge}
-                    onClick={onClaimRecharge}
-                    size="sm"
-                  >
-                    {isClaimingRecharge && (
-                      <Loader2 className="animate-spin h-6 w-6" />
-                    )}
-                    Claim Recharge (+{formatWattHours(claimableRecharge)})
-                  </Button>
-                )}
+                {claimableRecharge > BigInt(1_000) &&
+                  batteryDetails.activeBalance < BATTERY_STORAGE_LIMIT && (
+                    <Button
+                      className="bg-green-800/80 border border-green-600/50 mt-2 h-7 hover:bg-green-700/90 px-3 py-1 shadow-green-900/20 shadow-md text-green-100 text-xs"
+                      disabled={isClaimingRecharge}
+                      onClick={onClaimRecharge}
+                      size="sm"
+                    >
+                      {isClaimingRecharge && (
+                        <Loader2 className="animate-spin h-6 w-6" />
+                      )}
+                      Claim Recharge (+{formatWattHours(claimableRecharge)})
+                    </Button>
+                  )}
               </div>
             )}
             <GameStatusBar
