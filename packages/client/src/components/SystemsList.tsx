@@ -1,6 +1,6 @@
 import { getComponentValue } from '@latticexyz/recs';
 import { User } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { zeroHash } from 'viem';
 
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,10 @@ export const SystemsList: React.FC<SystemsListProps> = ({
     components: { Username },
     network: { playerEntity },
   } = useMUD();
+
   const [systemsTab, setSystemsTab] = useState<'your' | 'other'>('your');
+  const innerRef = useRef(null);
+  const rowRefs = useRef([]) as React.MutableRefObject<HTMLDivElement[]>;
 
   const myUsername = useMemo(() => {
     if (!playerEntity) return '';
@@ -42,6 +45,29 @@ export const SystemsList: React.FC<SystemsListProps> = ({
       s => s.author !== myUsername && s.author !== 'Template',
     );
   }, [myUsername, savedModifications]);
+
+  const scrollToRow = useCallback(() => {
+    const index = savedModifications.findIndex(
+      s => s.id === selectedModification.id,
+    );
+    const container = innerRef.current as unknown as HTMLDivElement;
+    const row = rowRefs.current[index];
+    if (container && row) {
+      // compute the row's position relative to the container
+      const containerRect = container.getBoundingClientRect();
+      const rowRect = row.getBoundingClientRect();
+      const offset = rowRect.top - containerRect.top + container.scrollTop;
+
+      container.scrollTo({
+        top: offset,
+        behavior: 'smooth',
+      });
+    }
+  }, [savedModifications, selectedModification, rowRefs]);
+
+  useEffect(() => {
+    scrollToRow();
+  }, [scrollToRow]);
 
   useEffect(() => {
     if (mySavedModifications.find(s => s.id === selectedModification.id)) {
@@ -104,21 +130,25 @@ export const SystemsList: React.FC<SystemsListProps> = ({
         </div>
       </div>
 
-      <div className="bg-black/30 border border-gray-800 h-[240px] overflow-y-auto pr-1 rounded-md systems-scrollbar">
+      <div
+        className="bg-black/30 border border-gray-800 h-[240px] overflow-y-auto pr-1 rounded-md systems-scrollbar"
+        ref={innerRef}
+      >
         <div className="p-1 space-y-1">
           {(systemsTab === 'your'
             ? mySavedModifications
             : otherSavedModifications
-          ).map(system => (
+          ).map((system, i) => (
             <div
               key={system.id}
-              onClick={() => onSelectSavedModification(system)}
               className={cn(
                 'border-l-2 cursor-pointer flex gap-2 items-start py-2 px-3 rounded transition-all',
                 selectedModification.id === system.id
                   ? 'bg-cyan-950/30 border-l-cyan-500'
                   : 'bg-gray-900/50 border-l-transparent hover:bg-gray-900/80 hover:border-l-gray-700',
               )}
+              onClick={() => onSelectSavedModification(system)}
+              ref={el => (el ? (rowRefs.current[i] = el) : null)}
             >
               <div className="flex h-4 items-center mt-0.5">
                 <input
