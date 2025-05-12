@@ -25,7 +25,7 @@ contract AutoTowerEscrow {
     /// @notice Emitted when a user receives USDC for selling electricity
     event ElectricitySale(address indexed seller, uint256 amount, uint256 nonce);
 
-    /// @param _usdc Address of the USDC token on Base/Base Sepolia
+    /// @param _usdc Address of the USDC token on Base
     /// @param _trustedRelayer Address of the trusted relayer
     constructor(address _usdc, address _trustedRelayer) {
         usdc = IERC20(_usdc);
