@@ -1,5 +1,5 @@
 import { useDndContext } from '@dnd-kit/core';
-import { Loader2, Wrench } from 'lucide-react';
+import { Binoculars, Loader2, Wrench } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   GiCannon,
@@ -8,6 +8,7 @@ import {
   GiMineExplosion,
 } from 'react-icons/gi';
 import { zeroAddress } from 'viem';
+import { useAccount } from 'wagmi';
 
 import { Draggable } from '@/components/Draggable';
 import { Droppable } from '@/components/Droppable';
@@ -44,6 +45,7 @@ const GRID_ROWS = 7;
 const GRID_COLS = 14;
 
 export const GameBoard: React.FC = () => {
+  const { address: playerAddress } = useAccount();
   const {
     activeTowerId,
     enemyCastlePosition,
@@ -250,17 +252,34 @@ export const GameBoard: React.FC = () => {
                             className="flex items-center h-full justify-center"
                           >
                             <div>
-                              {isTowerSelected && (
-                                <div
-                                  className="absolute bg-gray-800 border border-cyan-500 hover:bg-gray-700 p-1.5 rounded-full shadow-lg top-1/2 transition-colors z-20 -left-[35px]"
-                                  onClick={() => onViewTower(towerOnTile)}
-                                  style={{
-                                    transform: 'translateY(-50%)',
-                                  }}
-                                >
-                                  <Wrench className="h-4 text-cyan-400 w-4" />
-                                </div>
-                              )}
+                              {tooltipSelection === towerOnTile.id &&
+                                towerOnTile.owner === playerAddress && (
+                                  <div
+                                    className="absolute bg-gray-800 border border-cyan-500 hover:bg-gray-700 hover:cursor-pointer p-1.5 rounded-full shadow-lg top-1/2 transition-colors z-20 -left-[35px]"
+                                    onClick={() => onViewTower(towerOnTile)}
+                                    style={{
+                                      transform: 'translateY(-50%)',
+                                    }}
+                                  >
+                                    <Wrench className="h-4 text-cyan-400 w-4" />
+                                  </div>
+                                )}
+                              {tooltipSelection === towerOnTile.id &&
+                                towerOnTile.owner !== playerAddress && (
+                                  <div
+                                    className="absolute bg-gray-800 border border-pink-500 hover:bg-gray-700 hover:cursor-pointer p-1.5 rounded-full shadow-lg top-1/2 transition-colors z-20 -left-[35px]"
+                                    onClick={() => {
+                                      onViewTower(towerOnTile);
+                                      // Reset the active tower
+                                      handleTowerSelect('', 'offense');
+                                    }}
+                                    style={{
+                                      transform: 'translateY(-50%)',
+                                    }}
+                                  >
+                                    <Binoculars className="h-4 text-pink-400 w-4" />
+                                  </div>
+                                )}
                               <Draggable
                                 id={towerOnTile.id}
                                 disabled={!(isLeftSide && isPlayer1)}
