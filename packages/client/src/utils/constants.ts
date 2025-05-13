@@ -1,4 +1,4 @@
-import { garnet, pyrope, redstone, rhodolite } from '@latticexyz/common/chains';
+import { pyrope } from '@latticexyz/common/chains';
 import { Chain, Hex } from 'viem';
 import { anvil, baseSepolia } from 'viem/chains';
 
@@ -10,17 +10,13 @@ export const MAX_TICKS = 28;
 export const CHAIN_ID = import.meta.env.CHAIN_ID;
 export const WORLD_ADDRESS = import.meta.env.WORLD_ADDRESS;
 export const START_BLOCK = BigInt(import.meta.env.START_BLOCK ?? 0n);
-export const BASE_USDC_ADDRESS = import.meta.env.VITE_BASE_USDC_ADDRESS;
 
 export const url = new URL(window.location.href);
 export type Entity = Hex;
 
 export const chains: readonly [Chain, ...Chain[]] = [
   baseSepolia,
-  garnet,
   pyrope,
-  redstone,
-  rhodolite,
   {
     ...anvil,
     contracts: {
@@ -38,3 +34,8 @@ export const chains: readonly [Chain, ...Chain[]] = [
     },
   },
 ] as const satisfies Chain[];
+
+export const USDC_ADDRESSES: { [key: number]: string } = {
+  [baseSepolia.id]: '0xFf5E70a3233992015b1874d5e3D0F229B93b3535',
+  [pyrope.id]: '0xAC49338E773d463b9fcd88D44456E0130a7ce35b',
+};

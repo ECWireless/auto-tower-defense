@@ -78,10 +78,19 @@ export const getWorldAddress = (): `0x${string}` => {
   return WORLD_ADDRESS;
 };
 
-export const getChain = (forcedChainId?: number): Chain => {
-  const chain = chains.find(c => c.id === (forcedChainId ?? CHAIN_ID));
+export const getGameChain = (): Chain => {
+  const chain = chains.find(c => c.id === CHAIN_ID);
   if (!chain) {
     throw new Error(`No chain configured for chain ID ${CHAIN_ID}.`);
+  }
+  return chain;
+};
+
+export const getChain = (chainId: number | undefined): Chain | undefined => {
+  const chain = chains.find(c => c.id === chainId);
+  if (!chain) {
+    // eslint-disable-next-line no-console
+    console.warn(`Chain with id ${chainId} cannot be used for this game.`);
   }
   return chain;
 };

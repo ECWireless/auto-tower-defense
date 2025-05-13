@@ -12,7 +12,7 @@ import { useAccount } from 'wagmi';
 
 import { components } from '@/mud/recs';
 import { useWorldContract } from '@/mud/useWorldContract';
-import { getChain } from '@/utils/helpers';
+import { getGameChain } from '@/utils/helpers';
 
 const getContractError = (error: BaseError): string => {
   const revertError = error.walk(
@@ -282,7 +282,7 @@ export const useMUD = (): {
       }
 
       const publicClient = createPublicClient({
-        chain: getChain(),
+        chain: getGameChain(),
         transport: http(),
         batch: { multicall: false },
       });

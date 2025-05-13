@@ -3,6 +3,7 @@ import { getComponentValue } from '@latticexyz/recs';
 import { singletonEntity } from '@latticexyz/store-sync/recs';
 import {
   ArrowRightLeft,
+  CircleAlert,
   DollarSign,
   Loader2,
   StoreIcon as BuildingStore,
@@ -11,7 +12,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { createPublicClient, formatUnits, http, parseUnits } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { anvil, baseSepolia } from 'viem/chains';
 import { useAccount, useSwitchChain, useWalletClient } from 'wagmi';
 
 import { Button } from '@/components/ui/button';
@@ -28,12 +29,17 @@ import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/hooks/useMUD';
-import { BASE_USDC_ADDRESS } from '@/utils/constants';
-import { formatWattHours, getChain, getChainLogo } from '@/utils/helpers';
+import { USDC_ADDRESSES } from '@/utils/constants';
+import {
+  formatWattHours,
+  getChain,
+  getChainLogo,
+  getGameChain,
+} from '@/utils/helpers';
 
 export const SolarFarmDialog: React.FC = () => {
   const { address: playerAddress, chainId } = useAccount();
-  const { switchChain } = useSwitchChain();
+  const { isPending: isSwitchingChains, switchChain } = useSwitchChain();
   const {
     components: { AddressBook, BatteryDetails, SolarFarmDetails },
     network: { playerEntity },
@@ -67,20 +73,30 @@ export const SolarFarmDialog: React.FC = () => {
         throw new Error('Chain ID not found');
       }
 
-      let publicClient = createPublicClient({
-        batch: { multicall: false },
-        chain: getChain(),
-        transport: http(),
-      });
+      let publicClient = null;
 
-      if (chainId === baseSepolia.id) {
-        usdcAddress = BASE_USDC_ADDRESS;
+      const externalChain = getChain(chainId);
+      if (externalChain && externalChain.id !== anvil.id) {
+        usdcAddress = USDC_ADDRESSES[externalChain.id];
 
         publicClient = createPublicClient({
           batch: { multicall: false },
-          chain: getChain(chainId),
+          chain: externalChain,
           transport: http(),
         });
+      }
+
+      const gameChain = getGameChain();
+      if (chainId === gameChain.id) {
+        publicClient = createPublicClient({
+          batch: { multicall: false },
+          chain: gameChain,
+          transport: http(),
+        });
+      }
+
+      if (!publicClient) {
+        return BigInt(0);
       }
 
       const balance = await publicClient.readContract({
@@ -170,17 +186,15 @@ export const SolarFarmDialog: React.FC = () => {
         throw new Error('Wallet client not found');
       }
 
-      const gameChain = getChain();
-      if (chainId !== gameChain.id) {
-        switchChain({ chainId: gameChain.id });
+      const externalChain = getChain(chainId);
 
-        // wait 1 second for the chain to switch
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!externalChain) {
+        throw new Error('External chain not found');
       }
 
       const publicClient = createPublicClient({
         batch: { multicall: false },
-        chain: getChain(),
+        chain: externalChain,
         transport: http(),
       });
 
@@ -217,7 +231,7 @@ export const SolarFarmDialog: React.FC = () => {
         description: (error as Error).message,
       });
     }
-  }, [AddressBook, chainId, electricityAmount, switchChain, walletClient]);
+  }, [AddressBook, chainId, electricityAmount, walletClient]);
 
   const onHandleTransaction = useCallback(async () => {
     try {
@@ -275,8 +289,11 @@ export const SolarFarmDialog: React.FC = () => {
 
     if (isBuying) {
       const bigIntTxCost = parseUnits(calculateTransactionCost().toString(), 6);
+      const externalChain = getChain(chainId);
       if (bigIntTxCost > playerUSDCBalance) {
-        return `Insufficient ${getChain(chainId).name} USDC balance`;
+        return externalChain
+          ? `Insufficient ${externalChain.name} USDC balance`
+          : 'Unsupported chain';
       }
       if (
         parseUnits(electricityAmount, 3) >
@@ -346,12 +363,22 @@ export const SolarFarmDialog: React.FC = () => {
               <DialogDescription className="flex items-center justify-between mt-2 text-gray-300">
                 Buy or sell electricity for USDC
               </DialogDescription>
-              <div className="bg-blue-950/30 border border-blue-900/50 flex gap-2 items-center px-2 py-1 rounded-full">
-                <div className="bg-white flex h-4 items-center justify-center rounded-full w-4">
-                  <img src={getChainLogo(chainId)} className="h-2.5 w-2.5" />
+              <div
+                className={`${getChain(chainId) ? 'bg-blue-950/30 border border-blue-900/50' : 'bg-gray-600 border border-gray-200'} flex gap-2 items-center px-2 py-1 rounded-full`}
+              >
+                <div
+                  className={`${getChain(chainId) ? 'bg-white' : 'bg-gray-600'} flex h-4 items-center justify-center rounded-full w-4`}
+                >
+                  {getChain(chainId) ? (
+                    <img src={getChainLogo(chainId)} className="h-2.5 w-2.5" />
+                  ) : (
+                    <CircleAlert className="h-2.5 w-2.5 text-gray-200" />
+                  )}
                 </div>
-                <span className="font-medium text-blue-300 text-xs">
-                  {getChain(chainId).name}
+                <span
+                  className={`font-medium ${getChain(chainId) ? 'text-blue-300' : 'text-gray-200'} text-xs`}
+                >
+                  {getChain(chainId)?.name ?? 'Unsupported Chain'}
                 </span>
               </div>
             </div>
@@ -507,18 +534,29 @@ export const SolarFarmDialog: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button
-              className={
-                isBuying
-                  ? 'bg-green-800 hover:bg-green-700 text-white'
-                  : 'bg-red-800 hover:bg-red-700 text-white'
-              }
-              disabled={isProcessing || !!disabledMessage}
-              onClick={onHandleTransaction}
-            >
-              {isProcessing && <Loader2 className="animate-spin h-6 w-6" />}
-              {isBuying ? 'Buy Electricity' : 'Sell Electricity'}
-            </Button>
+            {getChain(chainId) ? (
+              <Button
+                className={
+                  isBuying
+                    ? 'bg-green-800 hover:bg-green-700 text-white'
+                    : 'bg-red-800 hover:bg-red-700 text-white'
+                }
+                disabled={isProcessing || !!disabledMessage}
+                onClick={onHandleTransaction}
+              >
+                {isProcessing && <Loader2 className="animate-spin h-6 w-6" />}
+                {isBuying ? 'Buy Electricity' : 'Sell Electricity'}
+              </Button>
+            ) : (
+              <Button
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+                disabled={isSwitchingChains}
+                onClick={() => switchChain({ chainId: baseSepolia.id })}
+              >
+                <CircleAlert className="h-6 w-6" />
+                Switch to {baseSepolia.name}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
