@@ -11,9 +11,9 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { createPublicClient, formatUnits, http, parseUnits } from 'viem';
+import { baseSepolia } from 'viem/chains';
 import { useAccount, useSwitchChain, useWalletClient } from 'wagmi';
 
-import { getChain } from '@/common';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,7 +28,8 @@ import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/hooks/useMUD';
-import { formatWattHours } from '@/utils/helpers';
+import { BASE_USDC_ADDRESS } from '@/utils/constants';
+import { formatWattHours, getChain, getChainLogo } from '@/utils/helpers';
 
 export const SolarFarmDialog: React.FC = () => {
   const { address: playerAddress, chainId } = useAccount();
@@ -53,7 +54,7 @@ export const SolarFarmDialog: React.FC = () => {
 
   const getUsdcBalance = useCallback(async () => {
     try {
-      const usdcAddress = getComponentValue(
+      let usdcAddress = getComponentValue(
         AddressBook,
         singletonEntity,
       )?.usdcAddress;
@@ -62,11 +63,25 @@ export const SolarFarmDialog: React.FC = () => {
         throw new Error('USDC address not found');
       }
 
-      const publicClient = createPublicClient({
+      if (!chainId) {
+        throw new Error('Chain ID not found');
+      }
+
+      let publicClient = createPublicClient({
         batch: { multicall: false },
         chain: getChain(),
         transport: http(),
       });
+
+      if (chainId === baseSepolia.id) {
+        usdcAddress = BASE_USDC_ADDRESS;
+
+        publicClient = createPublicClient({
+          batch: { multicall: false },
+          chain: getChain(chainId),
+          transport: http(),
+        });
+      }
 
       const balance = await publicClient.readContract({
         address: usdcAddress as `0x${string}`,
@@ -93,7 +108,7 @@ export const SolarFarmDialog: React.FC = () => {
       });
       return BigInt(0);
     }
-  }, [AddressBook, playerAddress]);
+  }, [AddressBook, chainId, playerAddress]);
 
   useEffect(() => {
     const fetchUsdcBalance = async () => {
@@ -261,7 +276,7 @@ export const SolarFarmDialog: React.FC = () => {
     if (isBuying) {
       const bigIntTxCost = parseUnits(calculateTransactionCost().toString(), 6);
       if (bigIntTxCost > playerUSDCBalance) {
-        return 'Insufficient USDC balance';
+        return `Insufficient ${getChain(chainId).name} USDC balance`;
       }
       if (
         parseUnits(electricityAmount, 3) >
@@ -281,6 +296,7 @@ export const SolarFarmDialog: React.FC = () => {
   }, [
     batteryDetails,
     calculateTransactionCost,
+    chainId,
     electricityAmount,
     isBuying,
     playerUSDCBalance,
@@ -326,9 +342,19 @@ export const SolarFarmDialog: React.FC = () => {
             <DialogTitle className="font-bold text-yellow-400 text-2xl">
               Solar Farm
             </DialogTitle>
-            <DialogDescription className="mt-2 text-gray-300">
-              Buy or sell electricity for USDC
-            </DialogDescription>
+            <div className="flex flex-col-reverse items-center justify-between sm:flex-row">
+              <DialogDescription className="flex items-center justify-between mt-2 text-gray-300">
+                Buy or sell electricity for USDC
+              </DialogDescription>
+              <div className="bg-blue-950/30 border border-blue-900/50 flex gap-2 items-center px-2 py-1 rounded-full">
+                <div className="bg-white flex h-4 items-center justify-center rounded-full w-4">
+                  <img src={getChainLogo(chainId)} className="h-2.5 w-2.5" />
+                </div>
+                <span className="font-medium text-blue-300 text-xs">
+                  {getChain(chainId).name}
+                </span>
+              </div>
+            </div>
           </DialogHeader>
 
           {lowElectricityBalanceMessage && (
