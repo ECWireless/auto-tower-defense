@@ -12,7 +12,8 @@ import {
 } from 'viem';
 import { useClient } from 'wagmi';
 
-import { chainId, getWorldAddress } from '@/common';
+import { CHAIN_ID } from '@/utils/constants';
+import { getWorldAddress } from '@/utils/helpers';
 
 export const useWorldContract = ():
   | GetContractReturnType<
@@ -23,7 +24,7 @@ export const useWorldContract = ():
       }
     >
   | undefined => {
-  const client = useClient({ chainId });
+  const client = useClient({ chainId: CHAIN_ID });
   const { data: sessionClient } = useSessionClient();
 
   const { data: worldContract } = useQuery({

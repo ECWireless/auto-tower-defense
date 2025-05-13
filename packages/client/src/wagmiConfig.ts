@@ -1,12 +1,13 @@
 import { garnet, pyrope, redstone, rhodolite } from '@latticexyz/common/chains';
 import { createWagmiConfig } from '@latticexyz/entrykit/internal';
 import { http, webSocket } from 'viem';
-import { anvil } from 'viem/chains';
+import { anvil, baseSepolia } from 'viem/chains';
 
-import { chainId, chains } from '@/common';
+import { CHAIN_ID, chains } from '@/utils/constants';
 
 export const transports = {
   [anvil.id]: webSocket(),
+  [baseSepolia.id]: http(),
   [garnet.id]: http(),
   [pyrope.id]: webSocket(),
   [rhodolite.id]: http(),
@@ -15,10 +16,11 @@ export const transports = {
 
 export const wagmiConfig = createWagmiConfig({
   appName: document.title,
-  chainId,
+  chainId: CHAIN_ID,
   chains,
   pollingInterval: {
     [anvil.id]: 2000,
+    [baseSepolia.id]: 2000,
     [garnet.id]: 2000,
     [pyrope.id]: 2000,
     [rhodolite.id]: 2000,

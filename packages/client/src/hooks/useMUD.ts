@@ -10,9 +10,9 @@ import {
 } from 'viem';
 import { useAccount } from 'wagmi';
 
-import { getChain } from '@/common';
 import { components } from '@/mud/recs';
 import { useWorldContract } from '@/mud/useWorldContract';
+import { getChain } from '@/utils/helpers';
 
 const getContractError = (error: BaseError): string => {
   const revertError = error.walk(

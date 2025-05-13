@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { getChain, getWorldAddress } from '@/common';
 import { MUDIcon } from '@/components/icons/MUDIcon';
+import { getChain, getWorldAddress } from '@/utils/helpers';
 
 export const Explorer = (): JSX.Element | null => {
   const [open, setOpen] = useState(false);
