@@ -17,10 +17,10 @@
     "typescript": "5.4.2"
   },
   "dependencies": {
-    "@latticexyz/common": "2.2.21",
-    "@latticexyz/recs": "2.2.21",
-    "@latticexyz/store-sync": "2.2.21",
-    "@latticexyz/world": "2.2.21",
+    "@latticexyz/common": "2.2.22-7c2fe37ce180c3d55160202867bd3835683f532b",
+    "@latticexyz/recs": "2.2.22-7c2fe37ce180c3d55160202867bd3835683f532b",
+    "@latticexyz/store-sync": "2.2.22-7c2fe37ce180c3d55160202867bd3835683f532b",
+    "@latticexyz/world": "2.2.22-7c2fe37ce180c3d55160202867bd3835683f532b",
     "dotenv": "^16.4.7",
     "rxjs": "7.5.5",
     "viem": "2.21.19"
