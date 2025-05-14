@@ -21,6 +21,7 @@ contract PostDeploy is Script {
 
     // Load the private key from the `PRIVATE_KEY` environment variable (in .env)
     uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+    uint256 relayerPrivateKey = vm.envUint("RELAYER_PRIVATE_KEY");
 
     // Start broadcasting transactions from the deployer account
     vm.startBroadcast(deployerPrivateKey);
@@ -36,6 +37,7 @@ contract PostDeploy is Script {
       whPerCentPrice: 1920 // 1.92kWh/cent
     });
     SolarFarmDetails.set(solarFarmDetails);
+    AddressBook.setRelayerAddress(vm.addr(relayerPrivateKey));
 
     if (block.chainid == 31337) {
       uint256 solarFarmerStartingBalance = 100 * 1e6;

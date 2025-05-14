@@ -11,6 +11,8 @@ pragma solidity >=0.8.24;
 interface ISolarFarmSystem {
   function app__buyElectricity(uint256 electricityAmount) external;
 
+  function app__buyElectricityAsRelayer(address receiver, uint256 usdcAmount) external;
+
   function app__sellElectricity(uint256 electricityAmount) external;
 
   function app__claimRecharge() external;

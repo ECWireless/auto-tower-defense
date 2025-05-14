@@ -17,6 +17,7 @@ import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/Encoded
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct AddressBookData {
+  address relayerAddress;
   address solarFarmAddress;
   address usdcAddress;
 }
@@ -26,12 +27,12 @@ library AddressBook {
   ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000041646472657373426f6f6b0000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0028020014140000000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x003c030014141400000000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of ()
   Schema constant _keySchema = Schema.wrap(0x0000000000000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (address, address)
-  Schema constant _valueSchema = Schema.wrap(0x0028020061610000000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (address, address, address)
+  Schema constant _valueSchema = Schema.wrap(0x003c030061616100000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -46,9 +47,10 @@ library AddressBook {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](2);
-    fieldNames[0] = "solarFarmAddress";
-    fieldNames[1] = "usdcAddress";
+    fieldNames = new string[](3);
+    fieldNames[0] = "relayerAddress";
+    fieldNames[1] = "solarFarmAddress";
+    fieldNames[2] = "usdcAddress";
   }
 
   /**
@@ -66,12 +68,50 @@ library AddressBook {
   }
 
   /**
+   * @notice Get relayerAddress.
+   */
+  function getRelayerAddress() internal view returns (address relayerAddress) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Get relayerAddress.
+   */
+  function _getRelayerAddress() internal view returns (address relayerAddress) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Set relayerAddress.
+   */
+  function setRelayerAddress(address relayerAddress) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((relayerAddress)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set relayerAddress.
+   */
+  function _setRelayerAddress(address relayerAddress) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((relayerAddress)), _fieldLayout);
+  }
+
+  /**
    * @notice Get solarFarmAddress.
    */
   function getSolarFarmAddress() internal view returns (address solarFarmAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -81,7 +121,7 @@ library AddressBook {
   function _getSolarFarmAddress() internal view returns (address solarFarmAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -91,7 +131,7 @@ library AddressBook {
   function setSolarFarmAddress(address solarFarmAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((solarFarmAddress)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((solarFarmAddress)), _fieldLayout);
   }
 
   /**
@@ -100,7 +140,7 @@ library AddressBook {
   function _setSolarFarmAddress(address solarFarmAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((solarFarmAddress)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((solarFarmAddress)), _fieldLayout);
   }
 
   /**
@@ -109,7 +149,7 @@ library AddressBook {
   function getUsdcAddress() internal view returns (address usdcAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -119,7 +159,7 @@ library AddressBook {
   function _getUsdcAddress() internal view returns (address usdcAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -129,7 +169,7 @@ library AddressBook {
   function setUsdcAddress(address usdcAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((usdcAddress)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((usdcAddress)), _fieldLayout);
   }
 
   /**
@@ -138,7 +178,7 @@ library AddressBook {
   function _setUsdcAddress(address usdcAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((usdcAddress)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((usdcAddress)), _fieldLayout);
   }
 
   /**
@@ -172,8 +212,8 @@ library AddressBook {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(address solarFarmAddress, address usdcAddress) internal {
-    bytes memory _staticData = encodeStatic(solarFarmAddress, usdcAddress);
+  function set(address relayerAddress, address solarFarmAddress, address usdcAddress) internal {
+    bytes memory _staticData = encodeStatic(relayerAddress, solarFarmAddress, usdcAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -186,8 +226,8 @@ library AddressBook {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(address solarFarmAddress, address usdcAddress) internal {
-    bytes memory _staticData = encodeStatic(solarFarmAddress, usdcAddress);
+  function _set(address relayerAddress, address solarFarmAddress, address usdcAddress) internal {
+    bytes memory _staticData = encodeStatic(relayerAddress, solarFarmAddress, usdcAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -201,7 +241,7 @@ library AddressBook {
    * @notice Set the full data using the data struct.
    */
   function set(AddressBookData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.solarFarmAddress, _table.usdcAddress);
+    bytes memory _staticData = encodeStatic(_table.relayerAddress, _table.solarFarmAddress, _table.usdcAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -215,7 +255,7 @@ library AddressBook {
    * @notice Set the full data using the data struct.
    */
   function _set(AddressBookData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.solarFarmAddress, _table.usdcAddress);
+    bytes memory _staticData = encodeStatic(_table.relayerAddress, _table.solarFarmAddress, _table.usdcAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -228,10 +268,14 @@ library AddressBook {
   /**
    * @notice Decode the tightly packed blob of static data using this table's field layout.
    */
-  function decodeStatic(bytes memory _blob) internal pure returns (address solarFarmAddress, address usdcAddress) {
-    solarFarmAddress = (address(Bytes.getBytes20(_blob, 0)));
+  function decodeStatic(
+    bytes memory _blob
+  ) internal pure returns (address relayerAddress, address solarFarmAddress, address usdcAddress) {
+    relayerAddress = (address(Bytes.getBytes20(_blob, 0)));
 
-    usdcAddress = (address(Bytes.getBytes20(_blob, 20)));
+    solarFarmAddress = (address(Bytes.getBytes20(_blob, 20)));
+
+    usdcAddress = (address(Bytes.getBytes20(_blob, 40)));
   }
 
   /**
@@ -245,7 +289,7 @@ library AddressBook {
     EncodedLengths,
     bytes memory
   ) internal pure returns (AddressBookData memory _table) {
-    (_table.solarFarmAddress, _table.usdcAddress) = decodeStatic(_staticData);
+    (_table.relayerAddress, _table.solarFarmAddress, _table.usdcAddress) = decodeStatic(_staticData);
   }
 
   /**
@@ -270,8 +314,12 @@ library AddressBook {
    * @notice Tightly pack static (fixed length) data using this table's schema.
    * @return The static data, encoded into a sequence of bytes.
    */
-  function encodeStatic(address solarFarmAddress, address usdcAddress) internal pure returns (bytes memory) {
-    return abi.encodePacked(solarFarmAddress, usdcAddress);
+  function encodeStatic(
+    address relayerAddress,
+    address solarFarmAddress,
+    address usdcAddress
+  ) internal pure returns (bytes memory) {
+    return abi.encodePacked(relayerAddress, solarFarmAddress, usdcAddress);
   }
 
   /**
@@ -281,10 +329,11 @@ library AddressBook {
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
   function encode(
+    address relayerAddress,
     address solarFarmAddress,
     address usdcAddress
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(solarFarmAddress, usdcAddress);
+    bytes memory _staticData = encodeStatic(relayerAddress, solarFarmAddress, usdcAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;

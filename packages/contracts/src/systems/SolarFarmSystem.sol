@@ -60,6 +60,57 @@ contract SolarFarmSystem is System {
     SolarFarmDetails.setFiatBalance(newFiatBalance);
   }
 
+
+  /**
+   * Allows a relayer to give electricity to a player based on USDC spent on a different chain
+   * Electricity first goes to activeBalance of BatteryDetails
+   * Excess goes to reserveBalance of BatteryDetails
+   * @param receiver address of the player who purchased on a different chain
+   * @param usdcAmount amount of USDC spent on a different chain
+   */
+  function buyElectricityAsRelayer(address receiver, uint256 usdcAmount) external {
+    require(usdcAmount > 0, "SolarFarmSystem: USDC amount must be greater than 0");
+
+    // Make sure the sender is the trusted relayer
+    require(
+      _msgSender() == AddressBook.getRelayerAddress(),
+      "SolarFarmSystem: only trusted relayer can call this function"
+    );
+
+    // Make sure the player already has a Battery
+    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(receiver);
+    require(
+      BatteryDetails.getLastRechargeTimestamp(globalPlayerId) != 0,
+      "SolarFarmSystem: player must have a battery"
+    );
+
+    // Figure out how much electricity was purchased
+    uint256 whPerCentPrice = SolarFarmDetails.getWhPerCentPrice();
+    require(usdcAmount >= 10000, "SolarFarmSystem: amount must be greater than 0.01 USDC");
+    uint256 electricityAmount = usdcAmount * whPerCentPrice;
+
+    uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
+    require(solarFarmElectricityBalance >= electricityAmount, "SolarFarmSystem: not enough electricity in Solar Farm");
+
+    // Add electricity to player's battery
+    uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
+    uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayerId);
+    uint256 newActiveBalance = activeBalance + electricityAmount;
+    uint256 newReserveBalance = reserveBalance;
+    if (newActiveBalance > BATTERY_STORAGE_LIMIT) {
+      newReserveBalance += newActiveBalance - BATTERY_STORAGE_LIMIT;
+      newActiveBalance = BATTERY_STORAGE_LIMIT;
+    }
+    BatteryDetails.setActiveBalance(globalPlayerId, newActiveBalance);
+    BatteryDetails.setReserveBalance(globalPlayerId, newReserveBalance);
+
+    // Update Solar Farm's electricity and fiat balances
+    SolarFarmDetails.setElectricityBalance(solarFarmElectricityBalance - electricityAmount);
+    uint256 solarFarmFiatBalance = SolarFarmDetails.getFiatBalance();
+    uint256 newFiatBalance = solarFarmFiatBalance + usdcAmount;
+    SolarFarmDetails.setFiatBalance(newFiatBalance);
+  }
+
   /**
    * Allows selling watt-hours for USDC based on electricityPrice
    * Can only sell from reserveBalance of BatteryDetails
