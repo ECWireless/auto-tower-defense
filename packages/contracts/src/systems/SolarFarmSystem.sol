@@ -60,7 +60,6 @@ contract SolarFarmSystem is System {
     SolarFarmDetails.setFiatBalance(newFiatBalance);
   }
 
-
   /**
    * Allows a relayer to give electricity to a player based on USDC spent on a different chain
    * Electricity first goes to activeBalance of BatteryDetails
@@ -71,10 +70,10 @@ contract SolarFarmSystem is System {
   function buyElectricityAsRelayer(address receiver, uint256 usdcAmount) external {
     require(usdcAmount > 0, "SolarFarmSystem: USDC amount must be greater than 0");
 
-    // Make sure the sender is the trusted relayer
+    // Make sure the sender is the relay receiver contract
     require(
-      _msgSender() == AddressBook.getRelayerAddress(),
-      "SolarFarmSystem: only trusted relayer can call this function"
+      _msgSender() == AddressBook.getRelayReceiverAddress(),
+      "SolarFarmSystem: only the relay reciever can call this function"
     );
 
     // Make sure the player already has a Battery
