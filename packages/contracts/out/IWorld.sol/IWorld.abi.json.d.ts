@@ -329,6 +329,19 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__updateSellEmitterAddress",
+    "inputs": [
+      {
+        "name": "sellEmitterAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__updateSolarFarmElectricityBalance",
     "inputs": [
       {

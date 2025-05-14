@@ -21,4 +21,8 @@ contract AdminSystem is System {
   function updateBuyReceiverAddress(address buyReceiverAddress) external {
     AddressBook.setBuyReceiverAddress(buyReceiverAddress);
   }
+
+  function updateSellEmitterAddress(address sellEmitterAddress) external {
+    AddressBook.setSellEmitterAddress(sellEmitterAddress);
+  }
 }
