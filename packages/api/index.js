@@ -1,7 +1,18 @@
 require("dotenv").config();
 const express = require("express");
 const { compile } = require("solc");
-var cors = require("cors");
+const cors = require("cors");
+const {
+  createPublicClient,
+  createWalletClient,
+  decodeEventLog,
+  http,
+  keccak256,
+  toHex,
+} = require("viem");
+const { privateKeyToAccount } = require("viem/accounts");
+const { baseSepolia } = require("viem/chains");
+const BASE_ESCOW_ABI = require("./abi/baseEscrowAbi.json");
 
 const app = express();
 app.use(cors());
@@ -48,6 +59,72 @@ app.post("/compile", (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Error compiling contract");
+  }
+});
+
+app.post("/buy-validator-signature", async (req, res) => {
+  const { amount, buyer, nonce, txHash } = req.body;
+
+  if (!(amount && buyer && nonce && txHash)) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    const basePublicClient = createPublicClient({
+      chain: baseSepolia,
+      transport: http(),
+    });
+
+    const receipt = await basePublicClient.getTransactionReceipt({
+      hash: txHash,
+    });
+
+    const { BASE_ESCROW_ADDRESS } = process.env;
+    if (!BASE_ESCROW_ADDRESS) {
+      return res.status(500).json({ error: "BASE_ESCROW_ADDRESS not set" });
+    }
+
+    const eventLog = receipt.logs.find(
+      (log) => log.address.toLowerCase() === BASE_ESCROW_ADDRESS.toLowerCase()
+    );
+
+    if (!eventLog) {
+      return res
+        .status(404)
+        .json({ error: "No ElectricityPurchase event found" });
+    }
+
+    const parsedLog = decodeEventLog({
+      abi: BASE_ESCOW_ABI,
+      data: eventLog.data,
+      topics: eventLog.topics,
+    });
+
+    if (
+      parsedLog.eventName !== "ElectricityPurchase" ||
+      parsedLog.args.buyer.toLowerCase() !== buyer.toLowerCase() ||
+      parsedLog.args.amount !== BigInt(amount) ||
+      parsedLog.args.nonce !== BigInt(nonce)
+    ) {
+      return res.status(400).json({ error: "Event mismatch" });
+    }
+
+    const message = keccak256(toHex(`${buyer}-${amount}-${nonce}`));
+    const { PRIVATE_KEY } = process.env;
+    if (!PRIVATE_KEY) {
+      return res.status(500).json({ error: "PRIVATE_KEY not set" });
+    }
+    const validatorAccount = privateKeyToAccount(PRIVATE_KEY);
+    const walletClient = createWalletClient({
+      account: validatorAccount,
+      chain: baseSepolia,
+      transport: http(),
+    });
+    const signature = await walletClient.signMessage({ message });
+    res.json({ signature });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Signature failed" });
   }
 });
 
