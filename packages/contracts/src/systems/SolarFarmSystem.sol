@@ -61,18 +61,18 @@ contract SolarFarmSystem is System {
   }
 
   /**
-   * Allows a relayer to give electricity to a player based on USDC spent on a different chain
+   * Allows a relay receiver to give electricity to a player based on USDC spent on a different chain
    * Electricity first goes to activeBalance of BatteryDetails
    * Excess goes to reserveBalance of BatteryDetails
    * @param receiver address of the player who purchased on a different chain
    * @param usdcAmount amount of USDC spent on a different chain
    */
-  function buyElectricityAsRelayer(address receiver, uint256 usdcAmount) external {
+  function buyElectricityThroughRelay(address receiver, uint256 usdcAmount) external {
     require(usdcAmount > 0, "SolarFarmSystem: USDC amount must be greater than 0");
 
     // Make sure the sender is the relay receiver contract
     require(
-      _msgSender() == AddressBook.getRelayReceiverAddress(),
+      _msgSender() == AddressBook.getBuyReceiverAddress(),
       "SolarFarmSystem: only the relay reciever can call this function"
     );
 
@@ -153,6 +153,54 @@ contract SolarFarmSystem is System {
     SolarFarmDetails.setElectricityBalance(newElectricityBalance);
     uint256 newFiatBalance = solarFarmFiatBalance - usdcAmount;
     SolarFarmDetails.setFiatBalance(newFiatBalance);
+  }
+
+  /**
+   * Allows a player to sell electricity on Redstone/Pyrope, while receiving USDC on a different chain
+   * Can only sell from reserveBalance of BatteryDetails
+   * @param electricityAmount in watt-hours
+   */
+  function sellElectricityThroughRelay(uint256 electricityAmount) external {
+    require(electricityAmount > 0, "SolarFarmSystem: electricity amount must be greater than 0");
+
+    // Make sure the player already has a Battery
+    address playerAddress = _msgSender();
+    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+    require(
+      BatteryDetails.getLastRechargeTimestamp(globalPlayerId) != 0,
+      "SolarFarmSystem: player must have a battery"
+    );
+
+    // Figure out how much USDC to transfer
+    uint256 whPerCentPrice = SolarFarmDetails.getWhPerCentPrice();
+    require(whPerCentPrice > 0, "SolarFarmSystem: whPerCentPrice must be greater than 0");
+    require(electricityAmount >= whPerCentPrice, "SolarFarmSystem: amount must be greater than 0.01 USDC");
+    uint256 usdcAmountCents = electricityAmount / whPerCentPrice;
+    uint256 usdcAmount = usdcAmountCents * 10000; // Convert to unformatted USDC
+
+    uint256 solarFarmFiatBalance = SolarFarmDetails.getFiatBalance();
+    require(solarFarmFiatBalance >= usdcAmount, "SolarFarmSystem: not enough USDC in Solar Farm");
+
+    // Remove electricity from player's battery reserve
+    uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayerId);
+    require(reserveBalance >= electricityAmount, "SolarFarmSystem: not enough electricity in battery reserve");
+    uint256 newReserveBalance = reserveBalance - electricityAmount;
+    BatteryDetails.setReserveBalance(globalPlayerId, newReserveBalance);
+
+    // Update Solar Farm's electricity and fiat balances
+    uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
+    uint256 newElectricityBalance = solarFarmElectricityBalance + electricityAmount;
+    SolarFarmDetails.setElectricityBalance(newElectricityBalance);
+    uint256 newFiatBalance = solarFarmFiatBalance - usdcAmount;
+    SolarFarmDetails.setFiatBalance(newFiatBalance);
+
+    // Call the emitter contract to handle the USDC transfer
+    address sellEmitterAddress = AddressBook.getSellEmitterAddress();
+    require(sellEmitterAddress != address(0), "SolarFarmSystem: sell emitter address not set in AddressBook");
+    (bool success, ) = sellEmitterAddress.call(
+      abi.encodeWithSignature("emitSellElectricity(address,uint256)", playerAddress, usdcAmount)
+    );
+    require(success, "SolarFarmSystem: failed to emit sell electricity event");
   }
 
   /**

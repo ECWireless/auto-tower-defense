@@ -18,7 +18,7 @@ contract AdminSystem is System {
     SolarFarmDetails.setElectricityBalance(newElectricityBalance);
   }
 
-  function updateRelayReceiverAddress(address relayReceiverAddress) external {
-    AddressBook.setRelayReceiverAddress(relayReceiverAddress);
+  function updateBuyReceiverAddress(address buyReceiverAddress) external {
+    AddressBook.setBuyReceiverAddress(buyReceiverAddress);
   }
 }

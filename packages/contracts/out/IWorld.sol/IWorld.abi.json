@@ -14,7 +14,7 @@
   },
   {
     "type": "function",
-    "name": "app__buyElectricityAsRelayer",
+    "name": "app__buyElectricityThroughRelay",
     "inputs": [
       {
         "name": "receiver",
@@ -303,10 +303,23 @@
   },
   {
     "type": "function",
-    "name": "app__updateRelayReceiverAddress",
+    "name": "app__sellElectricityThroughRelay",
     "inputs": [
       {
-        "name": "relayReceiverAddress",
+        "name": "electricityAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateBuyReceiverAddress",
+    "inputs": [
+      {
+        "name": "buyReceiverAddress",
         "type": "address",
         "internalType": "address"
       }

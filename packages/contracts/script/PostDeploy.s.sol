@@ -38,9 +38,11 @@ contract PostDeploy is Script {
     SolarFarmDetails.set(solarFarmDetails);
 
     address solarFarmSystemAddress = _solarFarmSystemAddress();
+    address buyReceiverAddress = vm.envAddress("BUY_RECEIVER_ADDRESS");
+    address sellEmitterAddress = vm.envAddress("SELL_EMITTER_ADDRESS");
     AddressBook.setSolarFarmAddress(solarFarmSystemAddress);
-    address relayReceiverAddress = vm.envAddress("RELAY_RECEIVER_ADDRESS");
-    AddressBook.setRelayReceiverAddress(relayReceiverAddress);
+    AddressBook.setBuyReceiverAddress(buyReceiverAddress);
+    AddressBook.setSellEmitterAddress(sellEmitterAddress);
 
     if (block.chainid == 31337) {
       uint256 solarFarmerStartingBalance = 100 * 1e6;

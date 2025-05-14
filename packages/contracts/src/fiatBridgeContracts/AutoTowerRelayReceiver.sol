@@ -34,7 +34,7 @@ contract AutoTowerRelayReceiver {
 
     // Buy electricity on behalf of the player
     (bool success, ) = worldAddress.call(
-      abi.encodeWithSignature("app__buyElectricityAsRelayer(address,uint256)", buyer, spendAmount)
+      abi.encodeWithSignature("app__buyElectricityThroughRelay(address,uint256)", buyer, spendAmount)
     );
     require(success, "Electricity grant failed");
   }
