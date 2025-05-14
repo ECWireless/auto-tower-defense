@@ -303,6 +303,19 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__updateRelayReceiverAddress",
+    "inputs": [
+      {
+        "name": "relayReceiverAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__updateSolarFarmElectricityBalance",
     "inputs": [
       {

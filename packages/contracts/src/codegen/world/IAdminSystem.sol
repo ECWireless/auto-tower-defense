@@ -12,4 +12,6 @@ interface IAdminSystem {
   function app__mintUsdcToPlayer(address player, uint256 amount) external;
 
   function app__updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external;
+
+  function app__updateRelayReceiverAddress(address relayReceiverAddress) external;
 }

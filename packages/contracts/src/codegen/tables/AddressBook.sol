@@ -17,7 +17,7 @@ import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/Encoded
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct AddressBookData {
-  address relayerAddress;
+  address relayReceiverAddress;
   address solarFarmAddress;
   address usdcAddress;
 }
@@ -48,7 +48,7 @@ library AddressBook {
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
     fieldNames = new string[](3);
-    fieldNames[0] = "relayerAddress";
+    fieldNames[0] = "relayReceiverAddress";
     fieldNames[1] = "solarFarmAddress";
     fieldNames[2] = "usdcAddress";
   }
@@ -68,9 +68,9 @@ library AddressBook {
   }
 
   /**
-   * @notice Get relayerAddress.
+   * @notice Get relayReceiverAddress.
    */
-  function getRelayerAddress() internal view returns (address relayerAddress) {
+  function getRelayReceiverAddress() internal view returns (address relayReceiverAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
@@ -78,9 +78,9 @@ library AddressBook {
   }
 
   /**
-   * @notice Get relayerAddress.
+   * @notice Get relayReceiverAddress.
    */
-  function _getRelayerAddress() internal view returns (address relayerAddress) {
+  function _getRelayReceiverAddress() internal view returns (address relayReceiverAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
@@ -88,21 +88,21 @@ library AddressBook {
   }
 
   /**
-   * @notice Set relayerAddress.
+   * @notice Set relayReceiverAddress.
    */
-  function setRelayerAddress(address relayerAddress) internal {
+  function setRelayReceiverAddress(address relayReceiverAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((relayerAddress)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((relayReceiverAddress)), _fieldLayout);
   }
 
   /**
-   * @notice Set relayerAddress.
+   * @notice Set relayReceiverAddress.
    */
-  function _setRelayerAddress(address relayerAddress) internal {
+  function _setRelayReceiverAddress(address relayReceiverAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((relayerAddress)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((relayReceiverAddress)), _fieldLayout);
   }
 
   /**
@@ -212,8 +212,8 @@ library AddressBook {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(address relayerAddress, address solarFarmAddress, address usdcAddress) internal {
-    bytes memory _staticData = encodeStatic(relayerAddress, solarFarmAddress, usdcAddress);
+  function set(address relayReceiverAddress, address solarFarmAddress, address usdcAddress) internal {
+    bytes memory _staticData = encodeStatic(relayReceiverAddress, solarFarmAddress, usdcAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -226,8 +226,8 @@ library AddressBook {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(address relayerAddress, address solarFarmAddress, address usdcAddress) internal {
-    bytes memory _staticData = encodeStatic(relayerAddress, solarFarmAddress, usdcAddress);
+  function _set(address relayReceiverAddress, address solarFarmAddress, address usdcAddress) internal {
+    bytes memory _staticData = encodeStatic(relayReceiverAddress, solarFarmAddress, usdcAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -241,7 +241,7 @@ library AddressBook {
    * @notice Set the full data using the data struct.
    */
   function set(AddressBookData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.relayerAddress, _table.solarFarmAddress, _table.usdcAddress);
+    bytes memory _staticData = encodeStatic(_table.relayReceiverAddress, _table.solarFarmAddress, _table.usdcAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -255,7 +255,7 @@ library AddressBook {
    * @notice Set the full data using the data struct.
    */
   function _set(AddressBookData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.relayerAddress, _table.solarFarmAddress, _table.usdcAddress);
+    bytes memory _staticData = encodeStatic(_table.relayReceiverAddress, _table.solarFarmAddress, _table.usdcAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -270,8 +270,8 @@ library AddressBook {
    */
   function decodeStatic(
     bytes memory _blob
-  ) internal pure returns (address relayerAddress, address solarFarmAddress, address usdcAddress) {
-    relayerAddress = (address(Bytes.getBytes20(_blob, 0)));
+  ) internal pure returns (address relayReceiverAddress, address solarFarmAddress, address usdcAddress) {
+    relayReceiverAddress = (address(Bytes.getBytes20(_blob, 0)));
 
     solarFarmAddress = (address(Bytes.getBytes20(_blob, 20)));
 
@@ -289,7 +289,7 @@ library AddressBook {
     EncodedLengths,
     bytes memory
   ) internal pure returns (AddressBookData memory _table) {
-    (_table.relayerAddress, _table.solarFarmAddress, _table.usdcAddress) = decodeStatic(_staticData);
+    (_table.relayReceiverAddress, _table.solarFarmAddress, _table.usdcAddress) = decodeStatic(_staticData);
   }
 
   /**
@@ -315,11 +315,11 @@ library AddressBook {
    * @return The static data, encoded into a sequence of bytes.
    */
   function encodeStatic(
-    address relayerAddress,
+    address relayReceiverAddress,
     address solarFarmAddress,
     address usdcAddress
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(relayerAddress, solarFarmAddress, usdcAddress);
+    return abi.encodePacked(relayReceiverAddress, solarFarmAddress, usdcAddress);
   }
 
   /**
@@ -329,11 +329,11 @@ library AddressBook {
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
   function encode(
-    address relayerAddress,
+    address relayReceiverAddress,
     address solarFarmAddress,
     address usdcAddress
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(relayerAddress, solarFarmAddress, usdcAddress);
+    bytes memory _staticData = encodeStatic(relayReceiverAddress, solarFarmAddress, usdcAddress);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;

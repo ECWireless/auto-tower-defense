@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, KingdomsByLevel, Level, PlayerCount, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData, SolarFarmDetails } from "../codegen/index.sol";
+import { AddressBook, SolarFarmDetails } from "../codegen/index.sol";
 import { BatteryHelpers } from "../Libraries/BatteryHelpers.sol";
 import "../../mocks/MockUSDC.sol";
 
@@ -16,5 +16,9 @@ contract AdminSystem is System {
 
   function updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external {
     SolarFarmDetails.setElectricityBalance(newElectricityBalance);
+  }
+
+  function updateRelayReceiverAddress(address relayReceiverAddress) external {
+    AddressBook.setRelayReceiverAddress(relayReceiverAddress);
   }
 }

@@ -21,7 +21,6 @@ contract PostDeploy is Script {
 
     // Load the private key from the `PRIVATE_KEY` environment variable (in .env)
     uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-    uint256 relayerPrivateKey = vm.envUint("RELAYER_PRIVATE_KEY");
 
     // Start broadcasting transactions from the deployer account
     vm.startBroadcast(deployerPrivateKey);
@@ -37,16 +36,18 @@ contract PostDeploy is Script {
       whPerCentPrice: 1920 // 1.92kWh/cent
     });
     SolarFarmDetails.set(solarFarmDetails);
-    AddressBook.setRelayerAddress(vm.addr(relayerPrivateKey));
+
+    address solarFarmSystemAddress = _solarFarmSystemAddress();
+    AddressBook.setSolarFarmAddress(solarFarmSystemAddress);
+    address relayReceiverAddress = vm.envAddress("RELAY_RECEIVER_ADDRESS");
+    AddressBook.setRelayReceiverAddress(relayReceiverAddress);
 
     if (block.chainid == 31337) {
       uint256 solarFarmerStartingBalance = 100 * 1e6;
       SolarFarmDetails.setFiatBalance(solarFarmerStartingBalance);
 
       // Send USDC to the Solar Farm System
-      address solarFarmSystemAddress = _solarFarmSystemAddress();
       address mockUsdcAddress = _deployMockUSDC(solarFarmSystemAddress, solarFarmerStartingBalance);
-      AddressBook.setSolarFarmAddress(solarFarmSystemAddress);
       AddressBook.setUsdcAddress(mockUsdcAddress);
       MockUSDC usdc = MockUSDC(mockUsdcAddress);
       uint256 balance = usdc.balanceOf(solarFarmSystemAddress);
