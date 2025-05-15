@@ -4,8 +4,11 @@ pragma solidity >=0.8.24;
 /// @title AutoTowerSellEmitter
 /// @notice Deployed on Redstone/Pyrope. Emits cross-chain event after being called by the MUD system.
 contract AutoTowerSellEmitter {
+  /// @notice owner of the contract
+  address public owner;
+
   /// @notice Address of the trusted Solar Farm System (MUD system)
-  address public immutable solarFarmSystem;
+  address public solarFarmSystem;
 
   /// @notice Tracks nonce per user to prevent message replay
   mapping(address => uint256) public saleNonce;
@@ -15,7 +18,24 @@ contract AutoTowerSellEmitter {
   event ElectricitySold(address indexed seller, uint256 receiveAmount, uint256 nonce);
 
   constructor(address _solarFarmSystem) {
+    owner = msg.sender;
     solarFarmSystem = _solarFarmSystem;
+  }
+
+  /// @notice Allower the owner to transfer ownership of the contract
+  /// @param newOwner Address of the new owner
+  function transferOwnership(address newOwner) external {
+    require(msg.sender == owner, "Not authorized");
+    require(newOwner != address(0), "Invalid address");
+    owner = newOwner;
+  }
+
+  /// @notice Allow the owner to update the Solar Farm System address
+  /// @param newSystem Address of the new Solar Farm System
+  function updateSolarFarmSystem(address newSystem) external {
+    require(msg.sender == owner, "Not authorized");
+    require(newSystem != address(0), "Invalid address");
+    solarFarmSystem = newSystem;
   }
 
   /// @notice Called by the MUD Solar Farm system after electricity is sold
