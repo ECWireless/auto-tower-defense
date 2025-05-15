@@ -316,19 +316,6 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__updateBuyEscrowAddress",
-    "inputs": [
-      {
-        "name": "buyEscrowAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "app__updateBuyReceiverAddress",
     "inputs": [
       {

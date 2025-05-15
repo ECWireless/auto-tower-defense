@@ -18,10 +18,6 @@ contract AdminSystem is System {
     SolarFarmDetails.setElectricityBalance(newElectricityBalance);
   }
 
-  function updateBuyEscrowAddress(address buyEscrowAddress) external {
-    AddressBook.setBuyEscrowAddress(buyEscrowAddress);
-  }
-
   function updateBuyReceiverAddress(address buyReceiverAddress) external {
     AddressBook.setBuyReceiverAddress(buyReceiverAddress);
   }
