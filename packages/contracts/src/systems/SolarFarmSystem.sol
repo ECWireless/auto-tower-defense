@@ -86,7 +86,8 @@ contract SolarFarmSystem is System {
     // Figure out how much electricity was purchased
     uint256 whPerCentPrice = SolarFarmDetails.getWhPerCentPrice();
     require(usdcAmount >= 10000, "SolarFarmSystem: amount must be greater than 0.01 USDC");
-    uint256 electricityAmount = usdcAmount * whPerCentPrice;
+    uint256 usdcAmountInCents = usdcAmount / 10000;
+    uint256 electricityAmount = usdcAmountInCents * whPerCentPrice;
 
     uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
     require(solarFarmElectricityBalance >= electricityAmount, "SolarFarmSystem: not enough electricity in Solar Farm");

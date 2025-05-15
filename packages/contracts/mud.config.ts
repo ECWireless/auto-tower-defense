@@ -25,6 +25,7 @@ export default defineWorld({
     },
     AddressBook: {
       schema: {
+        buyEscrowAddress: "address",
         buyReceiverAddress: "address",
         sellEmitterAddress: "address",
         solarFarmAddress: "address",

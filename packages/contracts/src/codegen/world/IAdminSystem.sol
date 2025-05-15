@@ -13,6 +13,8 @@ interface IAdminSystem {
 
   function app__updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external;
 
+  function app__updateBuyEscrowAddress(address buyEscrowAddress) external;
+
   function app__updateBuyReceiverAddress(address buyReceiverAddress) external;
 
   function app__updateSellEmitterAddress(address sellEmitterAddress) external;

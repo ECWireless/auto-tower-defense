@@ -17,6 +17,7 @@ import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/Encoded
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct AddressBookData {
+  address buyEscrowAddress;
   address buyReceiverAddress;
   address sellEmitterAddress;
   address solarFarmAddress;
@@ -28,12 +29,12 @@ library AddressBook {
   ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000041646472657373426f6f6b0000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0050040014141414000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0064050014141414140000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of ()
   Schema constant _keySchema = Schema.wrap(0x0000000000000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (address, address, address, address)
-  Schema constant _valueSchema = Schema.wrap(0x0050040061616161000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (address, address, address, address, address)
+  Schema constant _valueSchema = Schema.wrap(0x0064050061616161610000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -48,11 +49,12 @@ library AddressBook {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](4);
-    fieldNames[0] = "buyReceiverAddress";
-    fieldNames[1] = "sellEmitterAddress";
-    fieldNames[2] = "solarFarmAddress";
-    fieldNames[3] = "usdcAddress";
+    fieldNames = new string[](5);
+    fieldNames[0] = "buyEscrowAddress";
+    fieldNames[1] = "buyReceiverAddress";
+    fieldNames[2] = "sellEmitterAddress";
+    fieldNames[3] = "solarFarmAddress";
+    fieldNames[4] = "usdcAddress";
   }
 
   /**
@@ -70,12 +72,50 @@ library AddressBook {
   }
 
   /**
+   * @notice Get buyEscrowAddress.
+   */
+  function getBuyEscrowAddress() internal view returns (address buyEscrowAddress) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Get buyEscrowAddress.
+   */
+  function _getBuyEscrowAddress() internal view returns (address buyEscrowAddress) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Set buyEscrowAddress.
+   */
+  function setBuyEscrowAddress(address buyEscrowAddress) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((buyEscrowAddress)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set buyEscrowAddress.
+   */
+  function _setBuyEscrowAddress(address buyEscrowAddress) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((buyEscrowAddress)), _fieldLayout);
+  }
+
+  /**
    * @notice Get buyReceiverAddress.
    */
   function getBuyReceiverAddress() internal view returns (address buyReceiverAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -85,7 +125,7 @@ library AddressBook {
   function _getBuyReceiverAddress() internal view returns (address buyReceiverAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -95,7 +135,7 @@ library AddressBook {
   function setBuyReceiverAddress(address buyReceiverAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((buyReceiverAddress)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((buyReceiverAddress)), _fieldLayout);
   }
 
   /**
@@ -104,7 +144,7 @@ library AddressBook {
   function _setBuyReceiverAddress(address buyReceiverAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((buyReceiverAddress)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((buyReceiverAddress)), _fieldLayout);
   }
 
   /**
@@ -113,7 +153,7 @@ library AddressBook {
   function getSellEmitterAddress() internal view returns (address sellEmitterAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -123,7 +163,7 @@ library AddressBook {
   function _getSellEmitterAddress() internal view returns (address sellEmitterAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -133,7 +173,7 @@ library AddressBook {
   function setSellEmitterAddress(address sellEmitterAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((sellEmitterAddress)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((sellEmitterAddress)), _fieldLayout);
   }
 
   /**
@@ -142,7 +182,7 @@ library AddressBook {
   function _setSellEmitterAddress(address sellEmitterAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((sellEmitterAddress)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((sellEmitterAddress)), _fieldLayout);
   }
 
   /**
@@ -151,7 +191,7 @@ library AddressBook {
   function getSolarFarmAddress() internal view returns (address solarFarmAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -161,7 +201,7 @@ library AddressBook {
   function _getSolarFarmAddress() internal view returns (address solarFarmAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -171,7 +211,7 @@ library AddressBook {
   function setSolarFarmAddress(address solarFarmAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((solarFarmAddress)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((solarFarmAddress)), _fieldLayout);
   }
 
   /**
@@ -180,7 +220,7 @@ library AddressBook {
   function _setSolarFarmAddress(address solarFarmAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((solarFarmAddress)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((solarFarmAddress)), _fieldLayout);
   }
 
   /**
@@ -189,7 +229,7 @@ library AddressBook {
   function getUsdcAddress() internal view returns (address usdcAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -199,7 +239,7 @@ library AddressBook {
   function _getUsdcAddress() internal view returns (address usdcAddress) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
     return (address(bytes20(_blob)));
   }
 
@@ -209,7 +249,7 @@ library AddressBook {
   function setUsdcAddress(address usdcAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((usdcAddress)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((usdcAddress)), _fieldLayout);
   }
 
   /**
@@ -218,7 +258,7 @@ library AddressBook {
   function _setUsdcAddress(address usdcAddress) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((usdcAddress)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((usdcAddress)), _fieldLayout);
   }
 
   /**
@@ -253,12 +293,19 @@ library AddressBook {
    * @notice Set the full data using individual values.
    */
   function set(
+    address buyEscrowAddress,
     address buyReceiverAddress,
     address sellEmitterAddress,
     address solarFarmAddress,
     address usdcAddress
   ) internal {
-    bytes memory _staticData = encodeStatic(buyReceiverAddress, sellEmitterAddress, solarFarmAddress, usdcAddress);
+    bytes memory _staticData = encodeStatic(
+      buyEscrowAddress,
+      buyReceiverAddress,
+      sellEmitterAddress,
+      solarFarmAddress,
+      usdcAddress
+    );
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -272,12 +319,19 @@ library AddressBook {
    * @notice Set the full data using individual values.
    */
   function _set(
+    address buyEscrowAddress,
     address buyReceiverAddress,
     address sellEmitterAddress,
     address solarFarmAddress,
     address usdcAddress
   ) internal {
-    bytes memory _staticData = encodeStatic(buyReceiverAddress, sellEmitterAddress, solarFarmAddress, usdcAddress);
+    bytes memory _staticData = encodeStatic(
+      buyEscrowAddress,
+      buyReceiverAddress,
+      sellEmitterAddress,
+      solarFarmAddress,
+      usdcAddress
+    );
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -292,6 +346,7 @@ library AddressBook {
    */
   function set(AddressBookData memory _table) internal {
     bytes memory _staticData = encodeStatic(
+      _table.buyEscrowAddress,
       _table.buyReceiverAddress,
       _table.sellEmitterAddress,
       _table.solarFarmAddress,
@@ -311,6 +366,7 @@ library AddressBook {
    */
   function _set(AddressBookData memory _table) internal {
     bytes memory _staticData = encodeStatic(
+      _table.buyEscrowAddress,
       _table.buyReceiverAddress,
       _table.sellEmitterAddress,
       _table.solarFarmAddress,
@@ -333,15 +389,23 @@ library AddressBook {
   )
     internal
     pure
-    returns (address buyReceiverAddress, address sellEmitterAddress, address solarFarmAddress, address usdcAddress)
+    returns (
+      address buyEscrowAddress,
+      address buyReceiverAddress,
+      address sellEmitterAddress,
+      address solarFarmAddress,
+      address usdcAddress
+    )
   {
-    buyReceiverAddress = (address(Bytes.getBytes20(_blob, 0)));
+    buyEscrowAddress = (address(Bytes.getBytes20(_blob, 0)));
 
-    sellEmitterAddress = (address(Bytes.getBytes20(_blob, 20)));
+    buyReceiverAddress = (address(Bytes.getBytes20(_blob, 20)));
 
-    solarFarmAddress = (address(Bytes.getBytes20(_blob, 40)));
+    sellEmitterAddress = (address(Bytes.getBytes20(_blob, 40)));
 
-    usdcAddress = (address(Bytes.getBytes20(_blob, 60)));
+    solarFarmAddress = (address(Bytes.getBytes20(_blob, 60)));
+
+    usdcAddress = (address(Bytes.getBytes20(_blob, 80)));
   }
 
   /**
@@ -355,9 +419,13 @@ library AddressBook {
     EncodedLengths,
     bytes memory
   ) internal pure returns (AddressBookData memory _table) {
-    (_table.buyReceiverAddress, _table.sellEmitterAddress, _table.solarFarmAddress, _table.usdcAddress) = decodeStatic(
-      _staticData
-    );
+    (
+      _table.buyEscrowAddress,
+      _table.buyReceiverAddress,
+      _table.sellEmitterAddress,
+      _table.solarFarmAddress,
+      _table.usdcAddress
+    ) = decodeStatic(_staticData);
   }
 
   /**
@@ -383,12 +451,13 @@ library AddressBook {
    * @return The static data, encoded into a sequence of bytes.
    */
   function encodeStatic(
+    address buyEscrowAddress,
     address buyReceiverAddress,
     address sellEmitterAddress,
     address solarFarmAddress,
     address usdcAddress
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(buyReceiverAddress, sellEmitterAddress, solarFarmAddress, usdcAddress);
+    return abi.encodePacked(buyEscrowAddress, buyReceiverAddress, sellEmitterAddress, solarFarmAddress, usdcAddress);
   }
 
   /**
@@ -398,12 +467,19 @@ library AddressBook {
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
   function encode(
+    address buyEscrowAddress,
     address buyReceiverAddress,
     address sellEmitterAddress,
     address solarFarmAddress,
     address usdcAddress
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(buyReceiverAddress, sellEmitterAddress, solarFarmAddress, usdcAddress);
+    bytes memory _staticData = encodeStatic(
+      buyEscrowAddress,
+      buyReceiverAddress,
+      sellEmitterAddress,
+      solarFarmAddress,
+      usdcAddress
+    );
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
