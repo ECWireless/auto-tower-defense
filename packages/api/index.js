@@ -6,6 +6,7 @@ const {
   createPublicClient,
   createWalletClient,
   decodeEventLog,
+  encodeAbiParameters,
   http,
   keccak256,
   toHex,
@@ -110,7 +111,16 @@ app.post("/buy-validator-signature", async (req, res) => {
       return res.status(400).json({ error: "Event mismatch" });
     }
 
-    const message = keccak256(toHex(`${buyer}-${amount}-${nonce}`));
+    const encodedData = encodeAbiParameters(
+      [
+        { type: "address", name: "buyer" },
+        { type: "uint256", name: "amount" },
+        { type: "uint256", name: "nonce" },
+      ],
+      [buyer, amount, nonce]
+    );
+    const structHash = keccak256(encodedData);
+
     const { PRIVATE_KEY } = process.env;
     if (!PRIVATE_KEY) {
       return res.status(500).json({ error: "PRIVATE_KEY not set" });
@@ -121,7 +131,9 @@ app.post("/buy-validator-signature", async (req, res) => {
       chain: pyrope,
       transport: http(),
     });
-    const signature = await walletClient.signMessage({ message });
+    const signature = await walletClient.signMessage({
+      message: { raw: structHash },
+    });
     res.json({ signature });
   } catch (err) {
     console.error(err);
