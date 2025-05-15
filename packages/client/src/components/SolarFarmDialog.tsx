@@ -37,6 +37,8 @@ import {
   getGameChain,
 } from '@/utils/helpers';
 
+const CANCELLED_TX_ERROR = 'User rejected the request';
+
 export const SolarFarmDialog: React.FC = () => {
   const { address: playerAddress, chainId } = useAccount();
   const { isPending: isSwitchingChains, switchChain } = useSwitchChain();
@@ -173,65 +175,84 @@ export const SolarFarmDialog: React.FC = () => {
     return Number(transactionCost.toFixed(2));
   }, [electricityAmount, solarFarmDetails?.whPerCentPrice]);
 
-  const onApprove = useCallback(async () => {
-    try {
-      const { solarFarmAddress, usdcAddress } =
-        getComponentValue(AddressBook, singletonEntity) ?? {};
-
-      if (!usdcAddress) {
-        throw new Error('USDC address not found');
-      }
-
-      if (!walletClient) {
-        throw new Error('Wallet client not found');
-      }
-
-      const externalChain = getChain(chainId);
-
-      if (!externalChain) {
-        throw new Error('External chain not found');
-      }
-
-      const publicClient = createPublicClient({
-        batch: { multicall: false },
-        chain: externalChain,
-        transport: http(),
-      });
-
-      const txHash = await walletClient.writeContract({
-        address: usdcAddress as `0x${string}`,
-        abi: [
-          {
-            constant: false,
-            inputs: [
-              { name: 'spender', type: 'address' },
-              { name: 'amount', type: 'uint256' },
-            ],
-            name: 'approve',
-            outputs: [{ name: '', type: 'bool' }],
-            type: 'function',
-          },
-        ],
-        functionName: 'approve',
-        args: [solarFarmAddress, parseUnits(electricityAmount, 6)],
-      });
-      const txResult = await publicClient.waitForTransactionReceipt({
-        hash: txHash,
-        confirmations: 1,
-      });
-      const { status } = txResult;
-      const success = status === 'success';
-      if (!success) {
-        throw new Error('Failed to approve USDC transfer');
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`Smart contract error: ${(error as Error).message}`);
-      toast.error('Error approving USDC transfer', {
-        description: (error as Error).message,
-      });
+  const isBridgeRequired = useMemo(() => {
+    const externalChain = getChain(chainId);
+    if (!externalChain) {
+      return false;
     }
-  }, [AddressBook, chainId, electricityAmount, walletClient]);
+    return externalChain.id !== getGameChain().id;
+  }, [chainId]);
+
+  const onApprove = useCallback(async () => {
+    const { buyEscrowAddress, solarFarmAddress, usdcAddress } =
+      getComponentValue(AddressBook, singletonEntity) ?? {};
+
+    if (!buyEscrowAddress) {
+      throw new Error('Buy escrow address not found');
+    }
+
+    if (!solarFarmAddress) {
+      throw new Error('Solar farm address not found');
+    }
+
+    if (!usdcAddress) {
+      throw new Error('USDC address not found');
+    }
+
+    if (!walletClient) {
+      throw new Error('Wallet client not found');
+    }
+
+    const externalChain = getChain(chainId);
+    if (!externalChain) {
+      throw new Error('External chain not found');
+    }
+
+    const publicClient = createPublicClient({
+      batch: { multicall: false },
+      chain: externalChain,
+      transport: http(),
+    });
+
+    const spendAmount = parseUnits(calculateTransactionCost().toString(), 6);
+    const txHash = await walletClient.writeContract({
+      address: (isBridgeRequired
+        ? USDC_ADDRESSES[externalChain.id]
+        : usdcAddress) as `0x${string}`,
+      abi: [
+        {
+          constant: false,
+          inputs: [
+            { name: 'spender', type: 'address' },
+            { name: 'amount', type: 'uint256' },
+          ],
+          name: 'approve',
+          outputs: [{ name: '', type: 'bool' }],
+          type: 'function',
+        },
+      ],
+      functionName: 'approve',
+      args: [
+        isBridgeRequired ? buyEscrowAddress : solarFarmAddress,
+        spendAmount,
+      ],
+    });
+    const txResult = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+      confirmations: 1,
+    });
+    const { status } = txResult;
+    const success = status === 'success';
+    if (!success) {
+      throw new Error('Failed to approve USDC transfer');
+    }
+  }, [
+    AddressBook,
+    calculateTransactionCost,
+    chainId,
+    isBridgeRequired,
+    walletClient,
+  ]);
 
   const onHandleTransaction = useCallback(async () => {
     try {
@@ -266,6 +287,10 @@ export const SolarFarmDialog: React.FC = () => {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
+      if ((error as Error).message.includes(CANCELLED_TX_ERROR)) {
+        toast.error('Transaction cancelled');
+        return;
+      }
       toast.error('Error Buying Electricity', {
         description: (error as Error).message,
       });
@@ -280,6 +305,111 @@ export const SolarFarmDialog: React.FC = () => {
     onApprove,
     playSfx,
     sellElectricity,
+  ]);
+
+  const onHandleRelayTransaction = useCallback(async () => {
+    try {
+      setIsProcessing(true);
+      playSfx('click2');
+
+      if (isBuying) {
+        await onApprove();
+      }
+
+      if (!walletClient) {
+        throw new Error('Wallet client not found');
+      }
+
+      const externalChain = getChain(chainId);
+      if (!externalChain) {
+        throw new Error('External chain not found');
+      }
+      const { buyEscrowAddress } =
+        getComponentValue(AddressBook, singletonEntity) ?? {};
+      if (!buyEscrowAddress) {
+        throw new Error('Buy escrow address not found');
+      }
+
+      const publicClient = createPublicClient({
+        batch: { multicall: false },
+        chain: externalChain,
+        transport: http(),
+      });
+
+      if (isBuying) {
+        const spendAmount = parseUnits(
+          calculateTransactionCost().toString(),
+          6,
+        );
+        const buyArgs = {
+          address: buyEscrowAddress as `0x${string}`,
+          abi: [
+            {
+              inputs: [
+                {
+                  internalType: 'uint256',
+                  name: 'spendAmount',
+                  type: 'uint256',
+                },
+              ],
+              name: 'buyElectricity',
+              outputs: [],
+              stateMutability: 'nonpayable',
+              type: 'function',
+            },
+          ],
+          functionName: 'buyElectricity',
+          args: [spendAmount],
+        };
+
+        await publicClient.simulateContract(buyArgs);
+        const txHash = await walletClient.writeContract(buyArgs);
+        const txResult = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+          confirmations: 1,
+        });
+
+        const { status } = txResult;
+        const success = status === 'success';
+        if (!success) {
+          throw new Error('Smart contract error occurred');
+        }
+      } else {
+        return; // TODO: Implement sell electricity relay transaction
+      }
+
+      toast.success(
+        `${
+          isBuying ? 'Bought' : 'Sold'
+        } ${electricityAmount} kWh of electricity!`,
+      );
+      const usdcBalance = await getUsdcBalance();
+      setPlayerUSDCBalance(usdcBalance);
+      setElectricityAmount('1.92');
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      if ((error as Error).message.includes(CANCELLED_TX_ERROR)) {
+        toast.error('Transaction cancelled');
+        return;
+      }
+      toast.error('Error Buying Electricity', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [
+    AddressBook,
+    calculateTransactionCost,
+    chainId,
+    electricityAmount,
+    getUsdcBalance,
+    isBuying,
+    onApprove,
+    playSfx,
+    walletClient,
   ]);
 
   const disabledMessage = useMemo(() => {
@@ -542,7 +672,11 @@ export const SolarFarmDialog: React.FC = () => {
                     : 'bg-red-800 hover:bg-red-700 text-white'
                 }
                 disabled={isProcessing || !!disabledMessage}
-                onClick={onHandleTransaction}
+                onClick={() =>
+                  isBridgeRequired
+                    ? onHandleRelayTransaction()
+                    : onHandleTransaction()
+                }
               >
                 {isProcessing && <Loader2 className="animate-spin h-6 w-6" />}
                 {isBuying ? 'Buy Electricity' : 'Sell Electricity'}
