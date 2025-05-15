@@ -51,6 +51,7 @@ import {
 import { NO_ACTIONS_ERROR, useGame } from '@/contexts/GameContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
+import { API_ENDPOINT } from '@/utils/constants';
 import type { SavedModification, Tower } from '@/utils/types';
 
 import { Button } from './ui/button';
@@ -219,8 +220,6 @@ export const SystemModificationDrawer: React.FC<
 
   const onCompileCode = useCallback(async (): Promise<string | null> => {
     try {
-      const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
-
       const res = await fetch(`${API_ENDPOINT}/compile`, {
         method: 'POST',
         headers: {

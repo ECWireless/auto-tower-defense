@@ -1,3 +1,5 @@
+import { useSessionClient } from '@latticexyz/entrykit/internal';
+import { observer } from '@latticexyz/explorer/observer';
 import { useComponentValue } from '@latticexyz/react';
 import { getComponentValue } from '@latticexyz/recs';
 import { singletonEntity } from '@latticexyz/store-sync/recs';
@@ -11,7 +13,14 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { createPublicClient, formatUnits, http, parseUnits } from 'viem';
+import {
+  createPublicClient,
+  decodeEventLog,
+  formatUnits,
+  getContract,
+  http,
+  parseUnits,
+} from 'viem';
 import { anvil, baseSepolia } from 'viem/chains';
 import { useAccount, useSwitchChain, useWalletClient } from 'wagmi';
 
@@ -29,7 +38,13 @@ import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/hooks/useMUD';
-import { USDC_ADDRESSES } from '@/utils/constants';
+import {
+  API_ENDPOINT,
+  BUY_ESCROW_ABI,
+  BUY_ESCROW_ADDRESSES,
+  BUY_RECEIVER_ABI,
+  USDC_ADDRESSES,
+} from '@/utils/constants';
 import {
   formatWattHours,
   getChain,
@@ -48,6 +63,7 @@ export const SolarFarmDialog: React.FC = () => {
     systemCalls: { buyElectricity, sellElectricity },
   } = useMUD();
   const { data: walletClient } = useWalletClient();
+  const { data: sessionClient } = useSessionClient();
   const { playSfx } = useSettings();
   const { isSolarFarmDialogOpen, setIsSolarFarmDialogOpen } = useSolarFarm();
 
@@ -184,12 +200,8 @@ export const SolarFarmDialog: React.FC = () => {
   }, [chainId]);
 
   const onApprove = useCallback(async () => {
-    const { buyEscrowAddress, solarFarmAddress, usdcAddress } =
+    const { solarFarmAddress, usdcAddress } =
       getComponentValue(AddressBook, singletonEntity) ?? {};
-
-    if (!buyEscrowAddress) {
-      throw new Error('Buy escrow address not found');
-    }
 
     if (!solarFarmAddress) {
       throw new Error('Solar farm address not found');
@@ -206,6 +218,11 @@ export const SolarFarmDialog: React.FC = () => {
     const externalChain = getChain(chainId);
     if (!externalChain) {
       throw new Error('External chain not found');
+    }
+
+    const buyEscrowAddress = BUY_ESCROW_ADDRESSES[externalChain.id];
+    if (isBridgeRequired && !buyEscrowAddress) {
+      throw new Error('Buy escrow address not found');
     }
 
     const publicClient = createPublicClient({
@@ -320,57 +337,127 @@ export const SolarFarmDialog: React.FC = () => {
         throw new Error('Wallet client not found');
       }
 
+      if (!sessionClient) {
+        throw new Error('Session client not found');
+      }
+
       const externalChain = getChain(chainId);
       if (!externalChain) {
         throw new Error('External chain not found');
       }
-      const { buyEscrowAddress } =
+
+      const { buyReceiverAddress } =
         getComponentValue(AddressBook, singletonEntity) ?? {};
-      if (!buyEscrowAddress) {
-        throw new Error('Buy escrow address not found');
+      const buyEscrowAddress = BUY_ESCROW_ADDRESSES[externalChain.id];
+      if (!(buyEscrowAddress && buyReceiverAddress)) {
+        throw new Error('Buy escrow or receiver address not found');
       }
 
-      const publicClient = createPublicClient({
+      let publicClient = createPublicClient({
         batch: { multicall: false },
         chain: externalChain,
         transport: http(),
       });
 
       if (isBuying) {
+        // Send USDC to escrow contract
         const spendAmount = parseUnits(
           calculateTransactionCost().toString(),
           6,
         );
-        const buyArgs = {
+        const buyEscrowArgs = {
           address: buyEscrowAddress as `0x${string}`,
-          abi: [
-            {
-              inputs: [
-                {
-                  internalType: 'uint256',
-                  name: 'spendAmount',
-                  type: 'uint256',
-                },
-              ],
-              name: 'buyElectricity',
-              outputs: [],
-              stateMutability: 'nonpayable',
-              type: 'function',
-            },
-          ],
+          abi: BUY_ESCROW_ABI,
           functionName: 'buyElectricity',
           args: [spendAmount],
         };
 
-        await publicClient.simulateContract(buyArgs);
-        const txHash = await walletClient.writeContract(buyArgs);
-        const txResult = await publicClient.waitForTransactionReceipt({
+        let txHash = await walletClient.writeContract(buyEscrowArgs);
+        let txResult = await publicClient.waitForTransactionReceipt({
           hash: txHash,
           confirmations: 1,
         });
 
-        const { status } = txResult;
-        const success = status === 'success';
+        let success = txResult.status === 'success';
+        if (!success) {
+          throw new Error('Smart contract error occurred');
+        }
+
+        // Get signature from API
+        const eventLog = txResult.logs.find(
+          log => log.address.toLowerCase() === buyEscrowAddress.toLowerCase(),
+        );
+
+        if (!eventLog) {
+          throw new Error('Event log not found');
+        }
+
+        const parsedLog = decodeEventLog({
+          abi: BUY_ESCROW_ABI,
+          data: eventLog.data,
+          topics: eventLog.topics,
+        });
+
+        if (!parsedLog) {
+          throw new Error('Parsed log not found');
+        }
+
+        const { nonce } = parsedLog.args as unknown as {
+          nonce: bigint;
+        };
+
+        const res = await fetch(`${API_ENDPOINT}/buy-validator-signature`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: spendAmount.toString(),
+            buyer: playerAddress,
+            nonce: BigInt(nonce).toString(),
+            txHash,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to compile code');
+        }
+
+        const { signature } = await res.json();
+
+        // Call receiver contract and pass the signature
+        const buyReceiverArgs = {
+          address: buyReceiverAddress as `0x${string}`,
+          abi: BUY_RECEIVER_ABI,
+          functionName: 'handleElectricityPurchase',
+          args: [playerAddress, spendAmount, nonce, signature],
+        };
+
+        publicClient = createPublicClient({
+          batch: { multicall: false },
+          chain: getGameChain(),
+          transport: http(),
+        });
+
+        await publicClient.simulateContract(buyReceiverArgs);
+        const buyReceiverContract = getContract({
+          abi: BUY_RECEIVER_ABI,
+          address: buyReceiverAddress as `0x${string}`,
+          client: {
+            public: publicClient,
+            wallet: sessionClient.extend(observer()),
+          },
+        });
+
+        txHash = await buyReceiverContract.write.handleElectricityPurchase(
+          buyReceiverArgs.args,
+        );
+        txResult = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+          confirmations: 1,
+        });
+
+        success = txResult.status === 'success';
         if (!success) {
           throw new Error('Smart contract error occurred');
         }
@@ -408,7 +495,9 @@ export const SolarFarmDialog: React.FC = () => {
     getUsdcBalance,
     isBuying,
     onApprove,
+    playerAddress,
     playSfx,
+    sessionClient,
     walletClient,
   ]);
 
