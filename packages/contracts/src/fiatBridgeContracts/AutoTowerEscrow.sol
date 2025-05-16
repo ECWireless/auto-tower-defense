@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title AutoTowerEscrow
 /// @notice Deployed on Base Mainnet/Sepolia. Escrows USDC for electricity purchases and releases USDC for electricity sales,
 ///         based on cross-chain messages from Redstone/Pyrope.
 contract AutoTowerEscrow {
-  /// @notice owner of the contract
+  using ECDSA for bytes32;
+  using MessageHashUtils for bytes32;
+
   address public owner;
-
-  /// @notice USDC token used for payment
+  address public validator;
   IERC20 public immutable usdc;
-
-  /// @notice Trusted relayer allowed to call sellElectricity
-  address public trustedRelayer;
 
   /// @notice Per-user nonces to prevent replay on purchase side
   mapping(address => uint256) public purchaseNonce;
@@ -28,12 +28,10 @@ contract AutoTowerEscrow {
   /// @notice Emitted when a user receives USDC for selling electricity
   event ElectricitySale(address indexed seller, uint256 amount, uint256 nonce);
 
-  /// @param _usdc Address of the USDC token on Base
-  /// @param _trustedRelayer Address of the trusted relayer
-  constructor(address _usdc, address _trustedRelayer) {
+  constructor(address _usdc, address _validator) {
     owner = msg.sender;
     usdc = IERC20(_usdc);
-    trustedRelayer = _trustedRelayer;
+    validator = _validator;
   }
 
   /// @notice Allower the owner to transfer ownership of the contract
@@ -44,12 +42,12 @@ contract AutoTowerEscrow {
     owner = newOwner;
   }
 
-  /// @notice Allow the owner to update the trusted relayer
-  /// @param newRelayer Address of the new trusted relayer
-  function updateTrustedRelayer(address newRelayer) external {
+  /// @notice Allow the owner to update the trusted validator
+  /// @param newValidator Address of the new trusted validator
+  function updateValidator(address newValidator) external {
     require(msg.sender == owner, "Not authorized");
-    require(newRelayer != address(0), "Invalid address");
-    trustedRelayer = newRelayer;
+    require(newValidator != address(0), "Invalid address");
+    validator = newValidator;
   }
 
   /// @notice Called by user to purchase electricity with USDC
@@ -64,17 +62,22 @@ contract AutoTowerEscrow {
     emit ElectricityPurchase(msg.sender, spendAmount, nonce);
   }
 
-  /// @notice Called by trusted relayer to release USDC after electricity has been sold on Redstone
+  /// @notice Called by trusted validator to release USDC after electricity has been sold on Redstone
   /// @param seller Address to receive the USDC
   /// @param receiveAmount Amount of USDC to release
   /// @param nonce Unique sale nonce to prevent replay
-  function sellElectricity(address seller, uint256 receiveAmount, uint256 nonce) external {
-    require(msg.sender == trustedRelayer, "Not authorized");
-    require(receiveAmount > 0, "Amount must be greater than 0");
+  /// @param signature Validator signature of the sale data
+  function sellElectricity(address seller, uint256 receiveAmount, uint256 nonce, bytes calldata signature) external {
+    bytes32 structHash = keccak256(abi.encode(seller, receiveAmount, nonce));
+    bytes32 ethSignedMessageHash = structHash.toEthSignedMessageHash();
 
-    bytes32 id = keccak256(abi.encode(seller, receiveAmount, nonce));
-    require(!isSaleProcessed[id], "Already processed");
-    isSaleProcessed[id] = true;
+    address recovered = ethSignedMessageHash.recover(signature);
+    require(recovered == validator, "Invalid signature");
+
+    require(!isSaleProcessed[structHash], "Already processed");
+    isSaleProcessed[structHash] = true;
+
+    require(receiveAmount > 0, "Amount must be greater than 0");
 
     bool success = usdc.transfer(seller, receiveAmount);
     require(success, "USDC payout failed");

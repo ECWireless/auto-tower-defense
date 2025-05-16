@@ -41,11 +41,11 @@ export const USDC_ADDRESSES: { [key: number]: string } = {
   [pyrope.id]: '0xAC49338E773d463b9fcd88D44456E0130a7ce35b',
 };
 
-export const BUY_ESCROW_ADDRESSES: { [key: number]: string } = {
-  [baseSepolia.id]: '0xAeA2C0dfE4fB0A7ACFDD6DBb1d81AC73afc44bAb',
+export const ESCROW_ADDRESSES: { [key: number]: string } = {
+  [baseSepolia.id]: '0xe298F45102758119DeE35586fB9985FeE0E2Db38',
 };
 
-export const BUY_ESCROW_ABI = [
+export const ESCROW_ABI = [
   {
     inputs: [
       {
@@ -55,12 +55,39 @@ export const BUY_ESCROW_ABI = [
       },
       {
         internalType: 'address',
-        name: '_trustedRelayer',
+        name: '_validator',
         type: 'address',
       },
     ],
     stateMutability: 'nonpayable',
     type: 'constructor',
+  },
+  {
+    inputs: [],
+    name: 'ECDSAInvalidSignature',
+    type: 'error',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'length',
+        type: 'uint256',
+      },
+    ],
+    name: 'ECDSAInvalidSignatureLength',
+    type: 'error',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'bytes32',
+        name: 's',
+        type: 'bytes32',
+      },
+    ],
+    name: 'ECDSAInvalidSignatureS',
+    type: 'error',
   },
   {
     anonymous: false,
@@ -212,6 +239,11 @@ export const BUY_ESCROW_ABI = [
         name: 'nonce',
         type: 'uint256',
       },
+      {
+        internalType: 'bytes',
+        name: 'signature',
+        type: 'bytes',
+      },
     ],
     name: 'sellElectricity',
     outputs: [],
@@ -232,27 +264,14 @@ export const BUY_ESCROW_ABI = [
     type: 'function',
   },
   {
-    inputs: [],
-    name: 'trustedRelayer',
-    outputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
     inputs: [
       {
         internalType: 'address',
-        name: 'newRelayer',
+        name: 'newValidator',
         type: 'address',
       },
     ],
-    name: 'updateTrustedRelayer',
+    name: 'updateValidator',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -263,6 +282,19 @@ export const BUY_ESCROW_ABI = [
     outputs: [
       {
         internalType: 'contract IERC20',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'validator',
+    outputs: [
+      {
+        internalType: 'address',
         name: '',
         type: 'address',
       },
@@ -439,6 +471,134 @@ export const BUY_RECEIVER_ABI = [
       },
     ],
     stateMutability: 'view',
+    type: 'function',
+  },
+];
+
+export const SELL_EMITTER_ABI = [
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '_solarFarmSystem',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'constructor',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'seller',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'receiveAmount',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'nonce',
+        type: 'uint256',
+      },
+    ],
+    name: 'ElectricitySold',
+    type: 'event',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'seller',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: 'receiveAmount',
+        type: 'uint256',
+      },
+    ],
+    name: 'emitSellElectricity',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'owner',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    name: 'saleNonce',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'solarFarmSystem',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'newOwner',
+        type: 'address',
+      },
+    ],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'newSystem',
+        type: 'address',
+      },
+    ],
+    name: 'updateSolarFarmSystem',
+    outputs: [],
+    stateMutability: 'nonpayable',
     type: 'function',
   },
 ];

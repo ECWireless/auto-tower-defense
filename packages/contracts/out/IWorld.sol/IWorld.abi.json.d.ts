@@ -316,6 +316,19 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__updatUsdcAddress",
+    "inputs": [
+      {
+        "name": "usdcAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__updateBuyReceiverAddress",
     "inputs": [
       {
