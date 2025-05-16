@@ -1,6 +1,6 @@
 import { garnet, pyrope } from '@latticexyz/common/chains';
 import { Chain } from 'viem';
-import { base, baseSepolia, redstone } from 'viem/chains';
+import { anvil, base, baseSepolia, redstone } from 'viem/chains';
 
 import { CHAIN_ID, chains, WORLD_ADDRESS } from './constants';
 
@@ -97,6 +97,8 @@ export const getChain = (chainId: number | undefined): Chain | undefined => {
 
 export const getChainLogo = (chainId?: number): string => {
   switch (chainId) {
+    case anvil.id:
+      return '/assets/logos/anvil.png';
     case base.id:
       return '/assets/logos/base.png';
     case baseSepolia.id:
