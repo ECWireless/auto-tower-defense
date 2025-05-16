@@ -81,13 +81,13 @@ app.post("/buy-validator-signature", async (req, res) => {
       hash: txHash,
     });
 
-    const { BASE_ESCROW_ADDRESS } = process.env;
-    if (!BASE_ESCROW_ADDRESS) {
-      return res.status(500).json({ error: "BASE_ESCROW_ADDRESS not set" });
+    const { ESCROW_ADDRESS } = process.env;
+    if (!ESCROW_ADDRESS) {
+      return res.status(500).json({ error: "ESCROW_ADDRESS not set" });
     }
 
     const eventLog = receipt.logs.find(
-      (log) => log.address.toLowerCase() === BASE_ESCROW_ADDRESS.toLowerCase()
+      (log) => log.address.toLowerCase() === ESCROW_ADDRESS.toLowerCase()
     );
 
     if (!eventLog) {
@@ -121,11 +121,11 @@ app.post("/buy-validator-signature", async (req, res) => {
     );
     const structHash = keccak256(encodedData);
 
-    const { PRIVATE_KEY } = process.env;
-    if (!PRIVATE_KEY) {
-      return res.status(500).json({ error: "PRIVATE_KEY not set" });
+    const { VALIDATOR_PRIVATE_KEY } = process.env;
+    if (!VALIDATOR_PRIVATE_KEY) {
+      return res.status(500).json({ error: "VALIDATOR_PRIVATE_KEY not set" });
     }
-    const validatorAccount = privateKeyToAccount(PRIVATE_KEY);
+    const validatorAccount = privateKeyToAccount(VALIDATOR_PRIVATE_KEY);
     const walletClient = createWalletClient({
       account: validatorAccount,
       chain: pyrope,
@@ -196,11 +196,11 @@ app.post("/sell-validator-signature", async (req, res) => {
     );
     const structHash = keccak256(encodedData);
 
-    const { PRIVATE_KEY } = process.env;
-    if (!PRIVATE_KEY) {
-      return res.status(500).json({ error: "PRIVATE_KEY not set" });
+    const { VALIDATOR_PRIVATE_KEY } = process.env;
+    if (!VALIDATOR_PRIVATE_KEY) {
+      return res.status(500).json({ error: "VALIDATOR_PRIVATE_KEY not set" });
     }
-    const validatorAccount = privateKeyToAccount(PRIVATE_KEY);
+    const validatorAccount = privateKeyToAccount(VALIDATOR_PRIVATE_KEY);
     const walletClient = createWalletClient({
       account: validatorAccount,
       chain: baseSepolia,
