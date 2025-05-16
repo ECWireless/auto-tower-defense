@@ -22,6 +22,9 @@ contract AutoTowerEscrow {
   /// @notice Per-user nonces to prevent replay on sale side
   mapping(address => uint256) public saleNonce;
 
+  /// @notice Tracks which sale messages have already been processed
+  mapping(bytes32 => bool) public isSaleProcessed;
+
   /// @notice Emitted when a user buys electricity with USDC
   event ElectricityPurchase(address indexed buyer, uint256 amount, uint256 nonce);
 
@@ -85,7 +88,4 @@ contract AutoTowerEscrow {
     saleNonce[seller] = nonce;
     emit ElectricitySale(seller, receiveAmount, nonce);
   }
-
-  /// @notice Tracks which sale messages have already been processed
-  mapping(bytes32 => bool) public isSaleProcessed;
 }

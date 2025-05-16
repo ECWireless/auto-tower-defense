@@ -138,6 +138,19 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__getSolarFarmSystemAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "app__mintUsdcToPlayer",
     "inputs": [
       {

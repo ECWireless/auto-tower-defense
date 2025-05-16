@@ -4,10 +4,10 @@ pragma solidity >=0.8.24;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
-/// @title AutoTowerRelayReceiver
+/// @title AutoTowerBuyReceiver
 /// @notice Deployed on Redstone/Pyrope. Receives cross-chain messages from Base Mainnet/Base Sepolia
 ///         via player with validator signature and mints electricity in the MUD world.
-contract AutoTowerRelayReceiver {
+contract AutoTowerBuyReceiver {
   using ECDSA for bytes32;
   using MessageHashUtils for bytes32;
 
@@ -23,18 +23,24 @@ contract AutoTowerRelayReceiver {
     worldAddress = _worldAddress;
   }
 
+  /// @notice Allower the owner to transfer ownership of the contract
+  /// @param newOwner Address of the new owner
   function transferOwnership(address newOwner) external {
     require(msg.sender == owner, "Not authorized");
     require(newOwner != address(0), "Invalid address");
     owner = newOwner;
   }
 
+  /// @notice Allow the owner to update the trusted validator
+  /// @param newValidator Address of the new trusted validator
   function updateValidator(address newValidator) external {
     require(msg.sender == owner, "Not authorized");
     require(newValidator != address(0), "Invalid address");
     validator = newValidator;
   }
 
+  /// @notice Allow the owner to update the world address
+  /// @param newWorldAddress Address of the new world contract
   function updateWorldAddress(address newWorldAddress) external {
     require(msg.sender == owner, "Not authorized");
     require(newWorldAddress != address(0), "Invalid address");

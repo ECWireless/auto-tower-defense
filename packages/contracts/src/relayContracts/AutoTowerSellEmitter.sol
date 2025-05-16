@@ -4,10 +4,7 @@ pragma solidity >=0.8.24;
 /// @title AutoTowerSellEmitter
 /// @notice Deployed on Redstone/Pyrope. Emits cross-chain event after being called by the MUD system.
 contract AutoTowerSellEmitter {
-  /// @notice owner of the contract
   address public owner;
-
-  /// @notice Address of the trusted Solar Farm System (MUD system)
   address public solarFarmSystem;
 
   /// @notice Tracks nonce per user to prevent message replay
