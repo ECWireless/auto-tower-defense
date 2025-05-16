@@ -77,11 +77,114 @@ export const SolarFarmDialog: React.FC = () => {
   const [isBuying, setIsBuying] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [electricityAmount, setElectricityAmount] = useState<string>('1.92');
+  const [isThereExistingRelayTx, setIsThereExistingRelayTx] = useState(false);
 
   const [playerUSDCBalance, setPlayerUSDCBalance] = useState<bigint>(BigInt(0));
 
   const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
   const solarFarmDetails = useComponentValue(SolarFarmDetails, singletonEntity);
+
+  useEffect(() => {
+    const existingBuyEscrowTx = localStorage.getItem(BUY_ESCROW_TX_KEY);
+    const existingSellEmitterTx = localStorage.getItem(SELL_EMITTER_TX_KEY);
+
+    if (!solarFarmDetails) return;
+    if (existingBuyEscrowTx) {
+      const parsedTx = JSON.parse(existingBuyEscrowTx);
+      const { txHash } = parsedTx;
+
+      // Use logs to get the amount
+      const externalChain = getChain(chainId);
+      if (!externalChain) return;
+      if (!ESCROW_ADDRESSES[externalChain.id]) return;
+      const publicClient = createPublicClient({
+        batch: { multicall: false },
+        chain: externalChain,
+        transport: http(),
+      });
+      publicClient
+        .getTransactionReceipt({ hash: txHash })
+        .then(txResult => {
+          const eventLog = txResult.logs.find(
+            log =>
+              log.address.toLowerCase() ===
+              ESCROW_ADDRESSES[externalChain.id].toLowerCase(),
+          );
+          if (eventLog) {
+            const parsedLog = decodeEventLog({
+              abi: ESCROW_ABI,
+              data: eventLog.data,
+              topics: eventLog.topics,
+            });
+            if (parsedLog) {
+              const { args } = parsedLog;
+              const { amount: usdcAmount } = args as unknown as {
+                amount: bigint;
+              };
+              const amountInCents = usdcAmount / BigInt(10000);
+              const electricityAmount =
+                amountInCents * solarFarmDetails?.whPerCentPrice;
+              setElectricityAmount(formatUnits(electricityAmount, 3));
+              setIsThereExistingRelayTx(true);
+              setIsBuying(true);
+            }
+          }
+        })
+        .catch(error => {
+          // eslint-disable-next-line no-console
+          console.error(`Error fetching transaction receipt: ${error}`);
+        });
+    } else if (existingSellEmitterTx) {
+      const parsedTx = JSON.parse(existingSellEmitterTx);
+      const { txHash } = parsedTx;
+
+      // Use logs to get the amount
+      const gameChain = getGameChain();
+      const { sellEmitterAddress } =
+        getComponentValue(AddressBook, singletonEntity) ?? {};
+      if (!sellEmitterAddress) return;
+      const publicClient = createPublicClient({
+        batch: { multicall: false },
+        chain: gameChain,
+        transport: http(),
+      });
+      publicClient
+        .getTransactionReceipt({ hash: txHash })
+        .then(txResult => {
+          const eventLog = txResult.logs.find(
+            log =>
+              log.address.toLowerCase() === sellEmitterAddress.toLowerCase(),
+          );
+          if (eventLog) {
+            const parsedLog = decodeEventLog({
+              abi: SELL_EMITTER_ABI,
+              data: eventLog.data,
+              topics: eventLog.topics,
+            });
+            if (parsedLog) {
+              const { args } = parsedLog;
+              const { receiveAmount } = args as unknown as {
+                receiveAmount: bigint;
+              };
+              const amountInCents = receiveAmount / BigInt(10000);
+              const electricityAmount =
+                amountInCents * solarFarmDetails?.whPerCentPrice;
+              setElectricityAmount(formatUnits(electricityAmount, 3));
+              setIsThereExistingRelayTx(true);
+              setIsBuying(false);
+            }
+          }
+        })
+        .catch(error => {
+          // eslint-disable-next-line no-console
+          console.error(`Error fetching transaction receipt: ${error}`);
+        });
+    } else {
+      setElectricityAmount('1.92');
+      setIsThereExistingRelayTx(false);
+      setIsBuying(true);
+    }
+  }, [AddressBook, chainId, isSolarFarmDialogOpen, solarFarmDetails]);
 
   const getUsdcBalance = useCallback(async () => {
     try {
@@ -469,6 +572,7 @@ export const SolarFarmDialog: React.FC = () => {
 
         // Remove the buyEscrowTx from local storage
         localStorage.removeItem(BUY_ESCROW_TX_KEY);
+        setIsThereExistingRelayTx(false);
       } else {
         // Check if there is already a send USDC to escrow tx in local storage
         const existingTx = localStorage.getItem(SELL_EMITTER_TX_KEY);
@@ -567,6 +671,7 @@ export const SolarFarmDialog: React.FC = () => {
 
         // Remove the sellEmitterTx from local storage
         localStorage.removeItem(SELL_EMITTER_TX_KEY);
+        setIsThereExistingRelayTx(false);
       }
 
       toast.success(
@@ -787,21 +892,23 @@ export const SolarFarmDialog: React.FC = () => {
               <div className="flex justify-center mb-4">
                 <div className="bg-gray-800 flex p-1 rounded-full">
                   <button
-                    className={`font-medium hover:cursor-pointer px-4 py-1.5 rounded-full text-sm transition-colors ${
+                    className={`font-medium ${isThereExistingRelayTx ? 'hover:cursor-not-allowed' : 'hover:cursor-pointer'} px-4 py-1.5 rounded-full text-sm transition-colors ${
                       isBuying
                         ? 'bg-green-800 text-green-100'
                         : 'hover:text-white text-gray-400'
                     }`}
+                    disabled={isProcessing || isThereExistingRelayTx}
                     onClick={() => setIsBuying(true)}
                   >
                     Buy
                   </button>
                   <button
-                    className={`font-medium hover:cursor-pointer px-4 py-1.5 rounded-full text-sm transition-colors ${
+                    className={`font-medium ${isThereExistingRelayTx ? 'hover:cursor-not-allowed' : 'hover:cursor-pointer'} px-4 py-1.5 rounded-full text-sm transition-colors ${
                       !isBuying
                         ? 'bg-red-800 text-red-100'
                         : 'hover:text-white text-gray-400'
                     }`}
+                    disabled={isProcessing || isThereExistingRelayTx}
                     onClick={() => setIsBuying(false)}
                   >
                     Sell
@@ -820,6 +927,7 @@ export const SolarFarmDialog: React.FC = () => {
                 <div className="flex items-center">
                   <Input
                     className="bg-gray-800 border-gray-700 text-white"
+                    disabled={isProcessing || isThereExistingRelayTx}
                     id="electricity-amount"
                     onChange={handleElectricityAmountChange}
                     type="number"
@@ -827,7 +935,7 @@ export const SolarFarmDialog: React.FC = () => {
                   />
                   <span className="ml-2 text-gray-400 text-sm">kWh</span>
                 </div>
-                {!!disabledMessage && (
+                {!!disabledMessage && !isThereExistingRelayTx && (
                   <p className="text-red-500 text-xs mt-1">{disabledMessage}</p>
                 )}
               </div>
@@ -850,41 +958,56 @@ export const SolarFarmDialog: React.FC = () => {
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button
-              className="border-gray-700 text-gray-400"
-              onClick={() => setIsSolarFarmDialogOpen(false)}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            {getChain(chainId) ? (
-              <Button
-                className={
-                  isBuying
-                    ? 'bg-green-800 hover:bg-green-700 text-white'
-                    : 'bg-red-800 hover:bg-red-700 text-white'
-                }
-                disabled={isProcessing || !!disabledMessage}
-                onClick={() =>
-                  isBridgeRequired
-                    ? onHandleRelayTransaction()
-                    : onHandleTransaction()
-                }
-              >
-                {isProcessing && <Loader2 className="animate-spin h-6 w-6" />}
-                {isBuying ? 'Buy Electricity' : 'Sell Electricity'}
-              </Button>
-            ) : (
-              <Button
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-                disabled={isSwitchingChains}
-                onClick={() => switchChain({ chainId: baseSepolia.id })}
-              >
-                <CircleAlert className="h-6 w-6" />
-                Switch to {baseSepolia.name}
-              </Button>
+          <DialogFooter className="flex sm:flex-col">
+            {isThereExistingRelayTx && (
+              <p className="text-gray-400 text-orange-500 text-right text-xs">
+                You have an incomplete {isBuying ? 'purchase' : 'sale'}. Click
+                &quot;Continue&quot; to proceed.
+              </p>
             )}
+            <div className="flex flex-row gap-2 justify-end">
+              <Button
+                className="border-gray-700 text-gray-400"
+                onClick={() => setIsSolarFarmDialogOpen(false)}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              {getChain(chainId) ? (
+                <Button
+                  className={
+                    isBuying
+                      ? 'bg-green-800 hover:bg-green-700 text-white'
+                      : 'bg-red-800 hover:bg-red-700 text-white'
+                  }
+                  disabled={
+                    isProcessing ||
+                    (!!disabledMessage && !isThereExistingRelayTx)
+                  }
+                  onClick={() =>
+                    isBridgeRequired
+                      ? onHandleRelayTransaction()
+                      : onHandleTransaction()
+                  }
+                >
+                  {isProcessing && <Loader2 className="animate-spin h-6 w-6" />}
+                  {isThereExistingRelayTx
+                    ? 'Continue'
+                    : isBuying
+                      ? 'Buy Electricity'
+                      : 'Sell Electricity'}
+                </Button>
+              ) : (
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  disabled={isSwitchingChains}
+                  onClick={() => switchChain({ chainId: baseSepolia.id })}
+                >
+                  <CircleAlert className="h-6 w-6" />
+                  Switch to {baseSepolia.name}
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
