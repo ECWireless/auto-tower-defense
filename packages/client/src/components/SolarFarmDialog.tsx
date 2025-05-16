@@ -88,6 +88,7 @@ export const SolarFarmDialog: React.FC = () => {
     const existingBuyEscrowTx = localStorage.getItem(BUY_ESCROW_TX_KEY);
     const existingSellEmitterTx = localStorage.getItem(SELL_EMITTER_TX_KEY);
 
+    if (isProcessing) return;
     if (!solarFarmDetails) return;
     if (existingBuyEscrowTx) {
       const parsedTx = JSON.parse(existingBuyEscrowTx);
@@ -184,7 +185,13 @@ export const SolarFarmDialog: React.FC = () => {
       setIsThereExistingRelayTx(false);
       setIsBuying(true);
     }
-  }, [AddressBook, chainId, isSolarFarmDialogOpen, solarFarmDetails]);
+  }, [
+    AddressBook,
+    chainId,
+    isProcessing,
+    isSolarFarmDialogOpen,
+    solarFarmDetails,
+  ]);
 
   const getUsdcBalance = useCallback(async () => {
     try {
