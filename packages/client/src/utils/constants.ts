@@ -37,6 +37,7 @@ export const chains: readonly [Chain, ...Chain[]] = [
 ] as const satisfies Chain[];
 
 export const USDC_ADDRESSES: { [key: number]: string } = {
+  [anvil.id]: '0xc6709F349762B546d83760f28221CEd36d0a19D2',
   [baseSepolia.id]: '0xFf5E70a3233992015b1874d5e3D0F229B93b3535',
   [pyrope.id]: '0xAC49338E773d463b9fcd88D44456E0130a7ce35b',
 };

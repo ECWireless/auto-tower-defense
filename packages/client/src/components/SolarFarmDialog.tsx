@@ -21,7 +21,7 @@ import {
   http,
   parseUnits,
 } from 'viem';
-import { anvil, baseSepolia } from 'viem/chains';
+import { baseSepolia } from 'viem/chains';
 import { useAccount, useSwitchChain, useWalletClient } from 'wagmi';
 
 import { Button } from '@/components/ui/button';
@@ -83,40 +83,25 @@ export const SolarFarmDialog: React.FC = () => {
 
   const getUsdcBalance = useCallback(async () => {
     try {
-      let usdcAddress = getComponentValue(
-        AddressBook,
-        singletonEntity,
-      )?.usdcAddress;
-
-      if (!usdcAddress) {
-        throw new Error('USDC address not found');
-      }
-
       if (!chainId) {
         throw new Error('Chain ID not found');
       }
 
-      let publicClient = null;
-
       const externalChain = getChain(chainId);
-      if (externalChain && externalChain.id !== anvil.id) {
-        usdcAddress = USDC_ADDRESSES[externalChain.id];
-
-        publicClient = createPublicClient({
-          batch: { multicall: false },
-          chain: externalChain,
-          transport: http(),
-        });
+      if (!externalChain) {
+        throw new Error('External chain not found');
       }
 
-      const gameChain = getGameChain();
-      if (chainId === gameChain.id) {
-        publicClient = createPublicClient({
-          batch: { multicall: false },
-          chain: gameChain,
-          transport: http(),
-        });
+      const usdcAddress = USDC_ADDRESSES[externalChain.id];
+      if (!usdcAddress) {
+        throw new Error('USDC address not found');
       }
+
+      const publicClient = createPublicClient({
+        batch: { multicall: false },
+        chain: externalChain,
+        transport: http(),
+      });
 
       if (!publicClient) {
         return BigInt(0);
@@ -147,7 +132,7 @@ export const SolarFarmDialog: React.FC = () => {
       });
       return BigInt(0);
     }
-  }, [AddressBook, chainId, playerAddress]);
+  }, [chainId, playerAddress]);
 
   useEffect(() => {
     const fetchUsdcBalance = async () => {
@@ -205,15 +190,11 @@ export const SolarFarmDialog: React.FC = () => {
   }, [chainId]);
 
   const onApprove = useCallback(async () => {
-    const { solarFarmAddress, usdcAddress } =
+    const { solarFarmAddress } =
       getComponentValue(AddressBook, singletonEntity) ?? {};
 
     if (!solarFarmAddress) {
       throw new Error('Solar farm address not found');
-    }
-
-    if (!usdcAddress) {
-      throw new Error('USDC address not found');
     }
 
     if (!walletClient) {
@@ -223,6 +204,11 @@ export const SolarFarmDialog: React.FC = () => {
     const externalChain = getChain(chainId);
     if (!externalChain) {
       throw new Error('External chain not found');
+    }
+
+    const usdcAddress = USDC_ADDRESSES[externalChain.id];
+    if (!usdcAddress) {
+      throw new Error('USDC address not found');
     }
 
     const buyEscrowAddress = ESCROW_ADDRESSES[externalChain.id];
@@ -238,9 +224,7 @@ export const SolarFarmDialog: React.FC = () => {
 
     const spendAmount = parseUnits(calculateTransactionCost().toString(), 6);
     const txHash = await walletClient.writeContract({
-      address: (isBridgeRequired
-        ? USDC_ADDRESSES[externalChain.id]
-        : usdcAddress) as `0x${string}`,
+      address: usdcAddress as `0x${string}`,
       abi: [
         {
           constant: false,
