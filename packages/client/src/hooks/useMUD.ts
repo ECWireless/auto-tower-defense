@@ -483,7 +483,7 @@ export const useMUD = (): {
       const tx = await worldContract.write.app__sellElectricityThroughRelay([
         electricityAmount,
       ]);
-      // Store the tx now so SolarFarmDialog doesn't have to wait for the tx to be mined
+      // Store the tx now so SolarFarmDialog doesn't have to wait for the tx to be confirmed
       localStorage.setItem(
         SELL_EMITTER_TX_KEY,
         JSON.stringify({ txHash: tx, timestamp: Date.now() }),
