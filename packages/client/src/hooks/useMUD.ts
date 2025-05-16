@@ -12,6 +12,7 @@ import { useAccount } from 'wagmi';
 
 import { components } from '@/mud/recs';
 import { useWorldContract } from '@/mud/useWorldContract';
+import { SELL_EMITTER_TX_KEY } from '@/utils/constants';
 import { getGameChain } from '@/utils/helpers';
 
 const getContractError = (error: BaseError): string => {
@@ -482,6 +483,11 @@ export const useMUD = (): {
       const tx = await worldContract.write.app__sellElectricityThroughRelay([
         electricityAmount,
       ]);
+      // Store the tx now so SolarFarmDialog doesn't have to wait for the tx to be mined
+      localStorage.setItem(
+        SELL_EMITTER_TX_KEY,
+        JSON.stringify({ txHash: tx, timestamp: Date.now() }),
+      );
       const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
@@ -491,7 +497,7 @@ export const useMUD = (): {
           ? undefined
           : 'Failed to sell electricity through relay.',
         success,
-        txHash: txResult.transactionHash,
+        txHash: tx,
       };
     } catch (error) {
       return {

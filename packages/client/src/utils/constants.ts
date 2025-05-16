@@ -46,6 +46,9 @@ export const ESCROW_ADDRESSES: { [key: number]: string } = {
   [baseSepolia.id]: '0xe298F45102758119DeE35586fB9985FeE0E2Db38',
 };
 
+export const BUY_ESCROW_TX_KEY = 'buy-escrow-tx';
+export const SELL_EMITTER_TX_KEY = 'sell-emitter-tx';
+
 export const ESCROW_ABI = [
   {
     inputs: [

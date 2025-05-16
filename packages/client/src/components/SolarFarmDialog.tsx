@@ -40,10 +40,12 @@ import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/hooks/useMUD';
 import {
   API_ENDPOINT,
+  BUY_ESCROW_TX_KEY,
   BUY_RECEIVER_ABI,
   ESCROW_ABI,
   ESCROW_ADDRESSES,
   SELL_EMITTER_ABI,
+  SELL_EMITTER_TX_KEY,
   USDC_ADDRESSES,
 } from '@/utils/constants';
 import {
@@ -54,8 +56,6 @@ import {
 } from '@/utils/helpers';
 
 const CANCELLED_TX_ERROR = 'User rejected the request';
-const BUY_ESCROW_TX_KEY = 'buyEscrowTx';
-const SELL_EMITTER_TX_KEY = 'sellEmitterTx';
 
 export const SolarFarmDialog: React.FC = () => {
   const { address: playerAddress, chainId } = useAccount();
@@ -590,12 +590,6 @@ export const SolarFarmDialog: React.FC = () => {
 
           if (error) {
             throw new Error(error);
-          }
-          if (txHash) {
-            localStorage.setItem(
-              SELL_EMITTER_TX_KEY,
-              JSON.stringify({ txHash, timestamp: Date.now() }),
-            );
           }
         }
         if (!txHash) {
