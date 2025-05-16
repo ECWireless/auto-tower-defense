@@ -186,7 +186,16 @@ app.post("/sell-validator-signature", async (req, res) => {
       return res.status(400).json({ error: "Event mismatch" });
     }
 
-    const message = keccak256(toHex(`${seller}-${amount}-${nonce}`));
+    const encodedData = encodeAbiParameters(
+      [
+        { type: "address", name: "seller" },
+        { type: "uint256", name: "amount" },
+        { type: "uint256", name: "nonce" },
+      ],
+      [seller, amount, nonce]
+    );
+    const structHash = keccak256(encodedData);
+
     const { PRIVATE_KEY } = process.env;
     if (!PRIVATE_KEY) {
       return res.status(500).json({ error: "PRIVATE_KEY not set" });
@@ -197,7 +206,9 @@ app.post("/sell-validator-signature", async (req, res) => {
       chain: baseSepolia,
       transport: http(),
     });
-    const signature = await walletClient.signMessage({ message });
+    const signature = await walletClient.signMessage({
+      message: { raw: structHash },
+    });
     res.json({ signature });
   } catch (err) {
     console.error(err);
