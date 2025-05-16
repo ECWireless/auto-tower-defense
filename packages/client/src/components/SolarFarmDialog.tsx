@@ -40,9 +40,10 @@ import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/hooks/useMUD';
 import {
   API_ENDPOINT,
-  BUY_ESCROW_ABI,
-  BUY_ESCROW_ADDRESSES,
   BUY_RECEIVER_ABI,
+  ESCROW_ABI,
+  ESCROW_ADDRESSES,
+  SELL_EMITTER_ABI,
   USDC_ADDRESSES,
 } from '@/utils/constants';
 import {
@@ -60,7 +61,11 @@ export const SolarFarmDialog: React.FC = () => {
   const {
     components: { AddressBook, BatteryDetails, SolarFarmDetails },
     network: { playerEntity },
-    systemCalls: { buyElectricity, sellElectricity },
+    systemCalls: {
+      buyElectricity,
+      sellElectricity,
+      sellElectricityThroughRelay,
+    },
   } = useMUD();
   const { data: walletClient } = useWalletClient();
   const { data: sessionClient } = useSessionClient();
@@ -220,7 +225,7 @@ export const SolarFarmDialog: React.FC = () => {
       throw new Error('External chain not found');
     }
 
-    const buyEscrowAddress = BUY_ESCROW_ADDRESSES[externalChain.id];
+    const buyEscrowAddress = ESCROW_ADDRESSES[externalChain.id];
     if (isBridgeRequired && !buyEscrowAddress) {
       throw new Error('Buy escrow address not found');
     }
@@ -346,34 +351,38 @@ export const SolarFarmDialog: React.FC = () => {
         throw new Error('External chain not found');
       }
 
-      const { buyReceiverAddress } =
+      const { buyReceiverAddress, sellEmitterAddress } =
         getComponentValue(AddressBook, singletonEntity) ?? {};
-      const buyEscrowAddress = BUY_ESCROW_ADDRESSES[externalChain.id];
-      if (!(buyEscrowAddress && buyReceiverAddress)) {
+      const buyEscrowAddress = ESCROW_ADDRESSES[externalChain.id];
+
+      if (!(buyEscrowAddress && buyReceiverAddress && sellEmitterAddress)) {
         throw new Error('Buy escrow or receiver address not found');
       }
 
-      let publicClient = createPublicClient({
+      const externalPublicClient = createPublicClient({
         batch: { multicall: false },
         chain: externalChain,
         transport: http(),
       });
+      const gamePublicClient = createPublicClient({
+        batch: { multicall: false },
+        chain: getGameChain(),
+        transport: http(),
+      });
+
+      const usdcAmount = parseUnits(calculateTransactionCost().toString(), 6);
 
       if (isBuying) {
         // Send USDC to escrow contract
-        const spendAmount = parseUnits(
-          calculateTransactionCost().toString(),
-          6,
-        );
         const buyEscrowArgs = {
           address: buyEscrowAddress as `0x${string}`,
-          abi: BUY_ESCROW_ABI,
+          abi: ESCROW_ABI,
           functionName: 'buyElectricity',
-          args: [spendAmount],
+          args: [usdcAmount],
         };
 
         let txHash = await walletClient.writeContract(buyEscrowArgs);
-        let txResult = await publicClient.waitForTransactionReceipt({
+        let txResult = await externalPublicClient.waitForTransactionReceipt({
           hash: txHash,
           confirmations: 1,
         });
@@ -393,7 +402,7 @@ export const SolarFarmDialog: React.FC = () => {
         }
 
         const parsedLog = decodeEventLog({
-          abi: BUY_ESCROW_ABI,
+          abi: ESCROW_ABI,
           data: eventLog.data,
           topics: eventLog.topics,
         });
@@ -412,7 +421,7 @@ export const SolarFarmDialog: React.FC = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            amount: spendAmount.toString(),
+            amount: usdcAmount.toString(),
             buyer: playerAddress,
             nonce: BigInt(nonce).toString(),
             txHash,
@@ -420,7 +429,7 @@ export const SolarFarmDialog: React.FC = () => {
         });
 
         if (!res.ok) {
-          throw new Error('Failed to compile code');
+          throw new Error('Failed to get validator signature');
         }
 
         const { signature } = await res.json();
@@ -430,21 +439,15 @@ export const SolarFarmDialog: React.FC = () => {
           address: buyReceiverAddress as `0x${string}`,
           abi: BUY_RECEIVER_ABI,
           functionName: 'handleElectricityPurchase',
-          args: [playerAddress, spendAmount, nonce, signature],
+          args: [playerAddress, usdcAmount, nonce, signature],
         };
 
-        publicClient = createPublicClient({
-          batch: { multicall: false },
-          chain: getGameChain(),
-          transport: http(),
-        });
-
-        await publicClient.simulateContract(buyReceiverArgs);
+        await gamePublicClient.simulateContract(buyReceiverArgs);
         const buyReceiverContract = getContract({
           abi: BUY_RECEIVER_ABI,
           address: buyReceiverAddress as `0x${string}`,
           client: {
-            public: publicClient,
+            public: gamePublicClient,
             wallet: sessionClient.extend(observer()),
           },
         });
@@ -452,7 +455,7 @@ export const SolarFarmDialog: React.FC = () => {
         txHash = await buyReceiverContract.write.handleElectricityPurchase(
           buyReceiverArgs.args,
         );
-        txResult = await publicClient.waitForTransactionReceipt({
+        txResult = await gamePublicClient.waitForTransactionReceipt({
           hash: txHash,
           confirmations: 1,
         });
@@ -462,7 +465,88 @@ export const SolarFarmDialog: React.FC = () => {
           throw new Error('Smart contract error occurred');
         }
       } else {
-        return; // TODO: Implement sell electricity relay transaction
+        // Call world contract to emit electricity sale event
+        const {
+          error,
+          success: relayTxSuccess,
+          txHash: relayTxHash,
+        } = await sellElectricityThroughRelay(
+          parseUnits(electricityAmount, 3), // Convert kWh to watt-hours
+        );
+
+        if (error && !relayTxSuccess) {
+          throw new Error(error);
+        }
+
+        if (!relayTxHash) {
+          throw new Error('Transaction hash not found');
+        }
+
+        // Get signature from API
+        let txResult = await gamePublicClient.waitForTransactionReceipt({
+          hash: relayTxHash,
+          confirmations: 1,
+        });
+
+        const eventLog = txResult.logs.find(
+          log => log.address.toLowerCase() === sellEmitterAddress.toLowerCase(),
+        );
+
+        if (!eventLog) {
+          throw new Error('Event log not found');
+        }
+
+        const parsedLog = decodeEventLog({
+          abi: SELL_EMITTER_ABI,
+          data: eventLog.data,
+          topics: eventLog.topics,
+        });
+
+        if (!parsedLog) {
+          throw new Error('Parsed log not found');
+        }
+
+        const { nonce } = parsedLog.args as unknown as {
+          nonce: bigint;
+        };
+
+        const res = await fetch(`${API_ENDPOINT}/sell-validator-signature`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: usdcAmount.toString(),
+            nonce: BigInt(nonce).toString(),
+            seller: playerAddress,
+            txHash: relayTxHash,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to get validator signature');
+        }
+
+        const { signature } = await res.json();
+
+        // Call escrow contract and pass the signature to claim USDC
+        const sellEscrowArgs = {
+          address: buyEscrowAddress as `0x${string}`,
+          abi: ESCROW_ABI,
+          functionName: 'sellElectricity',
+          args: [playerAddress, usdcAmount, nonce, signature],
+        };
+
+        const txHash = await walletClient.writeContract(sellEscrowArgs);
+        txResult = await externalPublicClient.waitForTransactionReceipt({
+          hash: txHash,
+          confirmations: 1,
+        });
+
+        const success = txResult.status === 'success';
+        if (!success) {
+          throw new Error('Smart contract error occurred');
+        }
       }
 
       toast.success(
@@ -497,6 +581,7 @@ export const SolarFarmDialog: React.FC = () => {
     onApprove,
     playerAddress,
     playSfx,
+    sellElectricityThroughRelay,
     sessionClient,
     walletClient,
   ]);

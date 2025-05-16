@@ -101,6 +101,11 @@ export const useMUD = (): {
     sellElectricity: (
       electricityAmount: bigint,
     ) => Promise<{ error: string | undefined; success: boolean }>;
+    sellElectricityThroughRelay: (electricityAmount: bigint) => Promise<{
+      error: string | undefined;
+      success: boolean;
+      txHash?: `0x${string}`;
+    }>;
   };
 } => {
   const { address: playerAddress } = useAccount();
@@ -469,6 +474,33 @@ export const useMUD = (): {
     }
   };
 
+  const sellElectricityThroughRelay = async (electricityAmount: bigint) => {
+    try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+      const tx = await worldContract.write.app__sellElectricityThroughRelay([
+        electricityAmount,
+      ]);
+      const txResult = await sync.data.waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+
+      return {
+        error: success
+          ? undefined
+          : 'Failed to sell electricity through relay.',
+        success,
+        txHash: txResult.transactionHash,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const network = {
     playerEntity,
   };
@@ -487,6 +519,7 @@ export const useMUD = (): {
     nextTurn,
     saveModification,
     sellElectricity,
+    sellElectricityThroughRelay,
   };
   return { components, network, systemCalls };
 };
