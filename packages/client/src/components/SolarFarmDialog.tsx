@@ -54,6 +54,8 @@ import {
 } from '@/utils/helpers';
 
 const CANCELLED_TX_ERROR = 'User rejected the request';
+const BUY_ESCROW_TX_KEY = 'buyEscrowTx';
+const SELL_EMITTER_TX_KEY = 'sellEmitterTx';
 
 export const SolarFarmDialog: React.FC = () => {
   const { address: playerAddress, chainId } = useAccount();
@@ -318,10 +320,6 @@ export const SolarFarmDialog: React.FC = () => {
       setIsProcessing(true);
       playSfx('click2');
 
-      if (isBuying) {
-        await onApprove();
-      }
-
       if (!walletClient) {
         throw new Error('Wallet client not found');
       }
@@ -354,18 +352,37 @@ export const SolarFarmDialog: React.FC = () => {
         transport: http(),
       });
 
-      const usdcAmount = parseUnits(calculateTransactionCost().toString(), 6);
+      let txHash: `0x${string}` | null = null;
 
       if (isBuying) {
-        // Send USDC to escrow contract
-        const buyEscrowArgs = {
-          address: buyEscrowAddress as `0x${string}`,
-          abi: ESCROW_ABI,
-          functionName: 'buyElectricity',
-          args: [usdcAmount],
-        };
+        // Check if there is already a send USDC to escrow tx in local storage
+        const existingTx = localStorage.getItem(BUY_ESCROW_TX_KEY);
+        if (existingTx) {
+          const parsedTx = JSON.parse(existingTx);
+          txHash = parsedTx.txHash as `0x${string}`;
+        } else {
+          await onApprove();
 
-        let txHash = await walletClient.writeContract(buyEscrowArgs);
+          // Send USDC to escrow contract
+          const buyEscrowArgs = {
+            address: buyEscrowAddress as `0x${string}`,
+            abi: ESCROW_ABI,
+            functionName: 'buyElectricity',
+            args: [parseUnits(calculateTransactionCost().toString(), 6)],
+          };
+
+          txHash = await walletClient.writeContract(buyEscrowArgs);
+          if (txHash) {
+            localStorage.setItem(
+              BUY_ESCROW_TX_KEY,
+              JSON.stringify({ txHash, timestamp: Date.now() }),
+            );
+          }
+        }
+        if (!txHash) {
+          throw new Error('Transaction hash not found');
+        }
+
         let txResult = await externalPublicClient.waitForTransactionReceipt({
           hash: txHash,
           confirmations: 1,
@@ -395,7 +412,8 @@ export const SolarFarmDialog: React.FC = () => {
           throw new Error('Parsed log not found');
         }
 
-        const { nonce } = parsedLog.args as unknown as {
+        const { amount, nonce } = parsedLog.args as unknown as {
+          amount: bigint;
           nonce: bigint;
         };
 
@@ -405,7 +423,7 @@ export const SolarFarmDialog: React.FC = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            amount: usdcAmount.toString(),
+            amount: amount.toString(),
             buyer: playerAddress,
             nonce: BigInt(nonce).toString(),
             txHash,
@@ -423,7 +441,7 @@ export const SolarFarmDialog: React.FC = () => {
           address: buyReceiverAddress as `0x${string}`,
           abi: BUY_RECEIVER_ABI,
           functionName: 'handleElectricityPurchase',
-          args: [playerAddress, usdcAmount, nonce, signature],
+          args: [playerAddress, amount, nonce, signature],
         };
 
         await gamePublicClient.simulateContract(buyReceiverArgs);
@@ -448,27 +466,41 @@ export const SolarFarmDialog: React.FC = () => {
         if (!success) {
           throw new Error('Smart contract error occurred');
         }
+
+        // Remove the buyEscrowTx from local storage
+        localStorage.removeItem(BUY_ESCROW_TX_KEY);
       } else {
-        // Call world contract to emit electricity sale event
-        const {
-          error,
-          success: relayTxSuccess,
-          txHash: relayTxHash,
-        } = await sellElectricityThroughRelay(
-          parseUnits(electricityAmount, 3), // Convert kWh to watt-hours
-        );
+        // Check if there is already a send USDC to escrow tx in local storage
+        const existingTx = localStorage.getItem(SELL_EMITTER_TX_KEY);
+        if (existingTx) {
+          const parsedTx = JSON.parse(existingTx);
+          txHash = parsedTx.txHash as `0x${string}`;
+        } else {
+          // Call world contract to emit electricity sale event
+          const sellThroughRelayResult = await sellElectricityThroughRelay(
+            parseUnits(electricityAmount, 3), // Convert kWh to watt-hours
+          );
 
-        if (error && !relayTxSuccess) {
-          throw new Error(error);
+          const { error } = sellThroughRelayResult;
+          txHash = sellThroughRelayResult.txHash ?? null;
+
+          if (error) {
+            throw new Error(error);
+          }
+          if (txHash) {
+            localStorage.setItem(
+              SELL_EMITTER_TX_KEY,
+              JSON.stringify({ txHash, timestamp: Date.now() }),
+            );
+          }
         }
-
-        if (!relayTxHash) {
+        if (!txHash) {
           throw new Error('Transaction hash not found');
         }
 
         // Get signature from API
         let txResult = await gamePublicClient.waitForTransactionReceipt({
-          hash: relayTxHash,
+          hash: txHash,
           confirmations: 1,
         });
 
@@ -490,7 +522,8 @@ export const SolarFarmDialog: React.FC = () => {
           throw new Error('Parsed log not found');
         }
 
-        const { nonce } = parsedLog.args as unknown as {
+        const { receiveAmount, nonce } = parsedLog.args as unknown as {
+          receiveAmount: bigint;
           nonce: bigint;
         };
 
@@ -500,10 +533,10 @@ export const SolarFarmDialog: React.FC = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            amount: usdcAmount.toString(),
+            amount: receiveAmount.toString(),
             nonce: BigInt(nonce).toString(),
             seller: playerAddress,
-            txHash: relayTxHash,
+            txHash,
           }),
         });
 
@@ -518,10 +551,10 @@ export const SolarFarmDialog: React.FC = () => {
           address: buyEscrowAddress as `0x${string}`,
           abi: ESCROW_ABI,
           functionName: 'sellElectricity',
-          args: [playerAddress, usdcAmount, nonce, signature],
+          args: [playerAddress, receiveAmount, nonce, signature],
         };
 
-        const txHash = await walletClient.writeContract(sellEscrowArgs);
+        txHash = await walletClient.writeContract(sellEscrowArgs);
         txResult = await externalPublicClient.waitForTransactionReceipt({
           hash: txHash,
           confirmations: 1,
@@ -531,6 +564,9 @@ export const SolarFarmDialog: React.FC = () => {
         if (!success) {
           throw new Error('Smart contract error occurred');
         }
+
+        // Remove the sellEmitterTx from local storage
+        localStorage.removeItem(SELL_EMITTER_TX_KEY);
       }
 
       toast.success(
