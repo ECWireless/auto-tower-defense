@@ -1,12 +1,13 @@
 import { pyrope } from '@latticexyz/common/chains';
 import { createWagmiConfig } from '@latticexyz/entrykit/internal';
 import { http, webSocket } from 'viem';
-import { anvil, baseSepolia } from 'viem/chains';
+import { anvil, base, baseSepolia } from 'viem/chains';
 
 import { CHAIN_ID, chains } from '@/utils/constants';
 
 export const transports = {
   [anvil.id]: webSocket(),
+  [base.id]: http(),
   [baseSepolia.id]: http(),
   [pyrope.id]: webSocket(),
 } as const;
@@ -17,6 +18,7 @@ export const wagmiConfig = createWagmiConfig({
   chains,
   pollingInterval: {
     [anvil.id]: 2000,
+    [base.id]: 2000,
     [baseSepolia.id]: 2000,
     [pyrope.id]: 2000,
   },

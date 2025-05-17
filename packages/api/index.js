@@ -12,7 +12,7 @@ const {
   toHex,
 } = require("viem");
 const { privateKeyToAccount } = require("viem/accounts");
-const { baseSepolia, pyrope } = require("viem/chains");
+const { base, pyrope } = require("viem/chains");
 const BASE_ESCOW_ABI = require("./abi/baseEscrowAbi.json");
 const SELL_EMITTER_ABI = require("./abi/sellEmitterAbi.json");
 
@@ -73,7 +73,7 @@ app.post("/buy-validator-signature", async (req, res) => {
 
   try {
     const basePublicClient = createPublicClient({
-      chain: baseSepolia,
+      chain: base,
       transport: http(),
     });
 
@@ -203,7 +203,7 @@ app.post("/sell-validator-signature", async (req, res) => {
     const validatorAccount = privateKeyToAccount(VALIDATOR_PRIVATE_KEY);
     const walletClient = createWalletClient({
       account: validatorAccount,
-      chain: baseSepolia,
+      chain: base,
       transport: http(),
     });
     const signature = await walletClient.signMessage({
