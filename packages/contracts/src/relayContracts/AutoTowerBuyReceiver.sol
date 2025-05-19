@@ -72,13 +72,13 @@ contract AutoTowerBuyReceiver {
     processed[structHash] = true;
 
     try ISolarFarmSystem(worldAddress).app__buyElectricityThroughRelay(buyer, spendAmount) {
-        return;
+      return;
     } catch Error(string memory reason) {
-        // The callee reverted with a reason string
-        revert(string.concat("Electricity grant failed: ", reason));
+      // The callee reverted with a reason string
+      revert(reason);
     } catch (bytes memory) {
-        // The callee reverted without a reason string
-        revert("Electricity grant failed failed without a reason");
+      // The callee reverted without a reason string
+      revert("Electricity grant failed without a reason");
     }
   }
 }

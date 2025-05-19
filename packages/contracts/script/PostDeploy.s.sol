@@ -30,7 +30,7 @@ contract PostDeploy is Script {
 
     // Add Solar Farm details
     SolarFarmDetailsData memory solarFarmDetails = SolarFarmDetailsData({
-      electricityBalance: 16800000000, // 16.8 GWh
+      electricityBalance: 16800000, // 16.8 MWh
       fiatBalance: 0,
       msPerWh: 3600,
       whPerCentPrice: 1920 // 1.92kWh/cent

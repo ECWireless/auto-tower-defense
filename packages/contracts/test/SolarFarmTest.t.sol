@@ -56,7 +56,7 @@ contract SolarFarmTest is MudTest {
 
     // Check Solar Farm's electricity balance and fiat balance
     uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
-    assertEq(solarFarmElectricityBalance, 16799998080); // 16.79999808 GWh
+    assertEq(solarFarmElectricityBalance, 16798080); // 16.798080 MWh
     uint256 solarFarmFiatBalance = SolarFarmDetails.getFiatBalance();
     assertEq(solarFarmFiatBalance, 100010000); // 100.01 USDC
 
@@ -91,7 +91,7 @@ contract SolarFarmTest is MudTest {
 
     // Check Solar Farm's electricity balance and fiat balance
     uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
-    assertEq(solarFarmElectricityBalance, 16799980800); // 16.799980800 GWh
+    assertEq(solarFarmElectricityBalance, 16780800); // 16.780800 MWh
     uint256 solarFarmFiatBalance = SolarFarmDetails.getFiatBalance();
     assertEq(solarFarmFiatBalance, 100100000); // 100.10 USDC
 
@@ -158,7 +158,7 @@ contract SolarFarmTest is MudTest {
 
     // Approve the Solar Farm System to spend 0.01 USDC
     usdc.approve(_solarFarmSystemAddress(), 10000); // 0.01 USDC
-    uint256 electricityAmount = 16800000000 + 1; // 16.8 GWh + 1
+    uint256 electricityAmount = 16800000 + 1; // 16.8 MWh + 1
     vm.expectRevert("SolarFarmSystem: not enough electricity in Solar Farm");
     IWorld(worldAddress).app__buyElectricity(electricityAmount);
     vm.stopPrank();
@@ -200,7 +200,7 @@ contract SolarFarmTest is MudTest {
 
     // Check Solar Farm's electricity balance and fiat balance
     uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
-    assertEq(solarFarmElectricityBalance, 16800000000); // 16.8 GWh
+    assertEq(solarFarmElectricityBalance, 16800000); // 16.8 MWh
     uint256 solarFarmFiatBalance = SolarFarmDetails.getFiatBalance();
     assertEq(solarFarmFiatBalance, 100000000); // 100.00 USDC
 
