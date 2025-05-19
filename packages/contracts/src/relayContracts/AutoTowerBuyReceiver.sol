@@ -4,6 +4,10 @@ pragma solidity >=0.8.24;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
+interface ISolarFarmSystem {
+  function app__buyElectricityThroughRelay(address receiver, uint256 usdcAmount) external;
+}
+
 /// @title AutoTowerBuyReceiver
 /// @notice Deployed on Redstone/Pyrope. Receives cross-chain messages from Base Mainnet/Base Sepolia
 ///         via player with validator signature and mints electricity in the MUD world.
@@ -67,9 +71,14 @@ contract AutoTowerBuyReceiver {
     require(!processed[structHash], "Already processed");
     processed[structHash] = true;
 
-    (bool success, ) = worldAddress.call(
-      abi.encodeWithSignature("app__buyElectricityThroughRelay(address,uint256)", buyer, spendAmount)
-    );
-    require(success, "Electricity grant failed");
+    try ISolarFarmSystem(worldAddress).app__buyElectricityThroughRelay(buyer, spendAmount) {
+        return;
+    } catch Error(string memory reason) {
+        // The callee reverted with a reason string
+        revert(string.concat("Electricity grant failed: ", reason));
+    } catch (bytes memory) {
+        // The callee reverted without a reason string
+        revert("Electricity grant failed failed without a reason");
+    }
   }
 }
