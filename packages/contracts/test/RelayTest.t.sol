@@ -11,6 +11,7 @@ import { BatteryDetails, SolarFarmDetails, SolarFarmDetailsData } from "../src/c
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import "../src/relayContracts/AutoTowerEscrow.sol";
 import "../src/relayContracts/AutoTowerBuyReceiver.sol";
+import "../src/relayContracts/AutoTowerSellEmitter.sol";
 import "../mocks/MockUSDC.sol";
 import "forge-std/console.sol";
 
@@ -25,6 +26,7 @@ contract RelayTest is MudTest {
 
   AutoTowerEscrow public relayEscrow;
   AutoTowerBuyReceiver public relayReceiver;
+  AutoTowerSellEmitter public relayEmitter;
   address public usdcAddress = vm.envAddress("USDC_ADDRESS");
   address public adminAddress = vm.addr(vm.envUint("PRIVATE_KEY"));
 
@@ -32,13 +34,19 @@ contract RelayTest is MudTest {
   event ElectricitySale(address indexed seller, uint256 amount, uint256 nonce);
 
   function _deployRelayContracts() public {
+    vm.prank(adminAddress);
+    address solarFarmAddress = IWorld(worldAddress).app__getSolarFarmSystemAddress();
+
     vm.startPrank(relayOwner);
     relayEscrow = new AutoTowerEscrow(usdcAddress, relayValidator);
     relayReceiver = new AutoTowerBuyReceiver(relayValidator, worldAddress);
+    relayEmitter = new AutoTowerSellEmitter(solarFarmAddress);
     vm.stopPrank();
 
-    vm.prank(adminAddress);
+    vm.startPrank(adminAddress);
     IWorld(worldAddress).app__updateBuyReceiverAddress(address(relayReceiver));
+    IWorld(worldAddress).app__updateSellEmitterAddress(address(relayEmitter));
+    vm.stopPrank();
 
     vm.startPrank(aliceAddress);
     MockUSDC usdc = MockUSDC(usdcAddress);
@@ -377,7 +385,7 @@ contract RelayTest is MudTest {
     assertEq(BatteryDetails.getReserveBalance(aliceGlobalId), aliceNewReserveBalance);
   }
 
-  function testRevertBuyThroughRelayZeroPurchase() public {
+  function testRevertBuyThroughRelayZeroAmount() public {
     _deployRelayContracts();
 
     uint256 spendAmount = 0;
@@ -464,6 +472,138 @@ contract RelayTest is MudTest {
   }
 
   /// SELL THROUGH RELAY TESTS ///
+  function testSellElectricityThroughRelay() public {
+    _deployRelayContracts();
+
+    uint256 spendAmount = 1 * 1e6;
+    uint256 nonce = 1;
+    bytes32 structHash = keccak256(abi.encode(aliceAddress, spendAmount, nonce));
+    bytes32 ethHash = structHash.toEthSignedMessageHash();
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, ethHash);
+    bytes memory signature = abi.encodePacked(r, s, v);
+
+    vm.prank(aliceAddress);
+    // Create a game to get battery
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    // End game to have stake returned
+    _endGame(aliceAddress, gameId);
+
+    // Buy 1 USDC worth of electricity, so that it can be sold
+    vm.prank(aliceAddress);
+    relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
+
+    // Sell 0.50 USDC worth of electricity
+    uint256 electricityAmount = 96000;
+    vm.prank(aliceAddress);
+    IWorld(worldAddress).app__sellElectricityThroughRelay(electricityAmount);
+
+    SolarFarmDetailsData memory solarFarmDetails = SolarFarmDetails.get();
+    bytes32 aliceGlobalId = EntityHelpers.globalAddressToKey(aliceAddress);
+
+    assertEq(solarFarmDetails.electricityBalance, 16800000 - 192000 + electricityAmount);
+    assertEq(solarFarmDetails.fiatBalance, (100 * 1e6) + spendAmount - (5 * 1e5));
+    assertEq(BatteryDetails.getReserveBalance(aliceGlobalId), electricityAmount);
+  }
+
+  function testRevertSellThroughRelayZeroAmount() public {
+    _deployRelayContracts();
+
+    uint256 spendAmount = 1 * 1e6;
+    uint256 nonce = 1;
+    bytes32 structHash = keccak256(abi.encode(aliceAddress, spendAmount, nonce));
+    bytes32 ethHash = structHash.toEthSignedMessageHash();
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, ethHash);
+    bytes memory signature = abi.encodePacked(r, s, v);
+
+    vm.prank(aliceAddress);
+    // Create a game to get battery
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    // End game to have stake returned
+    _endGame(aliceAddress, gameId);
+
+    // Buy 1 USDC worth of electricity, so that it can be sold
+    vm.prank(aliceAddress);
+    relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
+
+    vm.prank(aliceAddress);
+    vm.expectRevert("SolarFarmSystem: electricity amount must be greater than 0");
+    IWorld(worldAddress).app__sellElectricityThroughRelay(0);
+  }
+
+  function testRevertSellThroughRelayLessThanCent() public {
+    _deployRelayContracts();
+
+    uint256 spendAmount = 1 * 1e6;
+    uint256 nonce = 1;
+    bytes32 structHash = keccak256(abi.encode(aliceAddress, spendAmount, nonce));
+    bytes32 ethHash = structHash.toEthSignedMessageHash();
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, ethHash);
+    bytes memory signature = abi.encodePacked(r, s, v);
+
+    vm.prank(aliceAddress);
+    // Create a game to get battery
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    // End game to have stake returned
+    _endGame(aliceAddress, gameId);
+
+    // Buy 1 USDC worth of electricity, so that it can be sold
+    vm.prank(aliceAddress);
+    relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
+
+    vm.prank(aliceAddress);
+    vm.expectRevert("SolarFarmSystem: amount must be greater than 0.01 USDC");
+    IWorld(worldAddress).app__sellElectricityThroughRelay(1);
+  }
+
+  function testRevertSellThroughRelayNotEnoughFiat() public {
+    _deployRelayContracts();
+
+    uint256 spendAmount = 1 * 1e6;
+    uint256 nonce = 1;
+    bytes32 structHash = keccak256(abi.encode(aliceAddress, spendAmount, nonce));
+    bytes32 ethHash = structHash.toEthSignedMessageHash();
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, ethHash);
+    bytes memory signature = abi.encodePacked(r, s, v);
+
+    vm.prank(aliceAddress);
+    // Create a game to get battery
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    // End game to have stake returned
+    _endGame(aliceAddress, gameId);
+
+    // Buy 1 USDC worth of electricity, so that it can be sold
+    vm.prank(aliceAddress);
+    relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
+
+    vm.prank(aliceAddress);
+    vm.expectRevert("SolarFarmSystem: not enough USDC in Solar Farm");
+    IWorld(worldAddress).app__sellElectricityThroughRelay(1000000000); // 1,000 USDC
+  }
+
+  function testRevertSellThroughRelayNotEnoughElectricity() public {
+    _deployRelayContracts();
+
+    uint256 spendAmount = 1 * 1e6;
+    uint256 nonce = 1;
+    bytes32 structHash = keccak256(abi.encode(aliceAddress, spendAmount, nonce));
+    bytes32 ethHash = structHash.toEthSignedMessageHash();
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, ethHash);
+    bytes memory signature = abi.encodePacked(r, s, v);
+
+    vm.prank(aliceAddress);
+    // Create a game to get battery
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    // End game to have stake returned
+    _endGame(aliceAddress, gameId);
+
+    // Buy 1 USDC worth of electricity, so that it can be sold
+    vm.prank(aliceAddress);
+    relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
+
+    vm.prank(aliceAddress);
+    vm.expectRevert("SolarFarmSystem: not enough electricity in battery reserve");
+    IWorld(worldAddress).app__sellElectricityThroughRelay(192000 + 1);
+  }
 
   /// BUY EMITTER TESTS ///
 }
