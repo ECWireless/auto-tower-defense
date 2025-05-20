@@ -1,15 +1,15 @@
 import { useState } from 'react';
 
-import { getChain, getWorldAddress } from '@/common';
 import { MUDIcon } from '@/components/icons/MUDIcon';
+import { getGameChain, getWorldAddress } from '@/utils/helpers';
 
 export const Explorer = (): JSX.Element | null => {
   const [open, setOpen] = useState(false);
 
-  const chain = getChain();
+  const gameChain = getGameChain();
   const worldAddress = getWorldAddress();
 
-  const explorerUrl = chain.blockExplorers?.worldsExplorer?.url;
+  const explorerUrl = gameChain.blockExplorers?.worldsExplorer?.url;
   if (!explorerUrl) return null;
 
   return (

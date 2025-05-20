@@ -14,6 +14,24 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__buyElectricityThroughRelay",
+    "inputs": [
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "usdcAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__claimRecharge",
     "inputs": [],
     "outputs": [],
@@ -108,6 +126,19 @@ declare const abi: [
   {
     "type": "function",
     "name": "app__getGameSystemAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "app__getSolarFarmSystemAddress",
     "inputs": [],
     "outputs": [
       {
@@ -278,6 +309,58 @@ declare const abi: [
         "name": "electricityAmount",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__sellElectricityThroughRelay",
+    "inputs": [
+      {
+        "name": "electricityAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updatUsdcAddress",
+    "inputs": [
+      {
+        "name": "usdcAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateBuyReceiverAddress",
+    "inputs": [
+      {
+        "name": "buyReceiverAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateSellEmitterAddress",
+    "inputs": [
+      {
+        "name": "sellEmitterAddress",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],

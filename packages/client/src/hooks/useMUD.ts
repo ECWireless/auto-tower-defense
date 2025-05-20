@@ -10,9 +10,10 @@ import {
 } from 'viem';
 import { useAccount } from 'wagmi';
 
-import { getChain } from '@/common';
 import { components } from '@/mud/recs';
 import { useWorldContract } from '@/mud/useWorldContract';
+import { SELL_EMITTER_TX_KEY } from '@/utils/constants';
+import { getGameChain } from '@/utils/helpers';
 
 const getContractError = (error: BaseError): string => {
   const revertError = error.walk(
@@ -101,6 +102,11 @@ export const useMUD = (): {
     sellElectricity: (
       electricityAmount: bigint,
     ) => Promise<{ error: string | undefined; success: boolean }>;
+    sellElectricityThroughRelay: (electricityAmount: bigint) => Promise<{
+      error: string | undefined;
+      success: boolean;
+      txHash?: `0x${string}`;
+    }>;
   };
 } => {
   const { address: playerAddress } = useAccount();
@@ -119,11 +125,29 @@ export const useMUD = (): {
     );
   }, [playerAddress]);
 
+  const publicClient = useMemo(
+    () =>
+      createPublicClient({
+        batch: { multicall: false },
+        chain: getGameChain(),
+        transport: http(),
+      }),
+    [],
+  );
+
   const buyElectricity = async (electricityAmount: bigint) => {
     try {
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
       }
+
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [electricityAmount],
+        functionName: 'app__buyElectricity',
+      });
 
       const tx = await worldContract.write.app__buyElectricity([
         electricityAmount,
@@ -150,6 +174,14 @@ export const useMUD = (): {
         throw new Error('World contract or sync data not found');
       }
 
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [],
+        functionName: 'app__claimRecharge',
+      });
+
       const tx = await worldContract.write.app__claimRecharge();
       const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
@@ -172,6 +204,14 @@ export const useMUD = (): {
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
       }
+
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [username, resetLevel],
+        functionName: 'app__createGame',
+      });
 
       const tx = await worldContract.write.app__createGame(
         [username, resetLevel],
@@ -202,6 +242,14 @@ export const useMUD = (): {
         throw new Error('World contract or sync data not found');
       }
 
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [savedModificationId as `0x${string}`],
+        functionName: 'app__deleteModification',
+      });
+
       const tx = await worldContract.write.app__deleteModification([
         savedModificationId as `0x${string}`,
       ]);
@@ -231,6 +279,14 @@ export const useMUD = (): {
         throw new Error('World contract or sync data not found');
       }
 
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [savedModificationId as `0x${string}`, description, name],
+        functionName: 'app__editModification',
+      });
+
       const tx = await worldContract.write.app__editModification([
         savedModificationId as `0x${string}`,
         description,
@@ -258,6 +314,14 @@ export const useMUD = (): {
         throw new Error('World contract or sync data not found');
       }
 
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [],
+        functionName: 'app__forfeitRun',
+      });
+
       const tx = await worldContract.write.app__forfeitRun();
       const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
@@ -281,12 +345,6 @@ export const useMUD = (): {
         throw new Error('World contract or sync data not found');
       }
 
-      const publicClient = createPublicClient({
-        chain: getChain(),
-        transport: http(),
-        batch: { multicall: false },
-      });
-
       const simulatedTx = await publicClient.simulateContract({
         abi: worldContract.abi,
         address: worldContract.address,
@@ -306,6 +364,14 @@ export const useMUD = (): {
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
       }
+
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [projectile, x, y],
+        functionName: 'app__playerInstallTower',
+      });
 
       const tx = await worldContract.write.app__playerInstallTower([
         projectile,
@@ -338,6 +404,14 @@ export const useMUD = (): {
         throw new Error('World contract or sync data not found');
       }
 
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [towerId as `0x${string}`, bytecode as `0x${string}`, sourceCode],
+        functionName: 'app__playerModifyTowerSystem',
+      });
+
       const tx = await worldContract.write.app__playerModifyTowerSystem([
         towerId as `0x${string}`,
         bytecode as `0x${string}`,
@@ -365,6 +439,14 @@ export const useMUD = (): {
         throw new Error('World contract or sync data not found');
       }
 
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [towerId as `0x${string}`, x, y],
+        functionName: 'app__playerMoveTower',
+      });
+
       const tx = await worldContract.write.app__playerMoveTower([
         towerId as `0x${string}`,
         x,
@@ -391,6 +473,14 @@ export const useMUD = (): {
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
       }
+
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [gameId as `0x${string}`],
+        functionName: 'app__nextTurn',
+      });
 
       const tx = await worldContract.write.app__nextTurn([
         gameId as `0x${string}`,
@@ -422,6 +512,14 @@ export const useMUD = (): {
         throw new Error('World contract or sync data not found');
       }
 
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [bytecode as `0x${string}`, description, name, sourceCode],
+        functionName: 'app__saveModification',
+      });
+
       const tx = await worldContract.write.app__saveModification([
         bytecode as `0x${string}`,
         description,
@@ -450,6 +548,14 @@ export const useMUD = (): {
         throw new Error('World contract or sync data not found');
       }
 
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [electricityAmount],
+        functionName: 'app__sellElectricity',
+      });
+
       const tx = await worldContract.write.app__sellElectricity([
         electricityAmount,
       ]);
@@ -460,6 +566,47 @@ export const useMUD = (): {
       return {
         error: success ? undefined : 'Failed to sell electricity.',
         success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
+  const sellElectricityThroughRelay = async (electricityAmount: bigint) => {
+    try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [electricityAmount],
+        functionName: 'app__sellElectricityThroughRelay',
+      });
+
+      const tx = await worldContract.write.app__sellElectricityThroughRelay([
+        electricityAmount,
+      ]);
+      // Store the tx now so SolarFarmDialog doesn't have to wait for the tx to be confirmed
+      localStorage.setItem(
+        SELL_EMITTER_TX_KEY,
+        JSON.stringify({ txHash: tx, timestamp: Date.now() }),
+      );
+      const txResult = await sync.data.waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+
+      return {
+        error: success
+          ? undefined
+          : 'Failed to sell electricity through relay.',
+        success,
+        txHash: tx,
       };
     } catch (error) {
       return {
@@ -487,6 +634,7 @@ export const useMUD = (): {
     nextTurn,
     saveModification,
     sellElectricity,
+    sellElectricityThroughRelay,
   };
   return { components, network, systemCalls };
 };

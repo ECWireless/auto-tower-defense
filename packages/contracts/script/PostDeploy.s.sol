@@ -30,21 +30,22 @@ contract PostDeploy is Script {
 
     // Add Solar Farm details
     SolarFarmDetailsData memory solarFarmDetails = SolarFarmDetailsData({
-      electricityBalance: 16800000000, // 16.8 GWh
+      electricityBalance: 16800000, // 16.8 MWh
       fiatBalance: 0,
       msPerWh: 3600,
       whPerCentPrice: 1920 // 1.92kWh/cent
     });
     SolarFarmDetails.set(solarFarmDetails);
 
+    address solarFarmSystemAddress = _solarFarmSystemAddress();
+    AddressBook.setSolarFarmAddress(solarFarmSystemAddress);
+
     if (block.chainid == 31337) {
       uint256 solarFarmerStartingBalance = 100 * 1e6;
       SolarFarmDetails.setFiatBalance(solarFarmerStartingBalance);
 
       // Send USDC to the Solar Farm System
-      address solarFarmSystemAddress = _solarFarmSystemAddress();
       address mockUsdcAddress = _deployMockUSDC(solarFarmSystemAddress, solarFarmerStartingBalance);
-      AddressBook.setSolarFarmAddress(solarFarmSystemAddress);
       AddressBook.setUsdcAddress(mockUsdcAddress);
       MockUSDC usdc = MockUSDC(mockUsdcAddress);
       uint256 balance = usdc.balanceOf(solarFarmSystemAddress);

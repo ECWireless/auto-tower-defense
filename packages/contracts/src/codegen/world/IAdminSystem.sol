@@ -11,5 +11,13 @@ pragma solidity >=0.8.24;
 interface IAdminSystem {
   function app__mintUsdcToPlayer(address player, uint256 amount) external;
 
+  function app__getSolarFarmSystemAddress() external view returns (address);
+
   function app__updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external;
+
+  function app__updatUsdcAddress(address usdcAddress) external;
+
+  function app__updateBuyReceiverAddress(address buyReceiverAddress) external;
+
+  function app__updateSellEmitterAddress(address sellEmitterAddress) external;
 }
