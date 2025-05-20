@@ -42,12 +42,13 @@ export const Home = (): JSX.Element => {
       KingdomsByLevel,
       PlayerCount,
       SavedKingdom,
+      SolarFarmDetails,
       TopLevel,
       Username,
       WinStreak,
     },
     network: { playerEntity },
-    systemCalls: { createGame },
+    systemCalls: { claimRecharge, createGame },
   } = useMUD();
   const { playSfx } = useSettings();
   const { setIsSolarFarmDialogOpen } = useSolarFarm();
@@ -57,6 +58,7 @@ export const Home = (): JSX.Element => {
   const [isCreatingGame, setIsCreatingGame] = useState(false);
 
   const [isMaxPlayersDialogOpen, setIsMaxPlayersDialogOpen] = useState(false);
+  const [isClaimingRecharge, setIsClaimingRecharge] = useState(false);
 
   // Ensure home page title is always "Auto Tower Defense"
   useEffect(() => {
@@ -68,6 +70,7 @@ export const Home = (): JSX.Element => {
   );
 
   const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
+  const solarFarmDetails = useComponentValue(SolarFarmDetails, singletonEntity);
 
   const batteryCharge = useMemo(() => {
     if (!batteryDetails) return 0;
@@ -76,6 +79,17 @@ export const Home = (): JSX.Element => {
       (Number(activeBalance) / BATTERY_STORAGE_LIMIT) * 100;
     return Math.round(percentOfStorage);
   }, [batteryDetails]);
+
+  const claimableRecharge = useMemo(() => {
+    if (!(batteryDetails && solarFarmDetails)) return BigInt(0);
+    const { lastRechargeTimestamp } = batteryDetails;
+    const currentTime = Date.now();
+    const timeSinceLastRecharge =
+      currentTime - Number(lastRechargeTimestamp) * 1000;
+    return BigInt(
+      Math.floor(timeSinceLastRecharge / Number(solarFarmDetails.msPerWh)),
+    );
+  }, [batteryDetails, solarFarmDetails]);
 
   const onCreateGame = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -191,6 +205,30 @@ export const Home = (): JSX.Element => {
     ],
   );
 
+  const onClaimRecharge = useCallback(async () => {
+    try {
+      setIsClaimingRecharge(true);
+      playSfx('click2');
+
+      const { error, success } = await claimRecharge();
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast.success('Recharge Claimed!');
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Claiming Recharge', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsClaimingRecharge(false);
+    }
+  }, [claimRecharge, playSfx]);
+
   useEffect(() => {
     if (!playerEntity) return;
     const savedUsername = getComponentValue(Username, playerEntity)?.value;
@@ -203,6 +241,23 @@ export const Home = (): JSX.Element => {
   return (
     <div className="bg-black flex flex-col min-h-screen p-4 relative text-white">
       <BackgroundAnimation />
+      {/* Claim Recharge Button */}
+      {claimableRecharge > BigInt(1_000) &&
+        (batteryDetails?.activeBalance ?? BigInt(0)) <
+          BATTERY_STORAGE_LIMIT && (
+          <Button
+            className="bg-green-800/80 border border-green-600/50 fixed hover:bg-green-700/90 left-1/2 mt-2 shadow-green-900/20 shadow-md text-green-100 text-xs top-4"
+            disabled={isClaimingRecharge}
+            onClick={onClaimRecharge}
+            size="sm"
+            style={{
+              transform: 'translateX(-50%)',
+            }}
+          >
+            {isClaimingRecharge && <Loader2 className="animate-spin h-6 w-6" />}
+            Claim Recharge (+{formatWattHours(claimableRecharge)})
+          </Button>
+        )}
 
       <h1 className="bg-clip-text bg-gradient-to-r font-bold from-purple-400 mb-6 mt-20 text-center text-transparent text-4xl to-pink-400 via-cyan-400">
         AUTO TOWER DEFENSE
