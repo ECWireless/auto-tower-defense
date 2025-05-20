@@ -133,7 +133,7 @@ contract RelayTest is MudTest {
     _deployRelayContracts();
 
     vm.startPrank(aliceAddress);
-    vm.expectRevert("Amount must be greater than 0");
+    vm.expectRevert("Amount must be greater than 0.01 USDC");
     relayEscrow.buyElectricity(0);
     vm.stopPrank();
   }
@@ -212,7 +212,7 @@ contract RelayTest is MudTest {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, ethHash);
 
     bytes memory signature = abi.encodePacked(r, s, v);
-    vm.expectRevert("Amount must be greater than 0");
+    vm.expectRevert("Amount must be greater than 0.01 USDC");
     relayEscrow.sellElectricity(aliceAddress, receiveAmount, nonce, signature);
     vm.stopPrank();
   }
