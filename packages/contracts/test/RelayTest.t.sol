@@ -32,6 +32,7 @@ contract RelayTest is MudTest {
 
   event ElectricityPurchase(address indexed buyer, uint256 amount, uint256 nonce);
   event ElectricitySale(address indexed seller, uint256 amount, uint256 nonce);
+  event ElectricitySold(address indexed seller, uint256 receiveAmount, uint256 nonce);
 
   function _deployRelayContracts() public {
     vm.prank(adminAddress);
@@ -79,7 +80,7 @@ contract RelayTest is MudTest {
     assertEq(escrowValidator, relayValidator);
   }
 
-  function testTransferOwnership() public {
+  function testEscrowTransferOwnership() public {
     _deployRelayContracts();
 
     vm.prank(relayOwner);
@@ -89,7 +90,7 @@ contract RelayTest is MudTest {
     assertEq(newOwner, aliceAddress);
   }
 
-  function testRevertTransferOwnershipNotOwner() public {
+  function testRevertEscrowTransferOwnershipNotOwner() public {
     _deployRelayContracts();
 
     vm.startPrank(aliceAddress);
@@ -98,7 +99,7 @@ contract RelayTest is MudTest {
     vm.stopPrank();
   }
 
-  function testUpdateValidator() public {
+  function testEscrowUpdateValidator() public {
     _deployRelayContracts();
 
     vm.prank(relayOwner);
@@ -108,7 +109,7 @@ contract RelayTest is MudTest {
     assertEq(newValidator, aliceAddress);
   }
 
-  function testRevertUpdateValidatorNotOwner() public {
+  function testRevertEscrowUpdateValidatorNotOwner() public {
     _deployRelayContracts();
 
     vm.startPrank(aliceAddress);
@@ -117,7 +118,7 @@ contract RelayTest is MudTest {
     vm.stopPrank();
   }
 
-  function testBuyElectricity() public {
+  function testBuyEscrowElectricity() public {
     _deployRelayContracts();
 
     vm.startPrank(aliceAddress);
@@ -128,7 +129,7 @@ contract RelayTest is MudTest {
     vm.stopPrank();
   }
 
-  function testRevertBuyElectricityZeroAmount() public {
+  function testRevertBuyEscrowElectricityZeroAmount() public {
     _deployRelayContracts();
 
     vm.startPrank(aliceAddress);
@@ -137,7 +138,7 @@ contract RelayTest is MudTest {
     vm.stopPrank();
   }
 
-  function testSellElectricity() public {
+  function testSellEscrowElectricity() public {
     _deployRelayContracts();
 
     vm.startPrank(aliceAddress);
@@ -157,7 +158,7 @@ contract RelayTest is MudTest {
     vm.stopPrank();
   }
 
-  function testRevertSellElectricityInvalidSignature() public {
+  function testRevertSellEscrowElectricityInvalidSignature() public {
     _deployRelayContracts();
 
     vm.startPrank(aliceAddress);
@@ -176,7 +177,7 @@ contract RelayTest is MudTest {
     vm.stopPrank();
   }
 
-  function testRevertSellElectricityAlreadyProcessed() public {
+  function testRevertSellEscrowElectricityAlreadyProcessed() public {
     _deployRelayContracts();
 
     vm.startPrank(aliceAddress);
@@ -197,7 +198,7 @@ contract RelayTest is MudTest {
     vm.stopPrank();
   }
 
-  function testRevertSellElectricityZeroAmount() public {
+  function testRevertSellEscrowElectricityZeroAmount() public {
     _deployRelayContracts();
 
     vm.startPrank(aliceAddress);
@@ -605,5 +606,85 @@ contract RelayTest is MudTest {
     IWorld(worldAddress).app__sellElectricityThroughRelay(192000 + 1);
   }
 
-  /// BUY EMITTER TESTS ///
+  /// SELL EMITTER TESTS ///
+  function testIsEmitterInitialized() public {
+    _deployRelayContracts();
+
+    address emitterOwner = relayEmitter.owner();
+    address emitterSolarFarmSystem = relayEmitter.solarFarmSystem();
+
+    vm.prank(adminAddress);
+    address solarFarmSystemAddress = IWorld(worldAddress).app__getSolarFarmSystemAddress();
+
+    assertEq(emitterOwner, relayOwner);
+    assertEq(emitterSolarFarmSystem, solarFarmSystemAddress);
+  }
+
+  function testEmitterTransferOwnership() public {
+    _deployRelayContracts();
+
+    vm.startPrank(relayOwner);
+    relayEmitter.transferOwnership(aliceAddress);
+    vm.stopPrank();
+
+    address newOwner = relayEmitter.owner();
+    assertEq(newOwner, aliceAddress);
+  }
+
+  function testRevertEmitterTransferOwnershipNotOwner() public {
+    _deployRelayContracts();
+
+    vm.startPrank(aliceAddress);
+    vm.expectRevert("Not authorized");
+    relayEmitter.transferOwnership(aliceAddress);
+    vm.stopPrank();
+  }
+
+  function testEmitterUpdateSolarFarmSystem() public {
+    _deployRelayContracts();
+
+    vm.startPrank(relayOwner);
+    relayEmitter.updateSolarFarmSystem(aliceAddress);
+    vm.stopPrank();
+
+    address newSystem = relayEmitter.solarFarmSystem();
+    assertEq(newSystem, aliceAddress);
+  }
+
+  function testRevertEmitterUpdateSolarFarmSystemNotOwner() public {
+    _deployRelayContracts();
+
+    vm.startPrank(aliceAddress);
+    vm.expectRevert("Not authorized");
+    relayEmitter.updateSolarFarmSystem(aliceAddress);
+    vm.stopPrank();
+  }
+
+  function testEmitSellElectricity() public {
+    _deployRelayContracts();
+
+    uint256 spendAmount = 1 * 1e6;
+    uint256 nonce = 1;
+    bytes32 structHash = keccak256(abi.encode(aliceAddress, spendAmount, nonce));
+    bytes32 ethHash = structHash.toEthSignedMessageHash();
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, ethHash);
+    bytes memory signature = abi.encodePacked(r, s, v);
+
+    vm.prank(aliceAddress);
+    // Create a game to get battery
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    // End game to have stake returned
+    _endGame(aliceAddress, gameId);
+
+    // Buy 1 USDC worth of electricity, so that it can be sold
+    vm.prank(aliceAddress);
+    relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
+
+    // Sell 0.50 USDC worth of electricity
+    uint256 electricityAmount = 96000; // This is worth 0.50 USDC (5 * 1e5)
+    vm.prank(aliceAddress);
+    vm.expectEmit(true, false, false, true);
+    emit ElectricitySold(aliceAddress, 5 * 1e5, 1);
+    IWorld(worldAddress).app__sellElectricityThroughRelay(electricityAmount);
+  }
 }
