@@ -56,7 +56,7 @@ contract AutoTowerEscrow {
   /// @notice Called by user to purchase electricity with USDC
   /// @param spendAmount Amount of USDC to escrow
   function buyElectricity(uint256 spendAmount) external {
-    require(spendAmount > 0, "Amount must be greater than 0");
+    require(spendAmount > 1 * 1e4, "Amount must be greater than 0.01 USDC");
 
     bool success = usdc.transferFrom(msg.sender, address(this), spendAmount);
     require(success, "USDC transfer failed");
@@ -80,7 +80,7 @@ contract AutoTowerEscrow {
     require(!isSaleProcessed[structHash], "Already processed");
     isSaleProcessed[structHash] = true;
 
-    require(receiveAmount > 0, "Amount must be greater than 0");
+    require(receiveAmount > 1 * 1e4, "Amount must be greater than 0.01 USDC");
 
     bool success = usdc.transfer(seller, receiveAmount);
     require(success, "USDC payout failed");
