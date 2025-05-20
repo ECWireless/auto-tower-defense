@@ -79,8 +79,6 @@ export const InnerGamePage = (): JSX.Element => {
   });
   const sensors = useSensors(pointerSensor);
 
-  const [isClaimingRecharge, setIsClaimingRecharge] = useState(false);
-
   // Add game ID to tab title
   useEffect(() => {
     if (game) {
@@ -98,6 +96,7 @@ export const InnerGamePage = (): JSX.Element => {
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isGameOverDialogOpen, setIsGameOverDialogOpen] = useState(false);
   const [isBatteryInfoDialogOpen, setIsBatteryInfoDialogOpen] = useState(false);
+  const [isClaimingRecharge, setIsClaimingRecharge] = useState(false);
 
   useEffect(() => {
     if (!game) return;
@@ -305,7 +304,7 @@ export const InnerGamePage = (): JSX.Element => {
             {claimableRecharge > BigInt(1_000) &&
               batteryDetails.activeBalance < BATTERY_STORAGE_LIMIT && (
                 <Button
-                  className="mt-2 bg-green-800/80 hover:bg-green-700/90 text-green-100 text-xs border border-green-600/50 shadow-md shadow-green-900/20"
+                  className="bg-green-800/80 border border-green-600/50 mt-2 hover:bg-green-700/90 shadow-green-900/20 shadow-md text-green-100 text-xs"
                   disabled={isClaimingRecharge}
                   onClick={onClaimRecharge}
                   size="sm"
