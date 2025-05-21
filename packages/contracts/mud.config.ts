@@ -32,6 +32,7 @@ export default defineWorld({
       },
       key: [],
     },
+    AddressToPlayerId: "bytes32", // Use addressToKey helper function; returns globalPlayerId
     BatteryDetails: {
       id: "bytes32", // This is the globalPlayerId
       activeBalance: "uint256", // Electricity in watt-hours
@@ -46,7 +47,7 @@ export default defineWorld({
       },
       key: [],
     },
-    CurrentGame: "bytes32", // Game.id || towerId
+    CurrentGame: "bytes32", // globalPlayerId || tower Id
     DefaultLogic: {
       schema: {
         value: "address",
@@ -64,23 +65,23 @@ export default defineWorld({
         amountToBattery: "uint256", // Electricity in watt-hours
         amountToKingdom: "uint256", // Electricity in watt-hours
         gameId: "bytes32", // The gameId of the game that generated this expense
-        playerAddress: "address",
+        playerId: "bytes32",
         savedKingdomId: "bytes32",
         timestamp: "uint256",
-        authors: "address[]", // Authors of all the tower modifications used in the game
+        authors: "bytes23[]", // globalPlayerIds of all who authored the tower modifications used in the game
       },
       type: "offchainTable",
     },
     Game: {
-      id: "bytes32", // keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
+      id: "bytes32", // keccak256(abi.encodePacked(globalPlayer1Id, globalPlayer2Id, timestamp));
       actionCount: "uint8",
       endTimestamp: "uint256",
-      player1Address: "address",
-      player2Address: "address",
+      player1Id: "bytes32", // globalPlayerId
+      player2Id: "bytes32", // globalPlayerId
       roundCount: "uint8",
       startTimestamp: "uint256",
-      turn: "address",
-      winner: "address",
+      turn: "bytes32", // globalPlayerId
+      winner: "bytes32", // globalPlayerId
     },
     Health: {
       schema: {
@@ -125,14 +126,15 @@ export default defineWorld({
         dataStruct: false,
       },
     },
-    Owner: "address",
-    OwnerTowers: "bytes32[]",
+    Owner: "bytes32", // ID it the tower ID; return is the globalPlayerId
+    OwnerTowers: "bytes32[]", // ID is the localPlayerId; value is list of towerIds
     PlayerCount: {
       schema: {
         value: "uint256",
       },
       key: [],
     },
+    PlayerIdToAddress: "address", // globalPlayerId is keccak256(abi.encodePacked(username, msg.sender, block.timestamp)) from player registration
     Position: {
       schema: {
         id: "bytes32",
@@ -169,10 +171,10 @@ export default defineWorld({
         amountToKingdom: "uint256", // Electricity in watt-hours
         amountToReserve: "uint256", // Electricity in watt-hours
         gameId: "bytes32", // The gameId of the game that generated this revenue
-        playerAddress: "address",
+        playerId: "bytes32", // globalPlayerId
         savedKingdomId: "bytes32",
         timestamp: "uint256",
-        authors: "address[]", // Authors of all the tower modifications used in the game
+        authors: "bytes32[]", // globalPlayerIds of all who authored the tower modifications used in the game
       },
       type: "offchainTable",
     },
@@ -180,13 +182,13 @@ export default defineWorld({
       // This is the table that accumulates actions throughout a game; at the end of a run, it is copied to SavedKingdom
       id: "bytes32", // gameId of the game being played
       gameId: "bytes32",
-      winner: "address",
+      winner: "bytes32", // globalPlayerId
       actions: "bytes32[]",
     },
     SavedKingdom: {
       // This is the table accumulates revenue for each player (author)
       id: "bytes32", // This is a deterministic hash of all actions by the author in the game; keccak256(abi.encodePacked(actions[]))
-      author: "address",
+      author: "bytes32", // globalPlayerId
       createdAtTimestamp: "uint256",
       electricityBalance: "uint256",
       losses: "uint256",
@@ -195,7 +197,7 @@ export default defineWorld({
     },
     SavedModification: {
       id: "bytes32", // keccak256(abi.encodePacked(bytecode))
-      author: "address",
+      author: "bytes32", // globalPlayerId
       size: "uint256",
       timestamp: "uint256",
       useCount: "uint256",
