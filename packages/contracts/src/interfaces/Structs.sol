@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 struct TowerDetails {
   bytes32 id;
   uint8 health;
-  address owner;
+  bytes32 owner;
   address projectileAddress;
   int16 projectileX;
   int16 projectileY;

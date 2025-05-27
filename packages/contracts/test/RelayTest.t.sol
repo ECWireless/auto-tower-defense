@@ -382,7 +382,7 @@ contract RelayTest is MudTest {
     assertEq(solarFarmDetails.fiatBalance, farmNewFiatBalance);
 
     uint256 aliceNewReserveBalance = 192000;
-    bytes32 aliceGlobalId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 aliceGlobalId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     assertEq(BatteryDetails.getReserveBalance(aliceGlobalId), aliceNewReserveBalance);
   }
 
@@ -499,7 +499,7 @@ contract RelayTest is MudTest {
     IWorld(worldAddress).app__sellElectricityThroughRelay(electricityAmount);
 
     SolarFarmDetailsData memory solarFarmDetails = SolarFarmDetails.get();
-    bytes32 aliceGlobalId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 aliceGlobalId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
 
     assertEq(solarFarmDetails.electricityBalance, 16800000 - 192000 + electricityAmount);
     assertEq(solarFarmDetails.fiatBalance, (100 * 1e6) + spendAmount - (5 * 1e5));

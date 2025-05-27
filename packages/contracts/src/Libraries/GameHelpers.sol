@@ -15,40 +15,37 @@ import "forge-std/console.sol";
  */
 library GameHelpers {
   function initializeGame(
-    address player1Address,
-    address player2Address,
-    bytes32 savedKingdomId,
-    bytes32 globalPlayer1
+    bytes32 globalPlayer1Id,
+    bytes32 globalPlayer2Id,
+    bytes32 savedKingdomId
   ) public returns (bytes32) {
     uint256 timestamp = block.timestamp;
-    bytes32 gameId = keccak256(abi.encodePacked(player1Address, player2Address, timestamp));
+    bytes32 gameId = keccak256(abi.encodePacked(globalPlayer1Id, globalPlayer2Id, timestamp));
 
     GameData memory newGame = GameData({
       actionCount: MAX_ACTIONS,
       endTimestamp: 0,
-      player1Address: player1Address,
-      player2Address: player2Address,
+      player1Id: globalPlayer1Id,
+      player2Id: globalPlayer2Id,
       roundCount: 1,
       startTimestamp: timestamp,
-      turn: player1Address,
-      winner: address(0)
+      turn: globalPlayer1Id,
+      winner: bytes32(0)
     });
     Game.set(gameId, newGame);
-    CurrentGame.set(globalPlayer1, gameId);
+    CurrentGame.set(globalPlayer1Id, gameId);
 
-    bytes32 castle1Id = keccak256(abi.encodePacked(gameId, player1Address, timestamp));
-    bytes32 castle2Id = keccak256(abi.encodePacked(gameId, player2Address, timestamp));
+    bytes32 castle1Id = keccak256(abi.encodePacked(gameId, globalPlayer1Id, timestamp));
+    bytes32 castle2Id = keccak256(abi.encodePacked(gameId, globalPlayer2Id, timestamp));
 
     CurrentGame.set(castle1Id, gameId);
     CurrentGame.set(castle2Id, gameId);
 
-    Owner.set(castle1Id, player1Address);
-    Owner.set(castle2Id, player2Address);
+    Owner.set(castle1Id, globalPlayer1Id);
+    Owner.set(castle2Id, globalPlayer2Id);
 
-    bytes32 localPlayer1 = EntityHelpers.localAddressToKey(gameId, player1Address);
-    bytes32 localPlayer2 = EntityHelpers.localAddressToKey(gameId, player2Address);
-    OwnerTowers.set(localPlayer1, new bytes32[](0));
-    OwnerTowers.set(localPlayer2, new bytes32[](0));
+    OwnerTowers.set(EntityHelpers.globalToLocalPlayerId(globalPlayer1Id, gameId), new bytes32[](0));
+    OwnerTowers.set(EntityHelpers.globalToLocalPlayerId(globalPlayer2Id, gameId), new bytes32[](0));
 
     Castle.set(castle1Id, true);
     Castle.set(castle2Id, true);
@@ -70,14 +67,13 @@ library GameHelpers {
     });
     LoadedKingdomActions.set(gameId, loadedKingdomActions);
 
-    Level.set(gameId, WinStreak.get(globalPlayer1));
+    Level.set(gameId, WinStreak.get(globalPlayer1Id));
 
     return gameId;
   }
 
-  function nextLevel(address player1Address) public view returns (bytes32) {
-    bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
-    uint256 level = WinStreak.get(globalPlayer1);
+  function nextLevel(bytes32 globalPlayer1Id) public view returns (bytes32) {
+    uint256 level = WinStreak.get(globalPlayer1Id);
     uint256 topLevel = TopLevel.get();
     require(level > 0, "GameSystem: player1 has no win streak");
 
@@ -85,7 +81,7 @@ library GameHelpers {
 
     // If no playable saved game is found, go up a level
     for (uint256 i = 0; i < 10; i++) {
-      bytes32 savedKingdomId = _getPlayableSavedKingdomId(player1Address, randomNumber, level);
+      bytes32 savedKingdomId = _getPlayableSavedKingdomId(globalPlayer1Id, randomNumber, level);
       if (savedKingdomId != bytes32(0)) {
         return savedKingdomId;
       }
@@ -99,7 +95,7 @@ library GameHelpers {
   }
 
   function _getPlayableSavedKingdomId(
-    address player1Address,
+    bytes32 globalPlayer1Id,
     uint256 randomNumber,
     uint256 level
   ) internal view returns (bytes32) {
@@ -107,7 +103,7 @@ library GameHelpers {
     require(savedKingdomIds.length > 0, "GameSystem: no saved kingdoms available");
 
     bytes32 savedKingdomId;
-    address savedKingdomAuthor;
+    bytes32 savedKingdomAuthor;
 
     uint256 savedKingdomsOriginalLength = savedKingdomIds.length;
 
@@ -118,7 +114,7 @@ library GameHelpers {
       savedKingdomAuthor = SavedKingdom.getAuthor(savedKingdomId);
 
       // If the author is not the player, return the saved kingdom ID
-      if (savedKingdomAuthor != player1Address) {
+      if (savedKingdomAuthor != globalPlayer1Id) {
         return savedKingdomId;
       }
 
@@ -135,31 +131,30 @@ library GameHelpers {
     return bytes32(0);
   }
 
-  function validateCreateGame(bytes32 globalPlayer1, string memory username) public {
+  function validateCreateGame(bytes32 globalPlayer1Id, string memory username) public {
     uint256 playerCount = PlayerCount.get();
     require(playerCount < MAX_PLAYERS, "GameSystem: max players reached");
 
-    string memory player1Username = Username.get(globalPlayer1);
+    string memory player1Username = Username.get(globalPlayer1Id);
     if (bytes(player1Username).length == 0) {
       bytes32 usernameBytes = keccak256(abi.encodePacked(username));
       require(!UsernameTaken.get(usernameBytes), "GameSystem: username is taken");
-      Username.set(globalPlayer1, username);
+      Username.set(globalPlayer1Id, username);
       UsernameTaken.set(usernameBytes, true);
       PlayerCount.set(playerCount + 1);
 
       // Grant player a fully charged battery
-      BatteryHelpers.grantBattery(globalPlayer1);
+      BatteryHelpers.grantBattery(globalPlayer1Id);
     }
 
-    bytes32 currentGameId = CurrentGame.get(globalPlayer1);
+    bytes32 currentGameId = CurrentGame.get(globalPlayer1Id);
     if (currentGameId != 0) {
       GameData memory currentGame = Game.get(currentGameId);
       require(currentGame.endTimestamp != 0, "GameSystem: player1 has an ongoing game");
     }
   }
 
-  function executePlayer2Actions(bytes32 gameId, address player1Address, address player2Address) public {
-    bytes32 globalPlayer1 = EntityHelpers.globalAddressToKey(player1Address);
+  function executePlayer2Actions(bytes32 gameId, bytes32 globalPlayer1Id, bytes32 globalPlayer2Id) public {
     uint8 roundCount = Game.getRoundCount(gameId) - 1;
     uint8 actionCount = Game.getActionCount(gameId);
     uint256 actionIdIndex = (roundCount * MAX_ACTIONS) + (MAX_ACTIONS - actionCount);
@@ -176,8 +171,8 @@ library GameHelpers {
 
     if (action.actionType == ActionType.Install) {
       TowerHelpers.installTower(
-        player2Address,
-        CurrentGame.get(globalPlayer1),
+        globalPlayer2Id,
+        CurrentGame.get(globalPlayer1Id),
         action.projectile,
         action.newX,
         action.newY
@@ -189,7 +184,7 @@ library GameHelpers {
         return;
       }
 
-      TowerHelpers.moveTower(player2Address, CurrentGame.get(globalPlayer1), towerEntity, action.newX, action.newY);
+      TowerHelpers.moveTower(globalPlayer2Id, CurrentGame.get(globalPlayer1Id), towerEntity, action.newX, action.newY);
     } else if (action.actionType == ActionType.Modify) {
       ProjectileData memory projectileData = Projectile.get(actionIds[actionIdIndex]);
       bytes32 towerEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, action.oldX, action.oldY));
@@ -199,8 +194,8 @@ library GameHelpers {
       }
 
       TowerHelpers.modifyTowerSystem(
-        player2Address,
-        CurrentGame.get(globalPlayer1),
+        globalPlayer2Id,
+        CurrentGame.get(globalPlayer1Id),
         towerEntity,
         projectileData.bytecode,
         projectileData.sourceCode

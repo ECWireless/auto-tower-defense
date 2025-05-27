@@ -12,3 +12,4 @@ uint256 constant MAX_MOD_NAME_LENGTH = 32;
 uint256 constant MAX_PLAYERS = 100;
 uint256 constant MAX_ROUNDS = 10;
 uint256 constant MAX_TICKS = 28;
+bytes32 constant ROB_ID = keccak256("ROB");

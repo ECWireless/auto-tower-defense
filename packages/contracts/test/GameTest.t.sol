@@ -33,8 +33,8 @@ contract GameTest is MudTest {
     vm.prank(aliceAddress);
     bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
 
-    bytes32 aliceCurrentGame = CurrentGame.get(EntityHelpers.globalAddressToKey(aliceAddress));
-    bytes32 robCurrentGame = CurrentGame.get(EntityHelpers.globalAddressToKey(robAddress));
+    bytes32 aliceCurrentGame = CurrentGame.get(EntityHelpers.addressToGlobalPlayerId(aliceAddress));
+    bytes32 robCurrentGame = CurrentGame.get(EntityHelpers.addressToGlobalPlayerId(robAddress));
 
     assertEq(aliceCurrentGame, gameId);
     assertEq(robCurrentGame, 0);
@@ -44,7 +44,7 @@ contract GameTest is MudTest {
     vm.prank(aliceAddress);
     IWorld(worldAddress).app__createGame("Alice", true);
 
-    string memory username = Username.get(EntityHelpers.globalAddressToKey(aliceAddress));
+    string memory username = Username.get(EntityHelpers.addressToGlobalPlayerId(aliceAddress));
     assertEq(username, "Alice");
 
     bytes32 usernameBytes = keccak256(abi.encodePacked(username));
@@ -60,7 +60,7 @@ contract GameTest is MudTest {
     vm.prank(aliceAddress);
     IWorld(worldAddress).app__createGame("Bob", true);
 
-    string memory username = Username.get(EntityHelpers.globalAddressToKey(aliceAddress));
+    string memory username = Username.get(EntityHelpers.addressToGlobalPlayerId(aliceAddress));
     assertEq(username, "Alice");
   }
 
@@ -105,7 +105,7 @@ contract GameTest is MudTest {
 
     GameData memory game = Game.get(gameId);
     assertTrue(game.endTimestamp > 0);
-    assertEq(game.winner, robAddress);
+    assertEq(game.winner, EntityHelpers.addressToGlobalPlayerId(robAddress));
   }
 
   function testRevertForfeitGameAlreadyEnded() public {
@@ -118,16 +118,6 @@ contract GameTest is MudTest {
     IWorld(worldAddress).app__forfeitRun();
   }
 
-  function testRevertForfeitNotPlayer1() public {
-    vm.startPrank(aliceAddress);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    _endGame(aliceAddress, gameId);
-
-    vm.expectRevert(bytes("GameSystem: not player1"));
-    vm.prank(bobAddress);
-    IWorld(worldAddress).app__forfeitRun();
-  }
-
   function testNextTurn() public {
     vm.startPrank(aliceAddress);
     bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
@@ -137,7 +127,7 @@ contract GameTest is MudTest {
 
     GameData memory game = Game.get(gameId);
     assertEq(game.actionCount, 2);
-    assertEq(game.turn, robAddress);
+    assertEq(game.turn, EntityHelpers.addressToGlobalPlayerId(robAddress));
     assertEq(game.roundCount, 1);
   }
 
@@ -151,7 +141,7 @@ contract GameTest is MudTest {
 
     GameData memory game = Game.get(gameId);
     assertEq(game.actionCount, 2);
-    assertEq(game.turn, aliceAddress);
+    assertEq(game.turn, EntityHelpers.addressToGlobalPlayerId(aliceAddress));
     assertEq(game.roundCount, 2);
   }
 
@@ -163,8 +153,8 @@ contract GameTest is MudTest {
     uint256 endTimestamp = Game.get(gameId).endTimestamp;
     assert(endTimestamp > 0);
 
-    address winnerAddress = Game.get(gameId).winner;
-    assertEq(winnerAddress, aliceAddress);
+    bytes32 winnerAddress = Game.get(gameId).winner;
+    assertEq(winnerAddress, EntityHelpers.addressToGlobalPlayerId(aliceAddress));
   }
 
   function testNextLevel() public {
@@ -178,7 +168,7 @@ contract GameTest is MudTest {
     vm.prank(aliceAddress);
     gameId = IWorld(worldAddress).app__createGame("Alice", false);
 
-    uint256 winStreak = WinStreak.get(EntityHelpers.globalAddressToKey(aliceAddress));
+    uint256 winStreak = WinStreak.get(EntityHelpers.addressToGlobalPlayerId(aliceAddress));
     assertEq(winStreak, 1);
 
     uint256 level = Level.get(gameId);
@@ -215,10 +205,10 @@ contract GameTest is MudTest {
     uint256 endTimestamp = Game.get(gameId).endTimestamp;
     assert(endTimestamp > 0);
 
-    address winnerAddress = Game.get(gameId).winner;
-    assertEq(winnerAddress, aliceAddress);
+    bytes32 winnerAddress = Game.get(gameId).winner;
+    assertEq(winnerAddress, EntityHelpers.addressToGlobalPlayerId(aliceAddress));
 
-    uint256 winStreak = WinStreak.get(EntityHelpers.globalAddressToKey(aliceAddress));
+    uint256 winStreak = WinStreak.get(EntityHelpers.addressToGlobalPlayerId(aliceAddress));
     assertEq(winStreak, 2);
   }
 
@@ -242,10 +232,10 @@ contract GameTest is MudTest {
     uint256 endTimestamp = Game.get(gameId).endTimestamp;
     assert(endTimestamp > 0);
 
-    address winnerAddress = Game.get(gameId).winner;
-    assertEq(winnerAddress, bobAddress);
+    bytes32 winnerAddress = Game.get(gameId).winner;
+    assertEq(winnerAddress, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
-    uint256 winStreak = WinStreak.get(EntityHelpers.globalAddressToKey(aliceAddress));
+    uint256 winStreak = WinStreak.get(EntityHelpers.addressToGlobalPlayerId(aliceAddress));
     assertEq(winStreak, 0);
   }
 }

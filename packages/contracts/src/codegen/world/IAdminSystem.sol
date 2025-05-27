@@ -9,6 +9,13 @@ pragma solidity >=0.8.24;
  * @dev This interface is automatically generated from the corresponding system contract. Do not edit manually.
  */
 interface IAdminSystem {
+  function app__saveSystemTemplate(
+    bytes memory bytecode,
+    string memory description,
+    string memory name,
+    string memory sourceCode
+  ) external returns (bytes32 savedModificationId);
+
   function app__mintUsdcToPlayer(address player, uint256 amount) external;
 
   function app__getSolarFarmSystemAddress() external view returns (address);

@@ -68,7 +68,7 @@ export default defineWorld({
         playerId: "bytes32",
         savedKingdomId: "bytes32",
         timestamp: "uint256",
-        authors: "bytes23[]", // globalPlayerIds of all who authored the tower modifications used in the game
+        authors: "bytes32[]", // globalPlayerIds of all who authored the tower modifications used in the game
       },
       type: "offchainTable",
     },

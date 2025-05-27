@@ -91,7 +91,7 @@ library BatteryHelpers {
     uint256 activeBalanceEarnings = winningPot / 2;
 
     // Get all the towers used in the game
-    address[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, true);
+    bytes32[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, true);
 
     // If there are no authors, give the player the rest of the winningPot
     if (allAuthors.length == 0) {
@@ -119,13 +119,13 @@ library BatteryHelpers {
     bytes32 gameId,
     uint256 amountToKingdom,
     uint256 amountToBattery,
-    address[] memory authors
+    bytes32[] memory authors
   ) internal {
     ExpenseReceiptData memory expenseReceipt = ExpenseReceiptData({
       amountToBattery: amountToBattery,
       amountToKingdom: amountToKingdom,
       gameId: gameId,
-      playerAddress: SavedKingdom.getAuthor(savedKingdomId),
+      playerId: SavedKingdom.getAuthor(savedKingdomId),
       savedKingdomId: savedKingdomId,
       timestamp: block.timestamp,
       authors: authors
@@ -177,29 +177,28 @@ library BatteryHelpers {
     uint256 opponentReserveEarnings = winningPot / 2;
 
     // Get all the towers used in the game
-    address[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, false);
+    bytes32[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, false);
 
     // If there are no authors, give the player2Address the rest of the winningPot
     if (allAuthors.length == 0) {
       opponentReserveEarnings += opponentReserveEarnings;
     }
-    bytes32 globalPlayer2Id = EntityHelpers.globalAddressToKey(savedKingdom.author);
-    uint256 opponentReserveBalance = BatteryDetails.getReserveBalance(globalPlayer2Id);
+    uint256 opponentReserveBalance = BatteryDetails.getReserveBalance(savedKingdom.author);
     opponentReserveBalance += opponentReserveEarnings;
-    BatteryDetails.setReserveBalance(globalPlayer2Id, opponentReserveBalance);
+    BatteryDetails.setReserveBalance(savedKingdom.author, opponentReserveBalance);
     winningPot -= opponentReserveEarnings;
 
     _distributeAuthorEarnings(allAuthors, winningPot);
     _storeRevenueReceipt(savedKingdomId, gameId, opponentSavedKingdomEarnings, opponentReserveEarnings, allAuthors);
   }
 
-  function _distributeAuthorEarnings(address[] memory allAuthors, uint256 winningPot) internal {
+  function _distributeAuthorEarnings(bytes32[] memory allAuthors, uint256 winningPot) internal {
     // Move remaining winningPot to authors (their reserveBalance) of all the towers used by winner (player 2)
     if (allAuthors.length == 0) return;
 
     uint256 authorEarnings = winningPot / allAuthors.length;
     for (uint256 i = 0; i < allAuthors.length; i++) {
-      bytes32 authorId = EntityHelpers.globalAddressToKey(allAuthors[i]);
+      bytes32 authorId = allAuthors[i];
       uint256 authorReserveBalance = BatteryDetails.getReserveBalance(authorId);
       authorReserveBalance += authorEarnings;
       BatteryDetails.setReserveBalance(authorId, authorReserveBalance);
@@ -211,13 +210,13 @@ library BatteryHelpers {
     bytes32 gameId,
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    address[] memory authors
+    bytes32[] memory authors
   ) internal {
     RevenueReceiptData memory revenueReceipt = RevenueReceiptData({
       amountToKingdom: amountToKingdom,
       amountToReserve: amountToReserve,
       gameId: gameId,
-      playerAddress: SavedKingdom.getAuthor(savedKingdomId),
+      playerId: SavedKingdom.getAuthor(savedKingdomId),
       savedKingdomId: savedKingdomId,
       timestamp: block.timestamp,
       authors: authors
@@ -230,7 +229,7 @@ library BatteryHelpers {
    * @param gameId The ID of the game
    * @param player1Kingdom Boolean for scanning left or right side of the board
    */
-  function _getAllKingdomTowerAuthors(bytes32 gameId, bool player1Kingdom) internal view returns (address[] memory) {
+  function _getAllKingdomTowerAuthors(bytes32 gameId, bool player1Kingdom) internal view returns (bytes32[] memory) {
     // If player1Kingdom is true, get all actions from SavedGame
     // If player1Kingdom is false, get all actions from LoadedKingdomActions
     bytes32[] memory savedGameActionIds = player1Kingdom
@@ -256,25 +255,25 @@ library BatteryHelpers {
 
     // Use the actionId to get the bytes from Projectile
     // Use SavedModification with keccak256(abi.encodePacked(bytecode)) to get all the authors of the towers used in the game
-    address[] memory authors = new address[](modifyActions.length);
+    bytes32[] memory authors = new bytes32[](modifyActions.length);
     for (uint256 i = 0; i < modifyActions.length; i++) {
       bytes32 actionId = modifyActions[i];
       bytes32 bytecodeHash = keccak256(abi.encodePacked(Projectile.getBytecode(actionId)));
-      address author = SavedModification.getAuthor(bytecodeHash);
+      bytes32 author = SavedModification.getAuthor(bytecodeHash);
       authors[i] = author;
     }
 
-    // Remove all empty addresses from the authors array
+    // Remove all empty bytes32 from the authors array
     uint256 count = 0;
     for (uint256 i = 0; i < authors.length; i++) {
-      if (authors[i] != address(0)) {
+      if (authors[i] != bytes32(0)) {
         count++;
       }
     }
-    address[] memory nonEmptyAuthors = new address[](count);
+    bytes32[] memory nonEmptyAuthors = new bytes32[](count);
     uint256 index = 0;
     for (uint256 i = 0; i < authors.length; i++) {
-      if (authors[i] != address(0)) {
+      if (authors[i] != bytes32(0)) {
         nonEmptyAuthors[index] = authors[i];
         index++;
       }

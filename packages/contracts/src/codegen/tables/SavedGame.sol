@@ -18,7 +18,7 @@ import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct SavedGameData {
   bytes32 gameId;
-  address winner;
+  bytes32 winner;
   bytes32[] actions;
 }
 
@@ -27,12 +27,12 @@ library SavedGame {
   ResourceId constant _tableId = ResourceId.wrap(0x74626170700000000000000000000000536176656447616d6500000000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0034020120140000000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0040020120200000000000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (bytes32, address, bytes32[])
-  Schema constant _valueSchema = Schema.wrap(0x003402015f61c100000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (bytes32, bytes32, bytes32[])
+  Schema constant _valueSchema = Schema.wrap(0x004002015f5fc100000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -113,29 +113,29 @@ library SavedGame {
   /**
    * @notice Get winner.
    */
-  function getWinner(bytes32 id) internal view returns (address winner) {
+  function getWinner(bytes32 id) internal view returns (bytes32 winner) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
-    return (address(bytes20(_blob)));
+    return (bytes32(_blob));
   }
 
   /**
    * @notice Get winner.
    */
-  function _getWinner(bytes32 id) internal view returns (address winner) {
+  function _getWinner(bytes32 id) internal view returns (bytes32 winner) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
-    return (address(bytes20(_blob)));
+    return (bytes32(_blob));
   }
 
   /**
    * @notice Set winner.
    */
-  function setWinner(bytes32 id, address winner) internal {
+  function setWinner(bytes32 id, bytes32 winner) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -145,7 +145,7 @@ library SavedGame {
   /**
    * @notice Set winner.
    */
-  function _setWinner(bytes32 id, address winner) internal {
+  function _setWinner(bytes32 id, bytes32 winner) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -347,7 +347,7 @@ library SavedGame {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(bytes32 id, bytes32 gameId, address winner, bytes32[] memory actions) internal {
+  function set(bytes32 id, bytes32 gameId, bytes32 winner, bytes32[] memory actions) internal {
     bytes memory _staticData = encodeStatic(gameId, winner);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
@@ -362,7 +362,7 @@ library SavedGame {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(bytes32 id, bytes32 gameId, address winner, bytes32[] memory actions) internal {
+  function _set(bytes32 id, bytes32 gameId, bytes32 winner, bytes32[] memory actions) internal {
     bytes memory _staticData = encodeStatic(gameId, winner);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
@@ -407,10 +407,10 @@ library SavedGame {
   /**
    * @notice Decode the tightly packed blob of static data using this table's field layout.
    */
-  function decodeStatic(bytes memory _blob) internal pure returns (bytes32 gameId, address winner) {
+  function decodeStatic(bytes memory _blob) internal pure returns (bytes32 gameId, bytes32 winner) {
     gameId = (Bytes.getBytes32(_blob, 0));
 
-    winner = (address(Bytes.getBytes20(_blob, 32)));
+    winner = (Bytes.getBytes32(_blob, 32));
   }
 
   /**
@@ -468,7 +468,7 @@ library SavedGame {
    * @notice Tightly pack static (fixed length) data using this table's schema.
    * @return The static data, encoded into a sequence of bytes.
    */
-  function encodeStatic(bytes32 gameId, address winner) internal pure returns (bytes memory) {
+  function encodeStatic(bytes32 gameId, bytes32 winner) internal pure returns (bytes memory) {
     return abi.encodePacked(gameId, winner);
   }
 
@@ -499,7 +499,7 @@ library SavedGame {
    */
   function encode(
     bytes32 gameId,
-    address winner,
+    bytes32 winner,
     bytes32[] memory actions
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
     bytes memory _staticData = encodeStatic(gameId, winner);

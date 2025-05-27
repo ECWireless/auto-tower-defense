@@ -20,21 +20,21 @@ import "@openzeppelin/contracts/utils/Strings.sol";
  */
 library TowerHelpers {
   function installTower(
-    address playerAddress,
+    bytes32 globalPlayerId,
     bytes32 gameId,
     bool projectile,
     int16 x,
     int16 y
   ) external returns (bytes32) {
     (x, y) = ProjectileHelpers.getActualCoordinates(x, y);
-    _validateInstallTower(gameId, playerAddress, x, y);
+    _validateInstallTower(gameId, globalPlayerId, x, y);
 
     uint256 towerCounter = TowerCounter.get();
-    bytes32 towerId = keccak256(abi.encodePacked(gameId, playerAddress, towerCounter));
-    _initializeTower(towerId, gameId, playerAddress, x, y, projectile);
-    address player1Address = Game.getPlayer1Address(gameId);
-    if (playerAddress == player1Address) {
-      ActionStorageHelpers.storeInstallTowerAction(gameId, playerAddress, x, y, projectile);
+    bytes32 towerId = keccak256(abi.encodePacked(gameId, globalPlayerId, towerCounter));
+    _initializeTower(towerId, gameId, globalPlayerId, x, y, projectile);
+    bytes32 globalPlayer1Id = Game.getPlayer1Id(gameId);
+    if (globalPlayerId == globalPlayer1Id) {
+      ActionStorageHelpers.storeInstallTowerAction(gameId, globalPlayerId, x, y, projectile);
     }
     TowerCounter.set(towerCounter + 1);
 
@@ -42,13 +42,13 @@ library TowerHelpers {
   }
 
   function moveTower(
-    address playerAddress,
+    bytes32 globalPlayerId,
     bytes32 gameId,
     bytes32 towerId,
     int16 x,
     int16 y
   ) external returns (bytes32) {
-    _validateMoveTower(gameId, playerAddress, towerId, x, y);
+    _validateMoveTower(gameId, globalPlayerId, towerId, x, y);
 
     (int16 oldX, int16 oldY) = Position.get(towerId);
 
@@ -60,8 +60,8 @@ library TowerHelpers {
 
     _decrementActionCount(gameId);
 
-    address player1Address = Game.getPlayer1Address(gameId);
-    if (playerAddress == player1Address) {
+    bytes32 globalPlayer1Id = Game.getPlayer1Id(gameId);
+    if (globalPlayerId == globalPlayer1Id) {
       ActionStorageHelpers.storeMoveTowerAction(gameId, towerId, oldX, oldY, actualX, actualY);
     }
 
@@ -69,7 +69,7 @@ library TowerHelpers {
   }
 
   function modifyTowerSystem(
-    address playerAddress,
+    bytes32 globalPlayerId,
     bytes32 gameId,
     bytes32 towerId,
     bytes memory bytecode,
@@ -77,7 +77,7 @@ library TowerHelpers {
   ) external returns (address projectileLogicAddress) {
     GameData memory currentGame = Game.get(gameId);
 
-    _validModifySystem(gameId, towerId, playerAddress);
+    _validModifySystem(gameId, towerId, globalPlayerId);
 
     address newSystem;
     assembly {
@@ -100,20 +100,20 @@ library TowerHelpers {
 
     _incrementSavedModificationUseCount(bytecode);
 
-    address player1Address = Game.getPlayer1Address(gameId);
-    if (playerAddress == player1Address) {
+    bytes32 globalPlayer1Id = Game.getPlayer1Id(gameId);
+    if (globalPlayerId == globalPlayer1Id) {
       ActionStorageHelpers.storeModifyTowerAction(gameId, towerId, bytecode, newSystem, sourceCode);
     }
     return address(newSystem);
   }
 
-  function _validateInstallTower(bytes32 gameId, address playerAddress, int16 x, int16 y) public view {
+  function _validateInstallTower(bytes32 gameId, bytes32 globalPlayerId, int16 x, int16 y) public view {
     require(gameId != 0, "TowerSystem: player has no ongoing game");
 
     GameData memory currentGame = Game.get(gameId);
     require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
     require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
-    require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
+    require(currentGame.turn == globalPlayerId, "TowerSystem: not player's turn");
 
     (int16 height, int16 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
@@ -122,21 +122,21 @@ library TowerHelpers {
     bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, x, y));
     require(positionEntity == 0, "TowerSystem: position is occupied");
 
-    if (playerAddress == currentGame.player2Address) {
+    if (globalPlayerId == currentGame.player2Id) {
       require(x > width / 2, "TowerSystem: x position is in enemy territory");
     } else {
       require(x < width / 2, "TowerSystem: x position is in player territory");
     }
   }
 
-  function _validateMoveTower(bytes32 gameId, address playerAddress, bytes32 towerId, int16 x, int16 y) internal view {
+  function _validateMoveTower(bytes32 gameId, bytes32 globalPlayerId, bytes32 towerId, int16 x, int16 y) internal view {
     bytes32 towerGameId = CurrentGame.get(towerId);
     require(gameId != 0, "TowerSystem: player has no ongoing game");
     require(gameId == towerGameId, "TowerSystem: tower is not in player's ongoing game");
 
     GameData memory currentGame = Game.get(gameId);
     require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");
-    require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
+    require(currentGame.turn == globalPlayerId, "TowerSystem: not player's turn");
 
     require(currentGame.actionCount > 0, "TowerSystem: player has no actions remaining");
     require(Tower.get(towerId), "TowerSystem: entity is not a tower");
@@ -144,12 +144,12 @@ library TowerHelpers {
     (int16 height, int16 width) = MapConfig.get();
     require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
     require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
-    require(Owner.get(towerId) == playerAddress, "TowerSystem: player does not own tower");
+    require(Owner.get(towerId) == globalPlayerId, "TowerSystem: player does not own tower");
 
     bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, x, y));
     require(positionEntity == 0, "TowerSystem: position is occupied");
 
-    if (playerAddress == currentGame.player2Address) {
+    if (globalPlayerId == currentGame.player2Id) {
       require(x > width / 2, "TowerSystem: x is in enemy territory");
     } else {
       require(x < width / 2, "TowerSystem: x is in player territory");
@@ -159,16 +159,16 @@ library TowerHelpers {
   function _initializeTower(
     bytes32 towerId,
     bytes32 gameId,
-    address playerAddress,
+    bytes32 globalPlayerId,
     int16 x,
     int16 y,
     bool projectile
   ) public {
     Tower.set(towerId, true);
     CurrentGame.set(towerId, gameId);
-    Owner.set(towerId, playerAddress);
+    Owner.set(towerId, globalPlayerId);
 
-    _addTowerToPlayer(gameId, playerAddress, towerId);
+    _addTowerToPlayer(gameId, globalPlayerId, towerId);
 
     if (projectile) {
       Health.set(towerId, MAX_HEALTH_CANNON, MAX_HEALTH_CANNON);
@@ -189,8 +189,8 @@ library TowerHelpers {
     _decrementActionCount(gameId);
   }
 
-  function _addTowerToPlayer(bytes32 gameId, address playerAddress, bytes32 towerId) internal {
-    bytes32 localPlayerId = EntityHelpers.localAddressToKey(gameId, playerAddress);
+  function _addTowerToPlayer(bytes32 gameId, bytes32 globalPlayerId, bytes32 towerId) internal {
+    bytes32 localPlayerId = EntityHelpers.globalToLocalPlayerId(globalPlayerId, gameId);
 
     bytes32[] memory playerTowers = OwnerTowers.get(localPlayerId);
     bytes32[] memory updatedTowers = new bytes32[](playerTowers.length + 1);
@@ -207,19 +207,19 @@ library TowerHelpers {
     Game.setActionCount(gameId, Game.getActionCount(gameId) - 1);
   }
 
-  function _validModifySystem(bytes32 gameId, bytes32 towerId, address playerAddress) public {
+  function _validModifySystem(bytes32 gameId, bytes32 towerId, bytes32 globalPlayerId) public {
     bytes32 towerGameId = CurrentGame.get(towerId);
     GameData memory currentGame = Game.get(gameId);
 
     require(gameId != 0, "TowerSystem: player has no ongoing game");
     require(gameId == towerGameId, "TowerSystem: tower is not in player's ongoing game");
 
-    if (playerAddress == currentGame.player2Address) {
-      require(Owner.get(towerId) == currentGame.player2Address, "TowerSystem: player does not own tower");
-      require(currentGame.turn == currentGame.player2Address, "TowerSystem: not player's turn");
+    if (globalPlayerId == currentGame.player2Id) {
+      require(Owner.get(towerId) == currentGame.player2Id, "TowerSystem: player does not own tower");
+      require(currentGame.turn == currentGame.player2Id, "TowerSystem: not player's turn");
     } else {
-      require(Owner.get(towerId) == playerAddress, "TowerSystem: player does not own tower");
-      require(currentGame.turn == playerAddress, "TowerSystem: not player's turn");
+      require(Owner.get(towerId) == globalPlayerId, "TowerSystem: player does not own tower");
+      require(currentGame.turn == globalPlayerId, "TowerSystem: not player's turn");
     }
 
     require(currentGame.endTimestamp == 0, "TowerSystem: game has ended");

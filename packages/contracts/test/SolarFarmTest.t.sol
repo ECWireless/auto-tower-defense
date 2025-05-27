@@ -61,7 +61,7 @@ contract SolarFarmTest is MudTest {
     assertEq(solarFarmFiatBalance, 100010000); // 100.01 USDC
 
     // Check Alice's active battery balance and reserve balance
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     assertEq(activeBalance, BATTERY_STORAGE_LIMIT - 8000 + 1920); // minus 8kWh + 1.92kWh
     uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayerId);
@@ -96,22 +96,22 @@ contract SolarFarmTest is MudTest {
     assertEq(solarFarmFiatBalance, 100100000); // 100.10 USDC
 
     // Check Alice's active battery balance and reserve balance
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     assertEq(activeBalance, BATTERY_STORAGE_LIMIT);
     uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayerId);
     assertEq(reserveBalance, 19200 - 8000); // 19.2kWh - 8kWh
   }
 
-  // Test revert buying before you have a battery
-  function testRevertBuyElectricityNoBattery() public {
+  // Test revert buying player not registered
+  function testRevertBuyElectricityNotRegistered() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
     // Approve the Solar Farm System to spend 0.01 USDC
     vm.startPrank(aliceAddress);
     usdc.approve(_solarFarmSystemAddress(), 10000); // 0.01 USDC
     uint256 electricityAmount = 1920; // 1.92kWh
-    vm.expectRevert("SolarFarmSystem: player must have a battery");
+    vm.expectRevert("SolarFarmSystem: player not registered");
     IWorld(worldAddress).app__buyElectricity(electricityAmount);
     vm.stopPrank();
   }
@@ -175,7 +175,7 @@ contract SolarFarmTest is MudTest {
     _endGame(aliceAddress, gameId);
 
     // Make sure active balance is full
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     assertEq(activeBalance, BATTERY_STORAGE_LIMIT);
 
@@ -211,10 +211,10 @@ contract SolarFarmTest is MudTest {
     assertEq(reserveBalance, 0); // 0.00kWh
   }
 
-  // Test revert selling before you have a battery
-  function testRevertSellElectricityNoBattery() public {
+  // Test revert selling before player is registered
+  function testRevertSellElectricityNotRegistered() public {
     uint256 electricityAmount = 1920; // 1.92kWh
-    vm.expectRevert("SolarFarmSystem: player must have a battery");
+    vm.expectRevert("SolarFarmSystem: player not registered");
     vm.prank(aliceAddress);
     IWorld(worldAddress).app__sellElectricity(electricityAmount);
   }
@@ -290,7 +290,7 @@ contract SolarFarmTest is MudTest {
 
     // Warp forward 1 hour (3600000 ms)
     vm.warp(block.timestamp + 3600);
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 lastRechargeTimestamp = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
     uint256 timeSinceLastRecharge = block.timestamp - lastRechargeTimestamp;
     assertEq(timeSinceLastRecharge, 3600);
@@ -313,7 +313,7 @@ contract SolarFarmTest is MudTest {
 
     // Warp forward 24 hours (86400000 ms)
     vm.warp(block.timestamp + 86400);
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 lastRechargeTimestamp = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
     uint256 timeSinceLastRecharge = block.timestamp - lastRechargeTimestamp;
     assertEq(timeSinceLastRecharge, 86400);
@@ -329,9 +329,9 @@ contract SolarFarmTest is MudTest {
     vm.stopPrank();
   }
 
-  // Test revert claiming recharge before you have a battery
-  function testRevertClaimRechargeNoBattery() public {
-    vm.expectRevert("SolarFarmSystem: player must have a battery");
+  // Test revert claiming recharge before player is registered
+  function testRevertClaimRechargeNotRegistered() public {
+    vm.expectRevert("SolarFarmSystem: player not registered");
     vm.prank(aliceAddress);
     IWorld(worldAddress).app__claimRecharge();
   }
@@ -372,7 +372,7 @@ contract SolarFarmTest is MudTest {
 
     // Warp forward 1 hour (3600000 ms)
     vm.warp(block.timestamp + 3600);
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 lastRechargeTimestamp = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
     uint256 timeSinceLastRecharge = block.timestamp - lastRechargeTimestamp;
     assertEq(timeSinceLastRecharge, 3600);

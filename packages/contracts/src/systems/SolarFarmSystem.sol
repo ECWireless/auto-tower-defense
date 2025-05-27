@@ -9,18 +9,24 @@ import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import "forge-std/console.sol";
 
 contract SolarFarmSystem is System {
+  modifier onlyRegisteredPlayer() {
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
+    require(globalPlayerId != bytes32(0), "SolarFarmSystem: player not registered");
+    _;
+  }
+
   /**
    * Allows purchasing watt-hours with USDC based on whPerCentPrice
    * Electricity first goes to activeBalance of BatteryDetails
    * Excess goes to reserveBalance of BatteryDetails
    * @param electricityAmount in watt-hours
    */
-  function buyElectricity(uint256 electricityAmount) external {
+  function buyElectricity(uint256 electricityAmount) external onlyRegisteredPlayer {
     require(electricityAmount > 0, "SolarFarmSystem: electricity amount must be greater than 0");
 
     // Make sure the player already has a Battery
     address playerAddress = _msgSender();
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(playerAddress);
     require(
       BatteryDetails.getLastRechargeTimestamp(globalPlayerId) != 0,
       "SolarFarmSystem: player must have a battery"
@@ -77,7 +83,7 @@ contract SolarFarmSystem is System {
     );
 
     // Make sure the player already has a Battery
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(receiver);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(receiver);
     require(
       BatteryDetails.getLastRechargeTimestamp(globalPlayerId) != 0,
       "SolarFarmSystem: player must have a battery"
@@ -116,12 +122,12 @@ contract SolarFarmSystem is System {
    * Can only sell from reserveBalance of BatteryDetails
    * @param electricityAmount in watt-hours
    */
-  function sellElectricity(uint256 electricityAmount) external {
+  function sellElectricity(uint256 electricityAmount) external onlyRegisteredPlayer {
     require(electricityAmount > 0, "SolarFarmSystem: electricity amount must be greater than 0");
 
     // Make sure the player already has a Battery
     address playerAddress = _msgSender();
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(playerAddress);
     require(
       BatteryDetails.getLastRechargeTimestamp(globalPlayerId) != 0,
       "SolarFarmSystem: player must have a battery"
@@ -161,12 +167,12 @@ contract SolarFarmSystem is System {
    * Can only sell from reserveBalance of BatteryDetails
    * @param electricityAmount in watt-hours
    */
-  function sellElectricityThroughRelay(uint256 electricityAmount) external {
+  function sellElectricityThroughRelay(uint256 electricityAmount) external onlyRegisteredPlayer {
     require(electricityAmount > 0, "SolarFarmSystem: electricity amount must be greater than 0");
 
     // Make sure the player already has a Battery
     address playerAddress = _msgSender();
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(playerAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(playerAddress);
     require(
       BatteryDetails.getLastRechargeTimestamp(globalPlayerId) != 0,
       "SolarFarmSystem: player must have a battery"
@@ -208,9 +214,9 @@ contract SolarFarmSystem is System {
    * Claims more electricity for BatteryDetails activeBalance based on SolarFarmDetails msPerWh; cannot exceed BATTERY_STORAGE_LIMIT
    * Also decreases SolarFarmSystem electricityBalance
    */
-  function claimRecharge() external {
+  function claimRecharge() external onlyRegisteredPlayer {
     // Make sure the player already has a Battery
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(_msgSender());
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
     require(
       BatteryDetails.getLastRechargeTimestamp(globalPlayerId) != 0,
       "SolarFarmSystem: player must have a battery"
