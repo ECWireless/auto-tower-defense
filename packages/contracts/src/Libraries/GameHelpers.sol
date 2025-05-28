@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, KingdomsByLevel, LastGameWonInRun, Level, LoadedKingdomActions, LoadedKingdomActionsData, MapConfig, Owner, OwnerTowers, PlayerCount, Position, Projectile, ProjectileData, SavedKingdom, TopLevel, Username, UsernameTaken, WinStreak } from "../codegen/index.sol";
+import { Action, ActionData, Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, KingdomsByLevel, LastGameWonInRun, Level, LoadedKingdomActions, LoadedKingdomActionsData, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileData, SavedKingdom, TopLevel, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { TowerHelpers } from "./TowerHelpers.sol";
-import { BatteryHelpers } from "./BatteryHelpers.sol";
-import { MAX_ACTIONS, MAX_CASTLE_HEALTH, MAX_PLAYERS } from "../../constants.sol";
+import { MAX_ACTIONS, MAX_CASTLE_HEALTH } from "../../constants.sol";
 import "forge-std/console.sol";
 
 /**
@@ -131,22 +130,7 @@ library GameHelpers {
     return bytes32(0);
   }
 
-  function validateCreateGame(bytes32 globalPlayer1Id, string memory username) public {
-    uint256 playerCount = PlayerCount.get();
-    require(playerCount < MAX_PLAYERS, "GameSystem: max players reached");
-
-    string memory player1Username = Username.get(globalPlayer1Id);
-    if (bytes(player1Username).length == 0) {
-      bytes32 usernameBytes = keccak256(abi.encodePacked(username));
-      require(!UsernameTaken.get(usernameBytes), "GameSystem: username is taken");
-      Username.set(globalPlayer1Id, username);
-      UsernameTaken.set(usernameBytes, true);
-      PlayerCount.set(playerCount + 1);
-
-      // Grant player a fully charged battery
-      BatteryHelpers.grantBattery(globalPlayer1Id);
-    }
-
+  function validateCreateGame(bytes32 globalPlayer1Id) public view {
     bytes32 currentGameId = CurrentGame.get(globalPlayer1Id);
     if (currentGameId != 0) {
       GameData memory currentGame = Game.get(currentGameId);

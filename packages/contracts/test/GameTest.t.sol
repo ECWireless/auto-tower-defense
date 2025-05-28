@@ -72,15 +72,28 @@ contract GameTest is MudTest {
     }
 
     vm.prank(address(101));
-    vm.expectRevert(bytes("GameSystem: max players reached"));
+    vm.expectRevert(bytes("AccountHelpers: max players reached"));
     IWorld(worldAddress).app__createGame(string(abi.encodePacked("Player", uint8(101))), true);
+  }
+
+  function testRevertUsernameEmpty() public {
+    vm.prank(aliceAddress);
+    vm.expectRevert(bytes("AccountHelpers: username is empty"));
+    IWorld(worldAddress).app__createGame("", true);
+  }
+
+  function testRevertUsernameTooLong() public {
+    string memory longUsername = "ThisUsernameIsWayTooL";
+    vm.prank(aliceAddress);
+    vm.expectRevert(bytes("AccountHelpers: username is too long"));
+    IWorld(worldAddress).app__createGame(longUsername, true);
   }
 
   function testRevertUsernameTaken() public {
     vm.prank(aliceAddress);
     IWorld(worldAddress).app__createGame("Alice", true);
 
-    vm.expectRevert(bytes("GameSystem: username is taken"));
+    vm.expectRevert(bytes("AccountHelpers: username is taken"));
     vm.prank(bobAddress);
     IWorld(worldAddress).app__createGame("Alice", true);
   }

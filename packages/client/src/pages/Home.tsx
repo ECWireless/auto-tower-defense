@@ -238,6 +238,14 @@ export const Home = (): JSX.Element => {
     }
   }, [Username, playerEntity]);
 
+  const usernameError = useMemo(() => {
+    if (!username) return null;
+    if (username.length > 20) {
+      return 'Username must be 20 characters or less';
+    }
+    return null;
+  }, [username]);
+
   return (
     <div className="bg-black flex flex-col min-h-screen p-4 relative text-white">
       <BackgroundAnimation />
@@ -357,6 +365,9 @@ export const Home = (): JSX.Element => {
                     type="text"
                     value={username}
                   />
+                  {usernameError && (
+                    <div className="text-red-500 text-sm ">{usernameError}</div>
+                  )}
                 </div>
               )}
               <div className="flex justify-center mb-16">

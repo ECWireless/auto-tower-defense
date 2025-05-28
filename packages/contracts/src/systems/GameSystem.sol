@@ -2,10 +2,11 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressToPlayerId, CurrentGame, Game, GameData, PlayerIdToAddress, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
+import { CurrentGame, Game, GameData, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { GameHelpers } from "../Libraries/GameHelpers.sol";
+import { AccountHelpers } from "../Libraries/AccountHelpers.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { ActionStorageHelpers } from "../Libraries/ActionStorageHelpers.sol";
 import { BatteryHelpers } from "../Libraries/BatteryHelpers.sol";
@@ -24,15 +25,12 @@ contract GameSystem is System {
     bytes32 globalPlayer1Id = EntityHelpers.addressToGlobalPlayerId(player1Address);
 
     if (globalPlayer1Id == bytes32(0)) {
-      globalPlayer1Id = keccak256(abi.encodePacked(username, player1Address, block.timestamp));
-      AddressToPlayerId.set(EntityHelpers.addressToKey(player1Address), globalPlayer1Id);
-      PlayerIdToAddress.set(globalPlayer1Id, player1Address);
+      globalPlayer1Id = AccountHelpers.registerPlayer(player1Address, username);
     }
 
+    GameHelpers.validateCreateGame(globalPlayer1Id);
+
     bytes32 savedKingdomId;
-
-    GameHelpers.validateCreateGame(globalPlayer1Id, username);
-
     if (resetLevel) {
       WinStreak.set(globalPlayer1Id, 0);
       // Stake 8 kWh of electricity
