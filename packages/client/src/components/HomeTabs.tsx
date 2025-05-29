@@ -6,7 +6,7 @@ import {
   HasValue,
   runQuery,
 } from '@latticexyz/recs';
-import { decodeEntity, encodeEntity } from '@latticexyz/store-sync/recs';
+import { decodeEntity } from '@latticexyz/store-sync/recs';
 import {
   ArrowRight,
   Calendar,
@@ -177,6 +177,7 @@ export const HomeTabs: React.FC = () => {
       HighestLevel,
       KingdomsByLevel,
       Level,
+      PlayerIdToAddress,
       RevenueReceipt,
       SavedKingdom,
       Username,
@@ -216,10 +217,10 @@ export const HomeTabs: React.FC = () => {
   const topPlayers = useEntityQuery([Has(HighestLevel)])
     .map(entity => {
       const playerLevel = getComponentValueStrict(HighestLevel, entity).value;
-      const playerAddress = decodeEntity(
-        { playerAddress: 'address' },
+      const playerAddress = getComponentValueStrict(
+        PlayerIdToAddress,
         entity,
-      ).playerAddress;
+      ).value;
       const playerUsername = getComponentValueStrict(Username, entity).value;
 
       return {
@@ -244,10 +245,7 @@ export const HomeTabs: React.FC = () => {
 
         const authorUsername = getComponentValueStrict(
           Username,
-          encodeEntity(
-            { playerAddress: 'address' },
-            { playerAddress: _savedKingdom.author as `0x${string}` },
-          ),
+          _savedKingdom.author as Entity,
         ).value;
 
         const revenueReceipts = Array.from(
