@@ -30,7 +30,8 @@ contract GameSystem is System {
 
     GameHelpers.validateCreateGame(globalPlayer1Id);
 
-    bytes32 savedKingdomId;
+    bytes32[] memory defaultActionIds = new bytes32[](0);
+    bytes32 savedKingdomId = keccak256(abi.encode(defaultActionIds));
     if (resetLevel) {
       WinStreak.set(globalPlayer1Id, 0);
       // Stake 8 kWh of electricity

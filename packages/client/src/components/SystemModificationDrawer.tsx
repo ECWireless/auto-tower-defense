@@ -546,7 +546,7 @@ export const SystemModificationDrawer: React.FC<
   const isMyTower = useMemo(() => {
     if (!isPlayer1) return false;
     if (!game) return false;
-    return game.player1Address === tower.owner;
+    return game.player1Id === tower.owner;
   }, [game, isPlayer1, tower.owner]);
 
   const isSystemSaved = useMemo(() => {

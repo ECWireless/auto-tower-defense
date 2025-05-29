@@ -62,7 +62,7 @@ export const SolarFarmDialog: React.FC = () => {
   const { isPending: isSwitchingChains, switchChain } = useSwitchChain();
   const {
     components: { AddressBook, BatteryDetails, SolarFarmDetails },
-    network: { playerEntity },
+    network: { globalPlayerId },
     systemCalls: {
       buyElectricity,
       sellElectricity,
@@ -81,7 +81,7 @@ export const SolarFarmDialog: React.FC = () => {
 
   const [playerUSDCBalance, setPlayerUSDCBalance] = useState<bigint>(BigInt(0));
 
-  const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
+  const batteryDetails = useComponentValue(BatteryDetails, globalPlayerId);
   const solarFarmDetails = useComponentValue(SolarFarmDetails, singletonEntity);
 
   useEffect(() => {

@@ -19,7 +19,6 @@ import {
 import type React from 'react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Address } from 'viem';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -87,7 +86,7 @@ const ActiveGameCard = ({
           <Users className="h-3 mr-1 text-gray-400 w-3" />
           <div className="text-sm text-white">
             <span>{game.player1Username}</span>
-            {game.turn === game.player1Address && (
+            {game.turn === game.player1Id && (
               <Badge
                 className="border-green-500 h-4 ml-1 px-1 text-green-500 text-xs"
                 variant="outline"
@@ -97,7 +96,7 @@ const ActiveGameCard = ({
             )}
             <span className="mx-1">vs</span>
             <span>{game.player2Username}</span>
-            {game.turn === game.player2Address && (
+            {game.turn === game.player2Id && (
               <Badge
                 className="border-green-500 h-4 ml-1 px-1 text-green-500 text-xs"
                 variant="outline"
@@ -159,7 +158,7 @@ const CompletedGameCard = ({
         <div className="flex gap-1 items-center">
           <Trophy className="h-3 mr-1 text-gray-400 w-3" />
           <span className="font-medium text-sm text-white">
-            {game.winner === game.player1Address
+            {game.winner === game.player1Id
               ? game.player1Username
               : game.player2Username}
           </span>
@@ -186,22 +185,13 @@ export const HomeTabs: React.FC = () => {
 
   const games = useEntityQuery([Has(Game)]).map(entity => {
     const _game = getComponentValueStrict(Game, entity);
-
-    const player1Entity = encodeEntity(
-      { playerAddress: 'address' },
-      { playerAddress: _game.player1Address as Address },
-    );
-    const player2Entity = encodeEntity(
-      { playerAddress: 'address' },
-      { playerAddress: _game.player2Address as Address },
-    );
     const _player1Username = getComponentValueStrict(
       Username,
-      player1Entity,
+      _game.player1Id as Entity,
     ).value;
     const _player2Username = getComponentValueStrict(
       Username,
-      player2Entity,
+      _game.player2Id as Entity,
     ).value;
 
     const _level =
@@ -212,14 +202,14 @@ export const HomeTabs: React.FC = () => {
       actionCount: _game.actionCount,
       endTimestamp: _game.endTimestamp,
       level: _level,
-      player1Address: _game.player1Address as Address,
+      player1Id: _game.player1Id as Entity,
       player1Username: _player1Username,
-      player2Address: _game.player2Address as Address,
+      player2Id: _game.player2Id as Entity,
       player2Username: _player2Username,
       roundCount: _game.roundCount,
       startTimestamp: _game.startTimestamp,
-      turn: _game.turn as Address,
-      winner: _game.winner as Address,
+      turn: _game.turn as Entity,
+      winner: _game.winner as Entity,
     };
   }) as Game[];
 
@@ -564,7 +554,7 @@ export const HomeTabs: React.FC = () => {
                       <div className="flex flex-col">
                         <div className="flex gap-2 items-center">
                           <span>{game.player1Username}</span>
-                          {game.turn === game.player1Address && (
+                          {game.turn === game.player1Id && (
                             <Badge
                               className="border-green-500 h-5 px-1 text-green-500 text-xs"
                               variant="outline"
@@ -576,7 +566,7 @@ export const HomeTabs: React.FC = () => {
                         <span className="text-gray-400">vs</span>
                         <div className="flex gap-2 items-center">
                           <span>{game.player2Username}</span>
-                          {game.turn === game.player2Address && (
+                          {game.turn === game.player2Id && (
                             <Badge
                               className="border-green-500 h-5 px-1 text-green-500 text-xs"
                               variant="outline"
@@ -652,7 +642,7 @@ export const HomeTabs: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">
-                      {game.winner === game.player1Address
+                      {game.winner === game.player1Id
                         ? game.player1Username
                         : game.player2Username}
                     </TableCell>

@@ -8,11 +8,11 @@ import { getKeysWithValue } from "@latticexyz/world-modules/src/modules/keyswith
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 import { CurrentGame, Game, GameData, Level, Username, UsernameTaken, WinStreak } from "../src/codegen/index.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
+import { ROB_ID } from "../constants.sol";
 
 contract GameTest is MudTest {
   address aliceAddress = vm.addr(1);
   address bobAddress = vm.addr(2);
-  address robAddress = address(0);
 
   bytes constant BYTECODE =
     hex"6080604052348015600e575f5ffd5b506101ef8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063cae93eb91461002d575b5f5ffd5b610047600480360381019061004291906100bf565b61005e565b60405161005592919061010c565b60405180910390f35b5f5f60058461006d9190610160565b60028461007a9190610160565b915091509250929050565b5f5ffd5b5f8160010b9050919050565b61009e81610089565b81146100a8575f5ffd5b50565b5f813590506100b981610095565b92915050565b5f5f604083850312156100d5576100d4610085565b5b5f6100e2858286016100ab565b92505060206100f3858286016100ab565b9150509250929050565b61010681610089565b82525050565b5f60408201905061011f5f8301856100fd565b61012c60208301846100fd565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61016a82610089565b915061017583610089565b925082820190507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008112617fff821317156101b3576101b2610133565b5b9291505056fea2646970667358221220b6537f6bf1ca7ac4afafd7133c251d6b0b155b45a5576490f217e48fef76c3fe64736f6c634300081c0033";
@@ -34,7 +34,7 @@ contract GameTest is MudTest {
     bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
 
     bytes32 aliceCurrentGame = CurrentGame.get(EntityHelpers.addressToGlobalPlayerId(aliceAddress));
-    bytes32 robCurrentGame = CurrentGame.get(EntityHelpers.addressToGlobalPlayerId(robAddress));
+    bytes32 robCurrentGame = CurrentGame.get(ROB_ID);
 
     assertEq(aliceCurrentGame, gameId);
     assertEq(robCurrentGame, 0);
@@ -118,7 +118,7 @@ contract GameTest is MudTest {
 
     GameData memory game = Game.get(gameId);
     assertTrue(game.endTimestamp > 0);
-    assertEq(game.winner, EntityHelpers.addressToGlobalPlayerId(robAddress));
+    assertEq(game.winner, ROB_ID);
   }
 
   function testRevertForfeitGameAlreadyEnded() public {
@@ -140,7 +140,7 @@ contract GameTest is MudTest {
 
     GameData memory game = Game.get(gameId);
     assertEq(game.actionCount, 2);
-    assertEq(game.turn, EntityHelpers.addressToGlobalPlayerId(robAddress));
+    assertEq(game.turn, ROB_ID);
     assertEq(game.roundCount, 1);
   }
 

@@ -7,7 +7,6 @@ import {
   HasValue,
   runQuery,
 } from '@latticexyz/recs';
-import { decodeEntity, encodeEntity } from '@latticexyz/store-sync/recs';
 import {
   createContext,
   ReactNode,
@@ -118,7 +117,7 @@ export const GameProvider = ({
       Tower,
       Username,
     },
-    network: { playerEntity },
+    network: { globalPlayerId },
     systemCalls: { installTower, moveTower, nextTurn },
   } = useMUD();
   const { playSfx } = useSettings();
@@ -149,7 +148,7 @@ export const GameProvider = ({
   const myCastlePosition = useEntityQuery([
     Has(Castle),
     HasValue(CurrentGame, { value: game?.id }),
-    HasValue(Owner, { value: game?.player1Address }),
+    HasValue(Owner, { value: game?.player1Id }),
   ]).map(entity => {
     const _myCastlePosition = getComponentValueStrict(Position, entity);
     const _myCastleHealth = getComponentValueStrict(Health, entity);
@@ -165,7 +164,7 @@ export const GameProvider = ({
   const enemyCastlePosition = useEntityQuery([
     Has(Castle),
     HasValue(CurrentGame, { value: game?.id }),
-    HasValue(Owner, { value: game?.player2Address }),
+    HasValue(Owner, { value: game?.player2Id }),
   ]).map(entity => {
     const _enemyCastlePosition = getComponentValueStrict(Position, entity);
     const _enemyCastleHealth = getComponentValueStrict(Health, entity);
@@ -182,21 +181,13 @@ export const GameProvider = ({
     if (!gameId) return;
     const _game = getComponentValue(GameComponent, gameId as Entity);
     if (_game) {
-      const player1Entity = encodeEntity(
-        { playerAddress: 'address' },
-        { playerAddress: _game.player1Address as Address },
-      );
-      const player2Entity = encodeEntity(
-        { playerAddress: 'address' },
-        { playerAddress: _game.player2Address as Address },
-      );
       const _player1Username = getComponentValueStrict(
         Username,
-        player1Entity,
+        _game.player1Id as Entity,
       ).value;
       const _player2Username = getComponentValueStrict(
         Username,
-        player2Entity,
+        _game.player2Id as Entity,
       ).value;
       const _level =
         getComponentValue(Level, gameId as Entity)?.value ?? BigInt(0);
@@ -206,14 +197,14 @@ export const GameProvider = ({
         actionCount: _game.actionCount,
         endTimestamp: _game.endTimestamp,
         level: _level,
-        player1Address: _game.player1Address as Address,
+        player1Id: _game.player1Id as Entity,
         player1Username: _player1Username,
-        player2Address: _game.player2Address as Address,
+        player2Id: _game.player2Id as Entity,
         player2Username: _player2Username,
         roundCount: _game.roundCount,
         startTimestamp: _game.startTimestamp,
-        turn: _game.turn as Address,
-        winner: _game.winner as Address,
+        turn: _game.turn as Entity,
+        winner: _game.winner as Entity,
       });
 
       const _towers = Array.from(
@@ -472,7 +463,7 @@ export const GameProvider = ({
         throw new Error('Game not found.');
       }
 
-      if (game.turn === game.player2Address) {
+      if (game.turn === game.player2Id) {
         await onNextRound();
         return;
       }
@@ -499,7 +490,7 @@ export const GameProvider = ({
 
   useEffect(() => {
     if (!game) return () => {};
-    if (game.turn !== game.player2Address) return () => {};
+    if (game.turn !== game.player2Id) return () => {};
     if (!triggerAnimation) return () => {};
 
     const _towers = Array.from(
@@ -567,17 +558,10 @@ export const GameProvider = ({
     triggerAnimation,
   ]);
 
-  const isPlayer1 = useMemo(() => {
-    if (!(game && playerEntity)) return false;
-    const playerAddress = decodeEntity(
-      {
-        address: 'address',
-      },
-      playerEntity,
-    ).address;
-
-    return playerAddress === game?.player1Address;
-  }, [game, playerEntity]);
+  const isPlayer1 = useMemo(
+    () => globalPlayerId === game?.player1Id,
+    [game, globalPlayerId],
+  );
 
   return (
     <GameContext.Provider

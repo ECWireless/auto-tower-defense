@@ -1,3 +1,4 @@
+import { useComponentValue } from '@latticexyz/react';
 import { Entity } from '@latticexyz/recs';
 import { useSync } from '@latticexyz/store-sync/react';
 import { encodeEntity } from '@latticexyz/store-sync/recs';
@@ -28,7 +29,7 @@ const getContractError = (error: BaseError): string => {
 
 export const useMUD = (): {
   components: typeof components;
-  network: { playerEntity: Entity | undefined };
+  network: { globalPlayerId: Entity | undefined };
   systemCalls: {
     buyElectricity: (electricityAmount: bigint) => Promise<{
       error: string | undefined;
@@ -113,17 +114,17 @@ export const useMUD = (): {
   const sync = useSync();
   const worldContract = useWorldContract();
 
-  const playerEntity = useMemo(() => {
-    if (!playerAddress) return undefined;
-    return encodeEntity(
+  const globalPlayerId = (useComponentValue(
+    components.AddressToPlayerId,
+    encodeEntity(
       {
         address: 'address',
       },
       {
-        address: playerAddress,
+        address: playerAddress as `0x${string}`,
       },
-    );
-  }, [playerAddress]);
+    ),
+  )?.value ?? undefined) as Entity | undefined;
 
   const publicClient = useMemo(
     () =>
@@ -617,7 +618,7 @@ export const useMUD = (): {
   };
 
   const network = {
-    playerEntity,
+    globalPlayerId,
   };
 
   const systemCalls = {

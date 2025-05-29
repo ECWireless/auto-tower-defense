@@ -14,7 +14,7 @@ import { Battery, Flag, Home, Loader2, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { zeroAddress } from 'viem';
+import { zeroAddress, zeroHash } from 'viem';
 import { useAccount } from 'wagmi';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
@@ -50,11 +50,11 @@ export const GamePage = (): JSX.Element => {
 
 export const InnerGamePage = (): JSX.Element => {
   const navigate = useNavigate();
-  const { address: playerAddress, isConnected, isReconnecting } = useAccount();
+  const { isConnected, isReconnecting } = useAccount();
   const { data: sessionClient } = useSessionClient();
   const {
     components: { BatteryDetails, SolarFarmDetails },
-    network: { playerEntity },
+    network: { globalPlayerId },
     systemCalls: { claimRecharge },
   } = useMUD();
   const {
@@ -100,15 +100,13 @@ export const InnerGamePage = (): JSX.Element => {
 
   useEffect(() => {
     if (!game) return;
-    if (game.winner === zeroAddress && game.endTimestamp === BigInt(0)) return;
-
-    if (playerAddress !== game.player1Address) return;
-
-    if (game.winner === playerAddress) {
+    if (game.winner === zeroHash && game.endTimestamp === BigInt(0)) return;
+    if (globalPlayerId !== game.player1Id) return;
+    if (game.winner === globalPlayerId) {
       playSfx('win');
     }
     setIsGameOverDialogOpen(true);
-  }, [game, playerAddress, playSfx]);
+  }, [game, globalPlayerId, playSfx]);
 
   // Open Battery Info Dialog if this is the first time the user is playing a game.
   useEffect(() => {
@@ -196,7 +194,7 @@ export const InnerGamePage = (): JSX.Element => {
     }
   };
 
-  const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
+  const batteryDetails = useComponentValue(BatteryDetails, globalPlayerId);
   const solarFarmDetails = useComponentValue(SolarFarmDetails, singletonEntity);
 
   const batteryCharge = useMemo(() => {
