@@ -350,6 +350,19 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__transferAccount",
+    "inputs": [
+      {
+        "name": "newAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__updatUsdcAddress",
     "inputs": [
       {
