@@ -5,11 +5,7 @@ import {
   getComponentValue,
   getComponentValueStrict,
 } from '@latticexyz/recs';
-import {
-  decodeEntity,
-  encodeEntity,
-  singletonEntity,
-} from '@latticexyz/store-sync/recs';
+import { encodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
 import { Battery, Loader2, Play, Signal, Zap } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -170,20 +166,13 @@ export const Home = (): JSX.Element => {
           getComponentValue(KingdomsByLevel, levelAsEntity)?.savedKingdomIds ??
           [];
 
-        const playerAddress = decodeEntity(
-          {
-            address: 'address',
-          },
-          globalPlayerId,
-        ).address;
-
         const topLevelKingdomsICanPlay = topLevelKingdoms.filter(
           savedKingdomId => {
             const savedTopLevelKingdom = getComponentValueStrict(
               SavedKingdom,
               savedKingdomId as Entity,
             );
-            return savedTopLevelKingdom.author !== playerAddress;
+            return savedTopLevelKingdom.author !== globalPlayerId;
           },
         );
 
