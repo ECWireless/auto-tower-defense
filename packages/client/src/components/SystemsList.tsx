@@ -22,7 +22,7 @@ export const SystemsList: React.FC<SystemsListProps> = ({
 }) => {
   const {
     components: { Username },
-    network: { playerEntity },
+    network: { globalPlayerId },
   } = useMUD();
 
   const [systemsTab, setSystemsTab] = useState<'your' | 'other'>('your');
@@ -30,9 +30,9 @@ export const SystemsList: React.FC<SystemsListProps> = ({
   const rowRefs = useRef([]) as React.MutableRefObject<HTMLDivElement[]>;
 
   const myUsername = useMemo(() => {
-    if (!playerEntity) return '';
-    return getComponentValue(Username, playerEntity)?.value ?? '';
-  }, [playerEntity, Username]);
+    if (!globalPlayerId) return '';
+    return getComponentValue(Username, globalPlayerId)?.value ?? '';
+  }, [globalPlayerId, Username]);
 
   const mySavedModifications = useMemo(() => {
     return savedModifications.filter(

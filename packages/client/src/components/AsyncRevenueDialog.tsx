@@ -2,7 +2,6 @@ import { useEntityQuery } from '@latticexyz/react';
 import { getComponentValueStrict, HasValue } from '@latticexyz/recs';
 import { Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -36,9 +35,9 @@ const formatTime = (time: number): string => {
 };
 
 export const AsyncRevenueDialog: React.FC = () => {
-  const { address: playerAddress } = useAccount();
   const {
     components: { RevenueReceipt },
+    network: { globalPlayerId },
   } = useMUD();
 
   const [isAsyncRevenueDialogOpen, setIsAsyncRevenueDialogOpen] =
@@ -48,7 +47,7 @@ export const AsyncRevenueDialog: React.FC = () => {
 
   const revenueReceipts = useEntityQuery([
     HasValue(RevenueReceipt, {
-      playerAddress,
+      playerId: globalPlayerId,
     }),
   ]).map(receiptId => getComponentValueStrict(RevenueReceipt, receiptId));
 

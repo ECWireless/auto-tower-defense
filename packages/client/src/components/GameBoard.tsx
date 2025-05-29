@@ -80,8 +80,8 @@ export const GameBoard: React.FC = () => {
   const canChangeTurn = useMemo(() => {
     if (!game) return false;
     if (game.endTimestamp !== BigInt(0)) return false;
-    if (game.turn === game.player2Address) return true;
-    return game.turn === game.player1Address && game.actionCount === 0;
+    if (game.turn === game.player2Id) return true;
+    return game.turn === game.player1Id && game.actionCount === 0;
   }, [game]);
 
   useEffect(() => {
@@ -288,7 +288,7 @@ export const GameBoard: React.FC = () => {
                                   onDoubleClick={() => onViewTower(towerOnTile)}
                                   style={{
                                     transform:
-                                      towerOnTile.owner === game.player2Address
+                                      towerOnTile.owner === game.player2Id
                                         ? 'rotateY(180deg)'
                                         : 'none',
                                     touchAction: 'none',

@@ -15,11 +15,8 @@ library ProjectileHelpers {
   function executeRoundResults(bytes32 gameId) public {
     GameData memory game = Game.get(gameId);
 
-    address player1Address = game.player1Address;
-    address player2Address = game.player2Address;
-
-    bytes32 localPlayer1Id = EntityHelpers.localAddressToKey(gameId, player1Address);
-    bytes32 localPlayer2Id = EntityHelpers.localAddressToKey(gameId, player2Address);
+    bytes32 localPlayer1Id = EntityHelpers.globalToLocalPlayerId(game.player1Id, gameId);
+    bytes32 localPlayer2Id = EntityHelpers.globalToLocalPlayerId(game.player2Id, gameId);
 
     bytes32[] memory allTowers = getAllTowers(localPlayer1Id, localPlayer2Id);
     TowerDetails[] memory towers = _getTowerDetails(allTowers);
@@ -28,7 +25,7 @@ library ProjectileHelpers {
 
     bool isGameOver = Game.getEndTimestamp(gameId) != 0;
     if (game.roundCount > MAX_ROUNDS && !isGameOver) {
-      endGame(gameId, game.player2Address);
+      endGame(gameId, game.player2Id);
     }
   }
 
@@ -64,7 +61,7 @@ library ProjectileHelpers {
       bytes32 towerId = allTowers[i];
       int16 x = Position.getX(towerId);
       int16 y = Position.getY(towerId);
-      address owner = Owner.get(towerId);
+      bytes32 owner = Owner.get(towerId);
 
       towers[i] = TowerDetails({
         id: towerId,
@@ -202,7 +199,7 @@ library ProjectileHelpers {
     bytes32 gameId = CurrentGame.get(towers[i].id);
     (int16 actualX, int16 actualY) = getActualCoordinates(newProjectileX, newProjectileY);
     bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, actualX, actualY));
-    address entityOwner = Owner.get(positionEntity);
+    bytes32 entityOwner = Owner.get(positionEntity);
 
     if (positionEntity != 0 && towers[i].id != positionEntity && entityOwner != towers[i].owner) {
       _handleCollision(towers, i, positionEntity);
@@ -286,8 +283,8 @@ library ProjectileHelpers {
     return a >= b ? a : b;
   }
 
-  function endGame(bytes32 gameId, address winner) public {
-    require(Game.getWinner(gameId) == address(0), "GameSystem: game has already ended");
+  function endGame(bytes32 gameId, bytes32 winner) public {
+    require(Game.getWinner(gameId) == bytes32(0), "GameSystem: game has already ended");
     require(Game.getEndTimestamp(gameId) == 0, "GameSystem: game has already ended");
 
     Game.setEndTimestamp(gameId, block.timestamp);
@@ -296,7 +293,7 @@ library ProjectileHelpers {
     (int16 mapHeight, int16 mapWidth) = MapConfig.get();
 
     GameData memory game = Game.get(gameId);
-    bool isWinnerPlayer1 = game.player1Address == winner;
+    bool isWinnerPlayer1 = game.player1Id == winner;
     bytes32 loserCastleId = isWinnerPlayer1
       ? EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2)
       : EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2);
@@ -304,7 +301,7 @@ library ProjectileHelpers {
     uint8 loserCastleHealth = Health.getCurrentHealth(loserCastleId);
     require(loserCastleHealth == 0, "GameSystem: loser castle health is not zero");
 
-    bytes32 globalPlayer1Id = EntityHelpers.globalAddressToKey(game.player1Address);
+    bytes32 globalPlayer1Id = game.player1Id;
     uint256 winStreak = WinStreak.get(globalPlayer1Id);
 
     if (isWinnerPlayer1) {
@@ -381,7 +378,7 @@ library ProjectileHelpers {
     LastGameWonInRun.set(globalPlayer1Id, bytes32(0));
   }
 
-  function _saveKingdom(address winner, bytes32[] memory savedGameActions, bytes32 savedKingdomId) internal {
+  function _saveKingdom(bytes32 winner, bytes32[] memory savedGameActions, bytes32 savedKingdomId) internal {
     SavedKingdomData memory savedKingdom = SavedKingdomData({
       author: winner,
       createdAtTimestamp: block.timestamp,

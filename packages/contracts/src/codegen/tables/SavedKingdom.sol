@@ -17,7 +17,7 @@ import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/Encoded
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct SavedKingdomData {
-  address author;
+  bytes32 author;
   uint256 createdAtTimestamp;
   uint256 electricityBalance;
   uint256 losses;
@@ -30,12 +30,12 @@ library SavedKingdom {
   ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000053617665644b696e67646f6d00000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0094050114202020200000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x00a0050120202020200000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (address, uint256, uint256, uint256, uint256, bytes32[])
-  Schema constant _valueSchema = Schema.wrap(0x00940501611f1f1f1fc100000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (bytes32, uint256, uint256, uint256, uint256, bytes32[])
+  Schema constant _valueSchema = Schema.wrap(0x00a005015f1f1f1f1fc100000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -77,29 +77,29 @@ library SavedKingdom {
   /**
    * @notice Get author.
    */
-  function getAuthor(bytes32 id) internal view returns (address author) {
+  function getAuthor(bytes32 id) internal view returns (bytes32 author) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (address(bytes20(_blob)));
+    return (bytes32(_blob));
   }
 
   /**
    * @notice Get author.
    */
-  function _getAuthor(bytes32 id) internal view returns (address author) {
+  function _getAuthor(bytes32 id) internal view returns (bytes32 author) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
-    return (address(bytes20(_blob)));
+    return (bytes32(_blob));
   }
 
   /**
    * @notice Set author.
    */
-  function setAuthor(bytes32 id, address author) internal {
+  function setAuthor(bytes32 id, bytes32 author) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -109,7 +109,7 @@ library SavedKingdom {
   /**
    * @notice Set author.
    */
-  function _setAuthor(bytes32 id, address author) internal {
+  function _setAuthor(bytes32 id, bytes32 author) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -481,7 +481,7 @@ library SavedKingdom {
    */
   function set(
     bytes32 id,
-    address author,
+    bytes32 author,
     uint256 createdAtTimestamp,
     uint256 electricityBalance,
     uint256 losses,
@@ -504,7 +504,7 @@ library SavedKingdom {
    */
   function _set(
     bytes32 id,
-    address author,
+    bytes32 author,
     uint256 createdAtTimestamp,
     uint256 electricityBalance,
     uint256 losses,
@@ -572,17 +572,17 @@ library SavedKingdom {
   )
     internal
     pure
-    returns (address author, uint256 createdAtTimestamp, uint256 electricityBalance, uint256 losses, uint256 wins)
+    returns (bytes32 author, uint256 createdAtTimestamp, uint256 electricityBalance, uint256 losses, uint256 wins)
   {
-    author = (address(Bytes.getBytes20(_blob, 0)));
+    author = (Bytes.getBytes32(_blob, 0));
 
-    createdAtTimestamp = (uint256(Bytes.getBytes32(_blob, 20)));
+    createdAtTimestamp = (uint256(Bytes.getBytes32(_blob, 32)));
 
-    electricityBalance = (uint256(Bytes.getBytes32(_blob, 52)));
+    electricityBalance = (uint256(Bytes.getBytes32(_blob, 64)));
 
-    losses = (uint256(Bytes.getBytes32(_blob, 84)));
+    losses = (uint256(Bytes.getBytes32(_blob, 96)));
 
-    wins = (uint256(Bytes.getBytes32(_blob, 116)));
+    wins = (uint256(Bytes.getBytes32(_blob, 128)));
   }
 
   /**
@@ -643,7 +643,7 @@ library SavedKingdom {
    * @return The static data, encoded into a sequence of bytes.
    */
   function encodeStatic(
-    address author,
+    bytes32 author,
     uint256 createdAtTimestamp,
     uint256 electricityBalance,
     uint256 losses,
@@ -678,7 +678,7 @@ library SavedKingdom {
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
   function encode(
-    address author,
+    bytes32 author,
     uint256 createdAtTimestamp,
     uint256 electricityBalance,
     uint256 losses,

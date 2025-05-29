@@ -12,9 +12,9 @@ import AppRoutes from '@/Routes';
 export const App = (): JSX.Element => {
   const {
     components: { Username },
-    network: { playerEntity },
+    network: { globalPlayerId },
   } = useMUD();
-  const savedUsername = useComponentValue(Username, playerEntity)?.value;
+  const savedUsername = useComponentValue(Username, globalPlayerId)?.value;
 
   return (
     <Router>

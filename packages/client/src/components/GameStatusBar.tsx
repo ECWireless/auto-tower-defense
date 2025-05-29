@@ -42,7 +42,7 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({
           <div className="sm:text-sm text-[10px] text-purple-300">
             {game.player1Username}
           </div>
-          {game.turn === game.player1Address && (
+          {game.turn === game.player1Id && (
             <Badge
               className="border-purple-500 flex-shrink-0 h-4 ml-1 px-1 sm:h-5 sm:ml-2 sm:text-xs text-[8px] text-purple-400"
               variant="outline"
@@ -120,7 +120,7 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({
       {/* Player 2 */}
       <div className="col-span-2 pr-1 sm:col-span-2 sm:pr-4 text-right">
         <div className="flex items-center justify-end">
-          {game.turn === game.player2Address && (
+          {game.turn === game.player2Id && (
             <Badge
               className="border-pink-500 flex-shrink-0 h-4 mr-1 px-1 sm:h-5 sm:mr-2 sm:text-xs text-[8px] text-pink-400"
               variant="outline"

@@ -32,10 +32,11 @@ import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const { data: sessionClient } = useSessionClient();
   const {
     components: {
+      AddressToPlayerId,
       BatteryDetails,
       CurrentGame,
       Game,
@@ -47,7 +48,7 @@ export const Home = (): JSX.Element => {
       Username,
       WinStreak,
     },
-    network: { playerEntity },
+    network: { globalPlayerId },
     systemCalls: { claimRecharge, createGame },
   } = useMUD();
   const { playSfx } = useSettings();
@@ -69,7 +70,7 @@ export const Home = (): JSX.Element => {
     useComponentValue(PlayerCount, singletonEntity)?.value ?? 0,
   );
 
-  const batteryDetails = useComponentValue(BatteryDetails, playerEntity);
+  const batteryDetails = useComponentValue(BatteryDetails, globalPlayerId);
   const solarFarmDetails = useComponentValue(SolarFarmDetails, singletonEntity);
 
   const batteryCharge = useMemo(() => {
@@ -98,11 +99,46 @@ export const Home = (): JSX.Element => {
         setIsCreatingGame(true);
         playSfx('click1');
 
-        if (!playerEntity) {
-          throw new Error('Player entity not found');
+        if (!address) {
+          throw new Error('No wallet address connected');
         }
 
-        let currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
+        if (!globalPlayerId) {
+          const { error, success } = await createGame(username, true);
+          if (error && !success) {
+            throw new Error(error);
+          }
+
+          toast.success('Game Created!');
+          const newGlobalPlayerId = getComponentValue(
+            AddressToPlayerId,
+            encodeEntity(
+              {
+                address: 'address',
+              },
+              {
+                address,
+              },
+            ),
+          )?.value as Entity | undefined;
+
+          if (!newGlobalPlayerId) {
+            throw new Error('No player ID found for the connected address');
+          }
+          const currentGame = getComponentValue(
+            CurrentGame,
+            newGlobalPlayerId,
+          )?.value;
+
+          if (!currentGame) {
+            throw new Error('No recent game found');
+          }
+
+          navigate(`${GAMES_PATH}/${currentGame}`);
+          return;
+        }
+
+        let currentGame = getComponentValue(CurrentGame, globalPlayerId)?.value;
         if (currentGame) {
           const game = getComponentValueStrict(Game, currentGame as Entity);
           if (game.endTimestamp === BigInt(0)) {
@@ -111,14 +147,17 @@ export const Home = (): JSX.Element => {
           }
         }
 
-        const savedUsername = getComponentValue(Username, playerEntity)?.value;
+        const savedUsername = getComponentValue(
+          Username,
+          globalPlayerId,
+        )?.value;
         if (playerCount >= MAX_PLAYERS && !savedUsername) {
           setIsMaxPlayersDialogOpen(true);
           return;
         }
 
         const winStreak =
-          getComponentValue(WinStreak, playerEntity)?.value ?? BigInt(0);
+          getComponentValue(WinStreak, globalPlayerId)?.value ?? BigInt(0);
         const topLevel =
           getComponentValue(TopLevel, singletonEntity)?.level ?? BigInt(0);
 
@@ -135,7 +174,7 @@ export const Home = (): JSX.Element => {
           {
             address: 'address',
           },
-          playerEntity,
+          globalPlayerId,
         ).address;
 
         const topLevelKingdomsICanPlay = topLevelKingdoms.filter(
@@ -161,15 +200,12 @@ export const Home = (): JSX.Element => {
         }
 
         const { error, success } = await createGame(username, resetLevel);
-
         if (error && !success) {
           throw new Error(error);
         }
 
         toast.success('Game Created!');
-
-        currentGame = getComponentValue(CurrentGame, playerEntity)?.value;
-
+        currentGame = getComponentValue(CurrentGame, globalPlayerId)?.value;
         if (!currentGame) {
           throw new Error('No recent game found');
         }
@@ -187,13 +223,15 @@ export const Home = (): JSX.Element => {
       }
     },
     [
+      address,
+      AddressToPlayerId,
       batteryDetails,
       createGame,
       CurrentGame,
       Game,
       KingdomsByLevel,
       navigate,
-      playerEntity,
+      globalPlayerId,
       playSfx,
       playerCount,
       SavedKingdom,
@@ -230,13 +268,21 @@ export const Home = (): JSX.Element => {
   }, [claimRecharge, playSfx]);
 
   useEffect(() => {
-    if (!playerEntity) return;
-    const savedUsername = getComponentValue(Username, playerEntity)?.value;
+    if (!globalPlayerId) return;
+    const savedUsername = getComponentValue(Username, globalPlayerId)?.value;
     if (savedUsername) {
       setUsername(savedUsername);
       setUsernameSaved(true);
     }
-  }, [Username, playerEntity]);
+  }, [Username, globalPlayerId]);
+
+  const usernameError = useMemo(() => {
+    if (!username) return null;
+    if (username.length > 20) {
+      return 'Username must be 20 characters or less';
+    }
+    return null;
+  }, [username]);
 
   return (
     <div className="bg-black flex flex-col min-h-screen p-4 relative text-white">
@@ -357,6 +403,9 @@ export const Home = (): JSX.Element => {
                     type="text"
                     value={username}
                   />
+                  {usernameError && (
+                    <div className="text-red-500 text-sm ">{usernameError}</div>
+                  )}
                 </div>
               )}
               <div className="flex justify-center mb-16">

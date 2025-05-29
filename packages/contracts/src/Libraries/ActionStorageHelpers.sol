@@ -41,7 +41,7 @@ library ActionStorageHelpers {
 
   function storeInstallTowerAction(
     bytes32 gameId,
-    address playerAddress,
+    bytes32 globalPlayerId,
     int16 newX,
     int16 newY,
     bool hasProjectile
@@ -79,7 +79,7 @@ library ActionStorageHelpers {
 
     SavedGameData memory savedGame = SavedGameData({
       gameId: gameId,
-      winner: playerAddress,
+      winner: globalPlayerId,
       actions: newSavedGameActionIds
     });
 

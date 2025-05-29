@@ -125,19 +125,6 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__getGameSystemAddress",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "app__getSolarFarmSystemAddress",
     "inputs": [],
     "outputs": [
@@ -303,6 +290,40 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__saveSystemTemplate",
+    "inputs": [
+      {
+        "name": "bytecode",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "sourceCode",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "savedModificationId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__sellElectricity",
     "inputs": [
       {
@@ -322,6 +343,19 @@ declare const abi: [
         "name": "electricityAmount",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__transferAccount",
+    "inputs": [
+      {
+        "name": "newAddress",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],

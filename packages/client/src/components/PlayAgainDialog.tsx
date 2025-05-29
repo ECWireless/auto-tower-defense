@@ -54,7 +54,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
       Username,
       WinStreak,
     },
-    network: { playerEntity },
+    network: { globalPlayerId },
     systemCalls: { createGame },
   } = useMUD();
   const { playSfx } = useSettings();
@@ -64,7 +64,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   const [isCreatingGame, setIsCreatingGame] = useState(false);
 
   const winStreak =
-    useComponentValue(WinStreak, playerEntity)?.value ?? BigInt(0);
+    useComponentValue(WinStreak, globalPlayerId)?.value ?? BigInt(0);
   const topLevel = useComponentValue(TopLevel, singletonEntity)?.level;
   const levelAsEntity = encodeEntity(
     { level: 'uint256' },
@@ -83,7 +83,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
         SavedKingdom,
         savedKingdomId as Entity,
       );
-      return savedTopLevelKingdom.author !== game.player1Address;
+      return savedTopLevelKingdom.author !== game.player1Id;
     });
   }, [game, SavedKingdom, topLevelKingdoms]);
 
@@ -96,16 +96,16 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
         throw new Error('Game not found.');
       }
 
-      if (!playerEntity) {
+      if (!globalPlayerId) {
         throw new Error('Player entity not found.');
       }
 
       const resetLevel =
-        game.winner !== game.player1Address ||
+        game.winner !== game.player1Id ||
         (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0);
 
-      const savedUsername = getComponentValue(Username, playerEntity)?.value;
-      const batteryDetails = getComponentValue(BatteryDetails, playerEntity);
+      const savedUsername = getComponentValue(Username, globalPlayerId)?.value;
+      const batteryDetails = getComponentValue(BatteryDetails, globalPlayerId);
       const activeBalance = batteryDetails?.activeBalance ?? BigInt(0);
       const reserveBalance = batteryDetails?.reserveBalance ?? BigInt(0);
       const totalBalance = activeBalance + reserveBalance;
@@ -126,7 +126,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
 
       toast.success('Game Created!');
 
-      const newGame = getComponentValue(CurrentGame, playerEntity)?.value;
+      const newGame = getComponentValue(CurrentGame, globalPlayerId)?.value;
       if (!newGame) {
         throw new Error('No recent game found');
       }
@@ -149,7 +149,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     CurrentGame,
     game,
     navigate,
-    playerEntity,
+    globalPlayerId,
     playSfx,
     setIsGameOverDialogOpen,
     setIsSolarFarmDialogOpen,
@@ -377,7 +377,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     );
   }
 
-  if (game.winner === game.player1Address) {
+  if (game.winner === game.player1Id) {
     return (
       <Dialog
         open={isGameOverDialogOpen}
@@ -513,12 +513,11 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
             Your castle has been destroyed by the enemy.
           </DialogDescription>
         </DialogHeader>
-        {game.winner !== game.player1Address &&
-          game.roundCount > MAX_ROUNDS && (
-            <p className="font-semibold mt-2">
-              You have reached the max rounds you can play in a game.
-            </p>
-          )}
+        {game.winner !== game.player1Id && game.roundCount > MAX_ROUNDS && (
+          <p className="font-semibold mt-2">
+            You have reached the max rounds you can play in a game.
+          </p>
+        )}
 
         {revenueReceipt && (
           <div className="my-4 space-y-6">

@@ -48,7 +48,7 @@ contract BatteryHelpersTest is MudTest {
   }
 
   function testGrantBattery() public {
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 lastRechargeTimestamp = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
     assertEq(lastRechargeTimestamp, 0);
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
@@ -59,6 +59,7 @@ contract BatteryHelpersTest is MudTest {
     bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
     _winGame(aliceAddress, gameId);
 
+    globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     lastRechargeTimestamp = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
     assert(lastRechargeTimestamp != 0);
 
@@ -67,7 +68,7 @@ contract BatteryHelpersTest is MudTest {
   }
 
   function stakeElectricity() public {
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 stakedBalance = BatteryDetails.getStakedBalance(globalPlayerId);
     assertEq(stakedBalance, 0);
 
@@ -88,7 +89,7 @@ contract BatteryHelpersTest is MudTest {
 
     // Lose first run as Alice
     _loseRun(aliceAddress, "Alice");
-    bytes32 globalPlayerId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     assertEq(activeBalance, BATTERY_STORAGE_LIMIT - 4000);
 
@@ -123,8 +124,8 @@ contract BatteryHelpersTest is MudTest {
 
     bytes32[] memory kingdoms = KingdomsByLevel.get(1);
     bytes32 bobSavedKingdomId = kingdoms[0];
-    address bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
-    assertEq(bobSavedKingdomAuthor, bobAddress);
+    bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
+    assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Have Jane reach top spot, so that Alice's stake does not get returned to active balance later
     vm.prank(janeAddress);
@@ -166,7 +167,7 @@ contract BatteryHelpersTest is MudTest {
     vm.stopPrank();
 
     // Make sure Alice's staked balance is 25% of Bob's SavedKingdom stake (500Wh)
-    bytes32 globalAliceId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 aliceStakedBalance = BatteryDetails.getStakedBalance(globalAliceId);
     assertEq(aliceStakedBalance, 8500); // 8.5kWh
 
@@ -199,8 +200,8 @@ contract BatteryHelpersTest is MudTest {
 
     bytes32[] memory kingdoms = KingdomsByLevel.get(1);
     bytes32 bobSavedKingdomId = kingdoms[0];
-    address bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
-    assertEq(bobSavedKingdomAuthor, bobAddress);
+    bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
+    assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Have Jane reach top spot, so that Alice's stake does not get returned to active balance later
     vm.prank(janeAddress);
@@ -275,7 +276,7 @@ contract BatteryHelpersTest is MudTest {
     vm.stopPrank();
 
     // Make sure her staked balance is 25% of Bob's SavedKingdom stake (34kWh)
-    bytes32 globalAliceId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 aliceStakedBalance = BatteryDetails.getStakedBalance(globalAliceId);
     assertEq(aliceStakedBalance, 8000 + 8500); // 8kWh + 6.5kWh
 
@@ -308,8 +309,8 @@ contract BatteryHelpersTest is MudTest {
 
     bytes32[] memory kingdoms = KingdomsByLevel.get(1);
     bytes32 bobSavedKingdomId = kingdoms[0];
-    address bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
-    assertEq(bobSavedKingdomAuthor, bobAddress);
+    bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
+    assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Jane should lose her stake to Bob's SavedKingdom
     _loseRun(janeAddress, "Jane");
@@ -343,7 +344,7 @@ contract BatteryHelpersTest is MudTest {
     vm.stopPrank();
 
     // Staked balance should be 0 since Alice is the top player (run is over)
-    bytes32 globalAliceId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 aliceStakedBalance = BatteryDetails.getStakedBalance(globalAliceId);
     assertEq(aliceStakedBalance, 0); // 0kWh
 
@@ -363,7 +364,7 @@ contract BatteryHelpersTest is MudTest {
     assertEq(bobSavedKingdomElectricityBalance, 1000); // 1kWh
 
     // Make sure Jane, as the only author, got 12.5% of the stake (250Wh)
-    bytes32 globalJaneId = EntityHelpers.globalAddressToKey(janeAddress);
+    bytes32 globalJaneId = EntityHelpers.addressToGlobalPlayerId(janeAddress);
     uint256 janeReserveBalance = BatteryDetails.getReserveBalance(globalJaneId);
     assertEq(janeReserveBalance, 250); // 0.25kWh
 
@@ -383,8 +384,8 @@ contract BatteryHelpersTest is MudTest {
 
     bytes32[] memory kingdoms = KingdomsByLevel.get(1);
     bytes32 bobSavedKingdomId = kingdoms[0];
-    address bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
-    assertEq(bobSavedKingdomAuthor, bobAddress);
+    bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
+    assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Jane should lose her stake to Bob's SavedKingdom
     _loseRun(janeAddress, "Jane");
@@ -419,7 +420,7 @@ contract BatteryHelpersTest is MudTest {
     vm.stopPrank();
 
     // Staked balance should be 8kWh since Bob's SavedKingdom has less than 1.92kWh
-    bytes32 globalAliceId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 aliceStakedBalance = BatteryDetails.getStakedBalance(globalAliceId);
     assertEq(aliceStakedBalance, 8000); // 8kWh
 
@@ -445,14 +446,14 @@ contract BatteryHelpersTest is MudTest {
 
     bytes32[] memory kingdoms = KingdomsByLevel.get(1);
     bytes32 bobSavedKingdomId = kingdoms[0];
-    address bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
-    assertEq(bobSavedKingdomAuthor, bobAddress);
+    bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
+    assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Alice should lose her stake to Bob's SavedKingdom
     _loseRun(aliceAddress, "Alice");
 
     // Make sure that Alice's stakedBalance is 0kWh
-    bytes32 globalAliceId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 aliceStakedBalance = BatteryDetails.getStakedBalance(globalAliceId);
     assertEq(aliceStakedBalance, 0); // 0kWh
     uint256 aliceActiveBalance = BatteryDetails.getActiveBalance(globalAliceId);
@@ -464,7 +465,7 @@ contract BatteryHelpersTest is MudTest {
 
     // Make sure 25% of Alice's stake goes to Bob's reserve balance (2kWh)
     // It would be 12.5% if there were authors
-    bytes32 globalBobId = EntityHelpers.globalAddressToKey(bobAddress);
+    bytes32 globalBobId = EntityHelpers.addressToGlobalPlayerId(bobAddress);
     uint256 bobReserveBalance = BatteryDetails.getReserveBalance(globalBobId);
     assertEq(bobReserveBalance, 2000); // 2kWh
 
@@ -477,9 +478,12 @@ contract BatteryHelpersTest is MudTest {
 
   // Test loseStake to increase opponent SavedKingdom balance and part of reserve balance; while also splitting with authors
   function testLoseStakeAuthorSplit() public {
+    vm.startPrank(janeAddress);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Jane", true);
     // Have Jane save a system modification
-    vm.prank(janeAddress);
     IWorld(worldAddress).app__saveModification(AUTHORED_BYTECODE, "My description", "Jane's System Modification", "");
+    vm.stopPrank();
 
     // Bob should start a game and create a SavedKingdom using Jane's system modification
     vm.startPrank(bobAddress);
@@ -494,14 +498,14 @@ contract BatteryHelpersTest is MudTest {
 
     bytes32[] memory kingdoms = KingdomsByLevel.get(1);
     bytes32 bobSavedKingdomId = kingdoms[0];
-    address bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
-    assertEq(bobSavedKingdomAuthor, bobAddress);
+    bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
+    assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Alice should lose her stake to Bob's SavedKingdom
     _loseRun(aliceAddress, "Alice");
 
     // Make sure that Alice's stakedBalance is 0kWh
-    bytes32 globalAliceId = EntityHelpers.globalAddressToKey(aliceAddress);
+    bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 aliceStakedBalance = BatteryDetails.getStakedBalance(globalAliceId);
     assertEq(aliceStakedBalance, 0); // 0kWh
     uint256 aliceActiveBalance = BatteryDetails.getActiveBalance(globalAliceId);
@@ -513,12 +517,12 @@ contract BatteryHelpersTest is MudTest {
     uint256 bobSavedKingdomWins = SavedKingdom.getWins(bobSavedKingdomId);
 
     // Make sure 12.5% of Alice's stake goes to Bob's reserve balance (1kWh)
-    bytes32 globalBobId = EntityHelpers.globalAddressToKey(bobAddress);
+    bytes32 globalBobId = EntityHelpers.addressToGlobalPlayerId(bobAddress);
     uint256 bobReserveBalance = BatteryDetails.getReserveBalance(globalBobId);
     assertEq(bobReserveBalance, 1000); // 1kWh
 
     // Make sure 12.5% of Alice's stake goes to Jane's reserve balance (1kWh)
-    bytes32 globalJaneId = EntityHelpers.globalAddressToKey(janeAddress);
+    bytes32 globalJaneId = EntityHelpers.addressToGlobalPlayerId(janeAddress);
     uint256 janeReserveBalance = BatteryDetails.getReserveBalance(globalJaneId);
     assertEq(janeReserveBalance, 1000); // 1kWh
 

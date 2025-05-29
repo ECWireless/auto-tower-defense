@@ -5,6 +5,7 @@ pragma solidity >=0.8.24;
 
 import { Action, ActionData } from "./tables/Action.sol";
 import { AddressBook, AddressBookData } from "./tables/AddressBook.sol";
+import { AddressToPlayerId } from "./tables/AddressToPlayerId.sol";
 import { BatteryDetails, BatteryDetailsData } from "./tables/BatteryDetails.sol";
 import { Castle } from "./tables/Castle.sol";
 import { Counter } from "./tables/Counter.sol";
@@ -24,6 +25,7 @@ import { MapConfig } from "./tables/MapConfig.sol";
 import { Owner } from "./tables/Owner.sol";
 import { OwnerTowers } from "./tables/OwnerTowers.sol";
 import { PlayerCount } from "./tables/PlayerCount.sol";
+import { PlayerIdToAddress } from "./tables/PlayerIdToAddress.sol";
 import { Position } from "./tables/Position.sol";
 import { Projectile, ProjectileData } from "./tables/Projectile.sol";
 import { ProjectileTrajectory } from "./tables/ProjectileTrajectory.sol";

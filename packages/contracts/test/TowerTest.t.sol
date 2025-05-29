@@ -14,8 +14,6 @@ contract TowerTest is MudTest {
   address bob = vm.addr(2);
   address rob = address(0);
 
-  bytes32 robId = EntityHelpers.globalAddressToKey(rob);
-  bytes32 defaultSavedGameId = keccak256(abi.encodePacked(bytes32(0), robId));
   bytes constant BYTECODE =
     hex"6080604052348015600e575f5ffd5b506102488061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063cae93eb91461002d575b5f5ffd5b610047600480360381019061004291906100bf565b61005e565b60405161005592919061010c565b60405180910390f35b5f5f60018461006d9190610160565b60018461007a91906101b9565b915091509250929050565b5f5ffd5b5f8160010b9050919050565b61009e81610089565b81146100a8575f5ffd5b50565b5f813590506100b981610095565b92915050565b5f5f604083850312156100d5576100d4610085565b5b5f6100e2858286016100ab565b92505060206100f3858286016100ab565b9150509250929050565b61010681610089565b82525050565b5f60408201905061011f5f8301856100fd565b61012c60208301846100fd565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61016a82610089565b915061017583610089565b925082820190507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008112617fff821317156101b3576101b2610133565b5b92915050565b5f6101c382610089565b91506101ce83610089565b92508282039050617fff81137fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008212171561020c5761020b610133565b5b9291505056fea2646970667358221220ce99c3e5e762de0a056f89a7edc1f3fd0b073a97bb3c924e932a6f0a45c842cd64736f6c634300081c0033";
   bytes constant STRAIGHT_LINE_BYTECODE =
@@ -162,10 +160,18 @@ contract TowerTest is MudTest {
     vm.stopPrank();
   }
 
-  function testRevertModifyNoGame() public {
-    vm.expectRevert(bytes("TowerSystem: player has no ongoing game"));
-    vm.prank(alice);
-    IWorld(worldAddress).app__playerModifyTowerSystem(0, BYTECODE, "");
+  function testRevertModifyGameEnded() public {
+    vm.startPrank(alice);
+    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
+    IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
+    // Need to go through 2 turns to end the game
+    IWorld(worldAddress).app__nextTurn(gameId);
+    IWorld(worldAddress).app__nextTurn(gameId);
+
+    vm.expectRevert(bytes("TowerSystem: game has ended"));
+    IWorld(worldAddress).app__playerModifyTowerSystem(towerId, BYTECODE, "");
+    vm.stopPrank();
   }
 
   function testRevertModifyNotPlayerGame() public {
@@ -198,11 +204,14 @@ contract TowerTest is MudTest {
     assertEq(savedModification.description, description);
     assertEq(savedModification.name, name);
     assertEq(savedModification.sourceCode, sourceCode);
-    assertEq(savedModification.author, alice);
+    assertEq(savedModification.author, EntityHelpers.addressToGlobalPlayerId(alice));
   }
 
   function testRevertSaveModificationEmptyBytes() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -214,6 +223,8 @@ contract TowerTest is MudTest {
 
   function testRevertSaveModificationNoDuplicateBytecode() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -240,6 +251,8 @@ contract TowerTest is MudTest {
 
   function testRevertSaveModificationNoName() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
     string memory description = "Test description";
     string memory sourceCode = "Test source code";
     string memory emptyName;
@@ -250,6 +263,8 @@ contract TowerTest is MudTest {
 
   function testRevertSaveModificationNoDescription() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
     string memory emptyDescription;
@@ -260,6 +275,8 @@ contract TowerTest is MudTest {
 
   function testRevertSaveModificationNameTooLong() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
     string memory description = "Test description";
     string memory name = "Test name that is too long and should revert";
     string memory sourceCode = "Test source code";
@@ -270,6 +287,9 @@ contract TowerTest is MudTest {
 
   function testRevertSaveModificationDescriptionTooLong() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string
       memory description = "This is a long test string meant to exceed the 256-byte limit in Solidity. It serves as a demonstration of handling storage and memory strings in smart contracts. The purpose of this string is to push beyond constraints, ensuring that Solidity developers recognize when their data exceeds inline storage limits.";
     string memory name = "Test name";
@@ -281,6 +301,9 @@ contract TowerTest is MudTest {
 
   function testRevertSaveModificationNameTaken() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -292,6 +315,9 @@ contract TowerTest is MudTest {
 
   function testEditModification() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -309,14 +335,17 @@ contract TowerTest is MudTest {
 
   function testRevertEditModificationNotAuthor() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
     bytes32 savedModificationId = IWorld(worldAddress).app__saveModification(BYTECODE, description, name, sourceCode);
-
     vm.stopPrank();
-    vm.startPrank(bob);
 
+    vm.startPrank(bob);
+    IWorld(worldAddress).app__createGame("Bob", true);
     string memory newDescription = "New description";
     string memory newName = "New name";
 
@@ -327,6 +356,9 @@ contract TowerTest is MudTest {
 
   function testRevertEditModificationNameTaken() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -340,6 +372,9 @@ contract TowerTest is MudTest {
 
   function testRevertEditModificationSameDetails() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -355,6 +390,9 @@ contract TowerTest is MudTest {
 
   function testRevertEditModificationNoName() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -370,6 +408,9 @@ contract TowerTest is MudTest {
 
   function testRevertEditModificationNoDescription() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -385,6 +426,9 @@ contract TowerTest is MudTest {
 
   function testRevertEditModificationNameTooLong() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -400,6 +444,9 @@ contract TowerTest is MudTest {
 
   function testRevertEditModificationDescriptionTooLong() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -416,6 +463,9 @@ contract TowerTest is MudTest {
 
   function testRevertEditModificationModDoesNotExist() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -432,6 +482,9 @@ contract TowerTest is MudTest {
 
   function testDeleteModification() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -444,20 +497,23 @@ contract TowerTest is MudTest {
     assertEq(savedModification.description, "");
     assertEq(savedModification.name, "");
     assertEq(savedModification.sourceCode, "");
-    assertEq(savedModification.author, address(0));
+    assertEq(savedModification.author, EntityHelpers.addressToGlobalPlayerId(address(0)));
     assertEq(savedModification.useCount, 0);
   }
 
   function testRevertDeleteModificationNotAuthor() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
     bytes32 savedModificationId = IWorld(worldAddress).app__saveModification(BYTECODE, description, name, sourceCode);
-
     vm.stopPrank();
-    vm.startPrank(bob);
 
+    vm.startPrank(bob);
+    IWorld(worldAddress).app__createGame("Bob", true);
     vm.expectRevert(bytes("TowerSystem: only the author can delete this modification"));
     IWorld(worldAddress).app__deleteModification(savedModificationId);
     vm.stopPrank();
@@ -465,6 +521,9 @@ contract TowerTest is MudTest {
 
   function testRevertDeleteModificationModDoesNotExist() public {
     vm.startPrank(alice);
+    // Create a game to register the player
+    IWorld(worldAddress).app__createGame("Alice", true);
+
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
