@@ -103,7 +103,11 @@ export const useMUD = (): {
     sellElectricity: (
       electricityAmount: bigint,
     ) => Promise<{ error: string | undefined; success: boolean }>;
-    sellElectricityThroughRelay: (electricityAmount: bigint) => Promise<{
+    sellElectricityThroughRelay: (
+      electricityAmount: bigint,
+      originChainId: number,
+      destinationChainId: number,
+    ) => Promise<{
       error: string | undefined;
       success: boolean;
       txHash?: `0x${string}`;
@@ -576,7 +580,11 @@ export const useMUD = (): {
     }
   };
 
-  const sellElectricityThroughRelay = async (electricityAmount: bigint) => {
+  const sellElectricityThroughRelay = async (
+    electricityAmount: bigint,
+    originChainId: number,
+    destinationChainId: number,
+  ) => {
     try {
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
@@ -596,7 +604,12 @@ export const useMUD = (): {
       // Store the tx now so SolarFarmDialog doesn't have to wait for the tx to be confirmed
       localStorage.setItem(
         SELL_EMITTER_TX_KEY,
-        JSON.stringify({ txHash: tx, timestamp: Date.now() }),
+        JSON.stringify({
+          destinationChainId,
+          originChainId,
+          timestamp: Date.now(),
+          txHash: tx,
+        }),
       );
       const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
