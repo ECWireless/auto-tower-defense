@@ -351,7 +351,7 @@ library ProjectileHelpers {
 
   function _setHighestLevel(bytes32 globalPlayer1, uint256 level) internal {
     uint256 highestLevel = HighestLevel.get(globalPlayer1);
-    if (level > highestLevel) {
+    if (level > highestLevel || highestLevel == 0) {
       HighestLevel.set(globalPlayer1, level);
     }
   }

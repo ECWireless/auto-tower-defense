@@ -291,7 +291,7 @@ library BatteryHelpers {
     uint256 winStreak = WinStreak.get(globalPlayer1Id);
     bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(winStreak);
 
-    if (kingdomsByLevel.length == 0) {
+    if (kingdomsByLevel.length == 0 || !_arePlayableKingdoms(globalPlayer1Id, kingdomsByLevel)) {
       uint256 stakedBalance = BatteryDetails.getStakedBalance(globalPlayer1Id);
       uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayer1Id);
       uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayer1Id);
@@ -306,5 +306,22 @@ library BatteryHelpers {
       BatteryDetails.setReserveBalance(globalPlayer1Id, reserveBalance);
       BatteryDetails.setStakedBalance(globalPlayer1Id, 0);
     }
+  }
+
+   /**
+   * Checks if any kingdoms in the next level are playable
+   * Only kingdoms that are not authored by the player can be played
+   * @param globalPlayerId The global ID of the player
+   * @param kingdomsByLevel The global ID of the player
+   * @return bool True if there are playable kingdoms, false otherwise
+   */
+  function _arePlayableKingdoms(bytes32 globalPlayerId, bytes32[] memory kingdomsByLevel) internal view returns (bool) {
+    for (uint256 i = 0; i < kingdomsByLevel.length; i++) {
+      bytes32 kingdomId = kingdomsByLevel[i];
+      if (SavedKingdom.getAuthor(kingdomId) != globalPlayerId) {
+        return true; // Found a playable kingdom
+      }
+    }
+    return false; // No playable kingdoms found
   }
 }
