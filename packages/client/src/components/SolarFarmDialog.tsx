@@ -21,7 +21,7 @@ import {
   http,
   parseUnits,
 } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import { useAccount, useSwitchChain, useWalletClient } from 'wagmi';
 
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ import {
   API_ENDPOINT,
   BUY_ESCROW_TX_KEY,
   BUY_RECEIVER_ABI,
+  chains,
   ESCROW_ABI,
   ESCROW_ADDRESSES,
   SELL_EMITTER_ABI,
@@ -78,6 +79,9 @@ export const SolarFarmDialog: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [electricityAmount, setElectricityAmount] = useState<string>('1.92');
   const [isThereExistingRelayTx, setIsThereExistingRelayTx] = useState(false);
+  const [existingRelayChainId, setExistingRelayChainId] = useState<
+    number | null
+  >(null);
 
   const [playerUSDCBalance, setPlayerUSDCBalance] = useState<bigint>(BigInt(0));
 
@@ -137,7 +141,7 @@ export const SolarFarmDialog: React.FC = () => {
         });
     } else if (existingSellEmitterTx) {
       const parsedTx = JSON.parse(existingSellEmitterTx);
-      const { txHash } = parsedTx;
+      const { destinationChainId, txHash } = parsedTx;
 
       // Use logs to get the amount
       const gameChain = getGameChain();
@@ -172,6 +176,9 @@ export const SolarFarmDialog: React.FC = () => {
                 amountInCents * solarFarmDetails?.whPerCentPrice;
               setElectricityAmount(formatUnits(electricityAmount, 3));
               setIsThereExistingRelayTx(true);
+              setExistingRelayChainId(
+                destinationChainId ? Number(destinationChainId) : null,
+              );
               setIsBuying(false);
             }
           }
@@ -485,7 +492,12 @@ export const SolarFarmDialog: React.FC = () => {
           if (txHash) {
             localStorage.setItem(
               BUY_ESCROW_TX_KEY,
-              JSON.stringify({ txHash, timestamp: Date.now() }),
+              JSON.stringify({
+                destinationChainId: getGameChain().id,
+                originChainId: externalChain.id,
+                timestamp: Date.now(),
+                txHash,
+              }),
             );
           }
         }
@@ -535,7 +547,9 @@ export const SolarFarmDialog: React.FC = () => {
           body: JSON.stringify({
             amount: amount.toString(),
             buyer: playerAddress,
+            destinationChainId: getGameChain().id,
             nonce: BigInt(nonce).toString(),
+            originChainId: externalChain.id,
             txHash,
           }),
         });
@@ -590,6 +604,8 @@ export const SolarFarmDialog: React.FC = () => {
           // Call world contract to emit electricity sale event
           const sellThroughRelayResult = await sellElectricityThroughRelay(
             parseUnits(electricityAmount, 3), // Convert kWh to watt-hours
+            getGameChain().id,
+            externalChain.id,
           );
 
           const { error } = sellThroughRelayResult;
@@ -639,7 +655,9 @@ export const SolarFarmDialog: React.FC = () => {
           },
           body: JSON.stringify({
             amount: receiveAmount.toString(),
+            destinationChainId: externalChain.id,
             nonce: BigInt(nonce).toString(),
+            originChainId: getGameChain().id,
             seller: playerAddress,
             txHash,
           }),
@@ -974,7 +992,25 @@ export const SolarFarmDialog: React.FC = () => {
               >
                 Cancel
               </Button>
-              {getChain(chainId) ? (
+              {!getChain(chainId) ||
+              (!!existingRelayChainId &&
+                getChain(chainId)?.id !== existingRelayChainId) ? (
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  disabled={isSwitchingChains}
+                  onClick={() =>
+                    switchChain({
+                      chainId: existingRelayChainId ?? base.id,
+                    })
+                  }
+                >
+                  <CircleAlert className="h-6 w-6" />
+                  Switch to{' '}
+                  {chains.find(c => c.id === existingRelayChainId)
+                    ? chains.find(c => c.id === existingRelayChainId)?.name
+                    : base.name}
+                </Button>
+              ) : (
                 <Button
                   className={
                     isBuying
@@ -997,15 +1033,6 @@ export const SolarFarmDialog: React.FC = () => {
                     : isBuying
                       ? 'Buy Electricity'
                       : 'Sell Electricity'}
-                </Button>
-              ) : (
-                <Button
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
-                  disabled={isSwitchingChains}
-                  onClick={() => switchChain({ chainId: baseSepolia.id })}
-                >
-                  <CircleAlert className="h-6 w-6" />
-                  Switch to {baseSepolia.name}
                 </Button>
               )}
             </div>
