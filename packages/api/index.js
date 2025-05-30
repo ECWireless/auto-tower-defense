@@ -12,9 +12,26 @@ const {
   toHex,
 } = require("viem");
 const { privateKeyToAccount } = require("viem/accounts");
-const { base, pyrope } = require("viem/chains");
+const { base, baseSepolia, pyrope, redstone } = require("viem/chains");
 const BASE_ESCOW_ABI = require("./abi/baseEscrowAbi.json");
 const SELL_EMITTER_ABI = require("./abi/sellEmitterAbi.json");
+
+const SUPPORTED_CHAINS = {
+  [base.id]: base,
+  [baseSepolia.id]: baseSepolia,
+  [pyrope.id]: pyrope,
+  [redstone.id]: redstone,
+};
+
+const ESCROW_CONTRACTS = {
+  [base.id]: "0x977437F82fb629FBF3028d485144Ad5666228133",
+  [baseSepolia.id]: "",
+};
+
+const SELL_EMITTER_CONTRACTS = {
+  [pyrope.id]: "0xe0f09caf7b81d6b5ed75e19d63b84ddf0a81197a",
+  [redstone.id]: "",
+};
 
 const app = express();
 app.use(cors());
@@ -65,29 +82,43 @@ app.post("/compile", (req, res) => {
 });
 
 app.post("/buy-validator-signature", async (req, res) => {
-  const { amount, buyer, nonce, txHash } = req.body;
+  const { amount, buyer, destinationChainId, nonce, originChainId, txHash } =
+    req.body;
 
-  if (!(amount && buyer && nonce && txHash)) {
+  if (
+    !(amount && buyer && destinationChainId && nonce && originChainId && txHash)
+  ) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
+  const originChain = SUPPORTED_CHAINS[originChainId];
+  const destinationChain = SUPPORTED_CHAINS[destinationChainId];
+  const escrowAddress = ESCROW_CONTRACTS[originChainId];
+
+  if (!SUPPORTED_CHAINS[originChainId]) {
+    return res.status(400).json({ error: "Unsupported origin chain ID" });
+  }
+
+  if (!SUPPORTED_CHAINS[destinationChainId]) {
+    return res.status(400).json({ error: "Unsupported destination chain ID" });
+  }
+
+  if (!escrowAddress) {
+    return res.status(400).json({ error: "Escrow contract not deployed" });
+  }
+
   try {
-    const basePublicClient = createPublicClient({
-      chain: base,
+    const publicClient = createPublicClient({
+      chain: originChain,
       transport: http(),
     });
 
-    const receipt = await basePublicClient.getTransactionReceipt({
+    const receipt = await publicClient.getTransactionReceipt({
       hash: txHash,
     });
 
-    const { ESCROW_ADDRESS } = process.env;
-    if (!ESCROW_ADDRESS) {
-      return res.status(500).json({ error: "ESCROW_ADDRESS not set" });
-    }
-
     const eventLog = receipt.logs.find(
-      (log) => log.address.toLowerCase() === ESCROW_ADDRESS.toLowerCase()
+      (log) => log.address.toLowerCase() === escrowAddress.toLowerCase()
     );
 
     if (!eventLog) {
@@ -128,7 +159,7 @@ app.post("/buy-validator-signature", async (req, res) => {
     const validatorAccount = privateKeyToAccount(VALIDATOR_PRIVATE_KEY);
     const walletClient = createWalletClient({
       account: validatorAccount,
-      chain: pyrope,
+      chain: destinationChain,
       transport: http(),
     });
     const signature = await walletClient.signMessage({
@@ -142,29 +173,52 @@ app.post("/buy-validator-signature", async (req, res) => {
 });
 
 app.post("/sell-validator-signature", async (req, res) => {
-  const { amount, nonce, seller, txHash } = req.body;
+  const { amount, destinationChainId, nonce, originChainId, seller, txHash } =
+    req.body;
 
-  if (!(amount && nonce && seller && txHash)) {
+  if (
+    !(
+      amount &&
+      destinationChainId &&
+      nonce &&
+      originChainId &&
+      seller &&
+      txHash
+    )
+  ) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
+  const originChain = SUPPORTED_CHAINS[originChainId];
+  const destinationChain = SUPPORTED_CHAINS[destinationChainId];
+  const sellEmitterAddress = SELL_EMITTER_CONTRACTS[originChainId];
+
+  if (!SUPPORTED_CHAINS[originChainId]) {
+    return res.status(400).json({ error: "Unsupported origin chain ID" });
+  }
+
+  if (!SUPPORTED_CHAINS[destinationChainId]) {
+    return res.status(400).json({ error: "Unsupported destination chain ID" });
+  }
+
+  if (!sellEmitterAddress) {
+    return res
+      .status(400)
+      .json({ error: "Sell emitter contract not deployed" });
+  }
+
   try {
-    const basePublicClient = createPublicClient({
-      chain: pyrope,
+    const publicClient = createPublicClient({
+      chain: originChain,
       transport: http(),
     });
 
-    const receipt = await basePublicClient.getTransactionReceipt({
+    const receipt = await publicClient.getTransactionReceipt({
       hash: txHash,
     });
 
-    const { SELL_EMITTER_ADDRESS } = process.env;
-    if (!SELL_EMITTER_ADDRESS) {
-      return res.status(500).json({ error: "SELL_EMITTER_ADDRESS not set" });
-    }
-
     const eventLog = receipt.logs.find(
-      (log) => log.address.toLowerCase() === SELL_EMITTER_ADDRESS.toLowerCase()
+      (log) => log.address.toLowerCase() === sellEmitterAddress.toLowerCase()
     );
 
     if (!eventLog) {
@@ -203,7 +257,7 @@ app.post("/sell-validator-signature", async (req, res) => {
     const validatorAccount = privateKeyToAccount(VALIDATOR_PRIVATE_KEY);
     const walletClient = createWalletClient({
       account: validatorAccount,
-      chain: base,
+      chain: destinationChain,
       transport: http(),
     });
     const signature = await walletClient.signMessage({
