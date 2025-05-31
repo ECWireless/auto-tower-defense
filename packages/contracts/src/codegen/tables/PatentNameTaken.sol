@@ -16,9 +16,9 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
-library SavedModNameTaken {
-  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "SavedModNameTake", typeId: RESOURCE_TABLE });`
-  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000053617665644d6f644e616d6554616b65);
+library PatentNameTaken {
+  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "PatentNameTaken", typeId: RESOURCE_TABLE });`
+  ResourceId constant _tableId = ResourceId.wrap(0x74626170700000000000000000000000506174656e744e616d6554616b656e00);
 
   FieldLayout constant _fieldLayout =
     FieldLayout.wrap(0x0020010020000000000000000000000000000000000000000000000000000000);

@@ -321,9 +321,9 @@ contract BatteryHelpersTest is MudTest {
     uint256 bobSavedKingdomLosses = SavedKingdom.getLosses(bobSavedKingdomId);
     assertEq(bobSavedKingdomLosses, 0);
 
-    // Have Jane author a system modification
+    // Have Jane register a patent
     vm.prank(janeAddress);
-    IWorld(worldAddress).app__saveModification(AUTHORED_BYTECODE, "My description", "Jane's System Modification", "");
+    IWorld(worldAddress).app__registerPatent(AUTHORED_BYTECODE, "My description", "Jane's Patent", "");
 
     // Alice should win the stake from Bob's SavedKingdom
     vm.prank(aliceAddress);
@@ -481,11 +481,11 @@ contract BatteryHelpersTest is MudTest {
     vm.startPrank(janeAddress);
     // Create a game to register the player
     IWorld(worldAddress).app__createGame("Jane", true);
-    // Have Jane save a system modification
-    IWorld(worldAddress).app__saveModification(AUTHORED_BYTECODE, "My description", "Jane's System Modification", "");
+    // Have Jane register a patent
+    IWorld(worldAddress).app__registerPatent(AUTHORED_BYTECODE, "My description", "Jane's Patent", "");
     vm.stopPrank();
 
-    // Bob should start a game and create a SavedKingdom using Jane's system modification
+    // Bob should start a game and create a SavedKingdom using Jane's patent
     vm.startPrank(bobAddress);
     bytes32 bobGameId = IWorld(worldAddress).app__createGame("Bob", true);
     bytes32 authoredTowerId = IWorld(worldAddress).app__playerInstallTower(true, 45, 15);

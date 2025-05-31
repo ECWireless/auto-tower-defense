@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, SavedModification, SolarFarmDetails } from "../codegen/index.sol";
+import { AddressBook, Patent, SolarFarmDetails } from "../codegen/index.sol";
 import { BatteryHelpers } from "../Libraries/BatteryHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { PatentHelpers } from "../Libraries/PatentHelpers.sol";
@@ -12,12 +12,12 @@ import "../../mocks/MockUSDC.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract AdminSystem is System {
-  function saveSystemTemplate(
+  function registerTemplatePatent(
     bytes memory bytecode,
     string memory description,
     string memory name,
     string memory sourceCode
-  ) external returns (bytes32 savedModificationId) {
+  ) external returns (bytes32 patentId) {
     uint256 contractSize;
     address newSystem;
     assembly {
@@ -34,18 +34,18 @@ contract AdminSystem is System {
       string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
     );
 
-    savedModificationId = keccak256(abi.encodePacked(bytecode));
+    patentId = keccak256(abi.encodePacked(bytecode));
 
-    bytes memory savedModificationBytecode = SavedModification.getBytecode(savedModificationId);
+    bytes memory patentBytecode = Patent.getBytecode(patentId);
     require(
-      keccak256(abi.encodePacked(savedModificationBytecode)) != savedModificationId,
+      keccak256(abi.encodePacked(patentBytecode)) != patentId,
       "AdminSystem: modification already exists"
     );
 
-    PatentHelpers.validateModification(savedModificationId, description, name);
+    PatentHelpers.validatePatent(patentId, description, name);
 
-    SavedModification.set(
-      savedModificationId,
+    Patent.set(
+      patentId,
       bytes32(0),
       contractSize,
       block.timestamp,
@@ -55,7 +55,7 @@ contract AdminSystem is System {
       name,
       sourceCode
     );
-    return savedModificationId;
+    return patentId;
   }
 
   function mintUsdcToPlayer(address player, uint256 amount) external {

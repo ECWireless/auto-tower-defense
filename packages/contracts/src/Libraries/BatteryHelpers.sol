@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Projectile, RevenueReceipt, RevenueReceiptData, SavedGame, SavedModification, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
+import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Patent, Projectile, RevenueReceipt, RevenueReceiptData, SavedGame, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
@@ -91,10 +91,10 @@ library BatteryHelpers {
     uint256 activeBalanceEarnings = winningPot / 2;
 
     // Get all the towers used in the game
-    bytes32[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, true);
+    bytes32[] memory allPatentees = _getAllKingdomTowerPatentees(gameId, true);
 
-    // If there are no authors, give the player the rest of the winningPot
-    if (allAuthors.length == 0) {
+    // If there are no patentees, give the player the rest of the winningPot
+    if (allPatentees.length == 0) {
       activeBalanceEarnings += activeBalanceEarnings;
     }
 
@@ -110,8 +110,8 @@ library BatteryHelpers {
     winningPot -= activeBalanceEarnings;
 
     _processPotentialStakeReturn(globalPlayer1Id);
-    _distributeAuthorEarnings(allAuthors, winningPot);
-    _storeExpenseReceipt(savedKingdomId, gameId, stakedEarnings, activeBalanceEarnings, allAuthors);
+    _distributeRoyalties(allPatentees, winningPot);
+    _storeExpenseReceipt(savedKingdomId, gameId, stakedEarnings, activeBalanceEarnings, allPatentees);
   }
 
   function _storeExpenseReceipt(
@@ -119,7 +119,7 @@ library BatteryHelpers {
     bytes32 gameId,
     uint256 amountToKingdom,
     uint256 amountToBattery,
-    bytes32[] memory authors
+    bytes32[] memory patentees
   ) internal {
     ExpenseReceiptData memory expenseReceipt = ExpenseReceiptData({
       amountToBattery: amountToBattery,
@@ -128,7 +128,7 @@ library BatteryHelpers {
       playerId: SavedKingdom.getAuthor(savedKingdomId),
       savedKingdomId: savedKingdomId,
       timestamp: block.timestamp,
-      authors: authors
+      patentees: patentees
     });
     ExpenseReceipt.set(keccak256(abi.encodePacked(savedKingdomId, block.timestamp)), expenseReceipt);
   }
@@ -177,10 +177,10 @@ library BatteryHelpers {
     uint256 opponentReserveEarnings = winningPot / 2;
 
     // Get all the towers used in the game
-    bytes32[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, false);
+    bytes32[] memory allPatentees = _getAllKingdomTowerPatentees(gameId, false);
 
-    // If there are no authors, give the player2Address the rest of the winningPot
-    if (allAuthors.length == 0) {
+    // If there are no patentees, give the player2Address the rest of the winningPot
+    if (allPatentees.length == 0) {
       opponentReserveEarnings += opponentReserveEarnings;
     }
     uint256 opponentReserveBalance = BatteryDetails.getReserveBalance(savedKingdom.author);
@@ -188,20 +188,20 @@ library BatteryHelpers {
     BatteryDetails.setReserveBalance(savedKingdom.author, opponentReserveBalance);
     winningPot -= opponentReserveEarnings;
 
-    _distributeAuthorEarnings(allAuthors, winningPot);
-    _storeRevenueReceipt(savedKingdomId, gameId, opponentSavedKingdomEarnings, opponentReserveEarnings, allAuthors);
+    _distributeRoyalties(allPatentees, winningPot);
+    _storeRevenueReceipt(savedKingdomId, gameId, opponentSavedKingdomEarnings, opponentReserveEarnings, allPatentees);
   }
 
-  function _distributeAuthorEarnings(bytes32[] memory allAuthors, uint256 winningPot) internal {
-    // Move remaining winningPot to authors (their reserveBalance) of all the towers used by winner (player 2)
-    if (allAuthors.length == 0) return;
+  function _distributeRoyalties(bytes32[] memory allPatentees, uint256 winningPot) internal {
+    // Move remaining winningPot to patentees (their reserveBalance) of all the tower patents used by winner (player 2)
+    if (allPatentees.length == 0) return;
 
-    uint256 authorEarnings = winningPot / allAuthors.length;
-    for (uint256 i = 0; i < allAuthors.length; i++) {
-      bytes32 authorId = allAuthors[i];
-      uint256 authorReserveBalance = BatteryDetails.getReserveBalance(authorId);
-      authorReserveBalance += authorEarnings;
-      BatteryDetails.setReserveBalance(authorId, authorReserveBalance);
+    uint256 royalty = winningPot / allPatentees.length;
+    for (uint256 i = 0; i < allPatentees.length; i++) {
+      bytes32 patenteeId = allPatentees[i];
+      uint256 patenteeReserveBalance = BatteryDetails.getReserveBalance(patenteeId);
+      patenteeReserveBalance += royalty;
+      BatteryDetails.setReserveBalance(patenteeId, patenteeReserveBalance);
     }
   }
 
@@ -210,7 +210,7 @@ library BatteryHelpers {
     bytes32 gameId,
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    bytes32[] memory authors
+    bytes32[] memory patentees
   ) internal {
     RevenueReceiptData memory revenueReceipt = RevenueReceiptData({
       amountToKingdom: amountToKingdom,
@@ -219,17 +219,17 @@ library BatteryHelpers {
       playerId: SavedKingdom.getAuthor(savedKingdomId),
       savedKingdomId: savedKingdomId,
       timestamp: block.timestamp,
-      authors: authors
+      patentees: patentees
     });
     RevenueReceipt.set(keccak256(abi.encodePacked(savedKingdomId, block.timestamp)), revenueReceipt);
   }
 
   /**
-   * Get all the authors of the towers on one side of the board
+   * Get all the patentees of the tower patents on one side of the board
    * @param gameId The ID of the game
    * @param player1Kingdom Boolean for scanning left or right side of the board
    */
-  function _getAllKingdomTowerAuthors(bytes32 gameId, bool player1Kingdom) internal view returns (bytes32[] memory) {
+  function _getAllKingdomTowerPatentees(bytes32 gameId, bool player1Kingdom) internal view returns (bytes32[] memory) {
     // If player1Kingdom is true, get all actions from SavedGame
     // If player1Kingdom is false, get all actions from LoadedKingdomActions
     bytes32[] memory savedGameActionIds = player1Kingdom
@@ -254,32 +254,32 @@ library BatteryHelpers {
     modifyActions = resizedModifyActions;
 
     // Use the actionId to get the bytes from Projectile
-    // Use SavedModification with keccak256(abi.encodePacked(bytecode)) to get all the authors of the towers used in the game
-    bytes32[] memory authors = new bytes32[](modifyActions.length);
+    // Use Patent with keccak256(abi.encodePacked(bytecode)) to get all the patentees of the tower patents used in the game
+    bytes32[] memory patentees = new bytes32[](modifyActions.length);
     for (uint256 i = 0; i < modifyActions.length; i++) {
       bytes32 actionId = modifyActions[i];
       bytes32 bytecodeHash = keccak256(abi.encodePacked(Projectile.getBytecode(actionId)));
-      bytes32 author = SavedModification.getAuthor(bytecodeHash);
-      authors[i] = author;
+      bytes32 patentee = Patent.getPatentee(bytecodeHash);
+      patentees[i] = patentee;
     }
 
-    // Remove all empty bytes32 from the authors array
+    // Remove all empty bytes32 from the patentees array
     uint256 count = 0;
-    for (uint256 i = 0; i < authors.length; i++) {
-      if (authors[i] != bytes32(0)) {
+    for (uint256 i = 0; i < patentees.length; i++) {
+      if (patentees[i] != bytes32(0)) {
         count++;
       }
     }
-    bytes32[] memory nonEmptyAuthors = new bytes32[](count);
+    bytes32[] memory nonEmptyPatentees = new bytes32[](count);
     uint256 index = 0;
-    for (uint256 i = 0; i < authors.length; i++) {
-      if (authors[i] != bytes32(0)) {
-        nonEmptyAuthors[index] = authors[i];
+    for (uint256 i = 0; i < patentees.length; i++) {
+      if (patentees[i] != bytes32(0)) {
+        nonEmptyPatentees[index] = patentees[i];
         index++;
       }
     }
 
-    return nonEmptyAuthors;
+    return nonEmptyPatentees;
   }
 
   /**

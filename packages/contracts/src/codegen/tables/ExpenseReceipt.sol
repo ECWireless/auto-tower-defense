@@ -23,7 +23,7 @@ struct ExpenseReceiptData {
   bytes32 playerId;
   bytes32 savedKingdomId;
   uint256 timestamp;
-  bytes32[] authors;
+  bytes32[] patentees;
 }
 
 library ExpenseReceipt {
@@ -59,7 +59,7 @@ library ExpenseReceipt {
     fieldNames[3] = "playerId";
     fieldNames[4] = "savedKingdomId";
     fieldNames[5] = "timestamp";
-    fieldNames[6] = "authors";
+    fieldNames[6] = "patentees";
   }
 
   /**
@@ -207,7 +207,7 @@ library ExpenseReceipt {
     bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp,
-    bytes32[] memory authors
+    bytes32[] memory patentees
   ) internal {
     bytes memory _staticData = encodeStatic(
       amountToBattery,
@@ -218,8 +218,8 @@ library ExpenseReceipt {
       timestamp
     );
 
-    EncodedLengths _encodedLengths = encodeLengths(authors);
-    bytes memory _dynamicData = encodeDynamic(authors);
+    EncodedLengths _encodedLengths = encodeLengths(patentees);
+    bytes memory _dynamicData = encodeDynamic(patentees);
 
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
@@ -238,7 +238,7 @@ library ExpenseReceipt {
     bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp,
-    bytes32[] memory authors
+    bytes32[] memory patentees
   ) internal {
     bytes memory _staticData = encodeStatic(
       amountToBattery,
@@ -249,8 +249,8 @@ library ExpenseReceipt {
       timestamp
     );
 
-    EncodedLengths _encodedLengths = encodeLengths(authors);
-    bytes memory _dynamicData = encodeDynamic(authors);
+    EncodedLengths _encodedLengths = encodeLengths(patentees);
+    bytes memory _dynamicData = encodeDynamic(patentees);
 
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
@@ -271,8 +271,8 @@ library ExpenseReceipt {
       _table.timestamp
     );
 
-    EncodedLengths _encodedLengths = encodeLengths(_table.authors);
-    bytes memory _dynamicData = encodeDynamic(_table.authors);
+    EncodedLengths _encodedLengths = encodeLengths(_table.patentees);
+    bytes memory _dynamicData = encodeDynamic(_table.patentees);
 
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
@@ -293,8 +293,8 @@ library ExpenseReceipt {
       _table.timestamp
     );
 
-    EncodedLengths _encodedLengths = encodeLengths(_table.authors);
-    bytes memory _dynamicData = encodeDynamic(_table.authors);
+    EncodedLengths _encodedLengths = encodeLengths(_table.patentees);
+    bytes memory _dynamicData = encodeDynamic(_table.patentees);
 
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
@@ -338,13 +338,13 @@ library ExpenseReceipt {
   function decodeDynamic(
     EncodedLengths _encodedLengths,
     bytes memory _blob
-  ) internal pure returns (bytes32[] memory authors) {
+  ) internal pure returns (bytes32[] memory patentees) {
     uint256 _start;
     uint256 _end;
     unchecked {
       _end = _encodedLengths.atIndex(0);
     }
-    authors = (SliceLib.getSubslice(_blob, _start, _end).decodeArray_bytes32());
+    patentees = (SliceLib.getSubslice(_blob, _start, _end).decodeArray_bytes32());
   }
 
   /**
@@ -367,7 +367,7 @@ library ExpenseReceipt {
       _table.timestamp
     ) = decodeStatic(_staticData);
 
-    (_table.authors) = decodeDynamic(_encodedLengths, _dynamicData);
+    (_table.patentees) = decodeDynamic(_encodedLengths, _dynamicData);
   }
 
   /**
@@ -409,10 +409,10 @@ library ExpenseReceipt {
    * @notice Tightly pack dynamic data lengths using this table's schema.
    * @return _encodedLengths The lengths of the dynamic fields (packed into a single bytes32 value).
    */
-  function encodeLengths(bytes32[] memory authors) internal pure returns (EncodedLengths _encodedLengths) {
+  function encodeLengths(bytes32[] memory patentees) internal pure returns (EncodedLengths _encodedLengths) {
     // Lengths are effectively checked during copy by 2**40 bytes exceeding gas limits
     unchecked {
-      _encodedLengths = EncodedLengthsLib.pack(authors.length * 32);
+      _encodedLengths = EncodedLengthsLib.pack(patentees.length * 32);
     }
   }
 
@@ -420,8 +420,8 @@ library ExpenseReceipt {
    * @notice Tightly pack dynamic (variable length) data using this table's schema.
    * @return The dynamic data, encoded into a sequence of bytes.
    */
-  function encodeDynamic(bytes32[] memory authors) internal pure returns (bytes memory) {
-    return abi.encodePacked(EncodeArray.encode((authors)));
+  function encodeDynamic(bytes32[] memory patentees) internal pure returns (bytes memory) {
+    return abi.encodePacked(EncodeArray.encode((patentees)));
   }
 
   /**
@@ -437,7 +437,7 @@ library ExpenseReceipt {
     bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp,
-    bytes32[] memory authors
+    bytes32[] memory patentees
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
     bytes memory _staticData = encodeStatic(
       amountToBattery,
@@ -448,8 +448,8 @@ library ExpenseReceipt {
       timestamp
     );
 
-    EncodedLengths _encodedLengths = encodeLengths(authors);
-    bytes memory _dynamicData = encodeDynamic(authors);
+    EncodedLengths _encodedLengths = encodeLengths(patentees);
+    bytes memory _dynamicData = encodeDynamic(patentees);
 
     return (_staticData, _encodedLengths, _dynamicData);
   }

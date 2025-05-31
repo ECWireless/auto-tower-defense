@@ -4,7 +4,7 @@ pragma solidity >=0.8.24;
 import { RESOURCE_SYSTEM } from "@latticexyz/world/src/worldResourceTypes.sol";
 import { WorldResourceIdLib } from "@latticexyz/world/src/WorldResourceId.sol";
 
-import { CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Position, Projectile, SavedModification, Tower, TowerCounter } from "../codegen/index.sol";
+import { CurrentGame, DefaultLogic, EntityAtPosition, Game, GameData, Health, MapConfig, Owner, OwnerTowers, Patent, Position, Projectile, Tower, TowerCounter } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
@@ -98,7 +98,7 @@ library TowerHelpers {
     Game.setActionCount(gameId, currentGame.actionCount - 1);
     Projectile.set(towerId, address(newSystem), DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
 
-    _incrementSavedModificationUseCount(bytecode);
+    _incrementPatentUseCount(bytecode);
 
     bytes32 globalPlayer1Id = Game.getPlayer1Id(gameId);
     if (globalPlayerId == globalPlayer1Id) {
@@ -248,13 +248,13 @@ library TowerHelpers {
     require(distance <= 1, "TowerSystem: projectile speed exceeds rules");
   }
 
-  function _incrementSavedModificationUseCount(bytes memory bytecode) public {
-    bytes32 savedModificationId = keccak256(abi.encodePacked(bytecode));
-    bytes memory potentialExistingBytecode = SavedModification.getBytecode(savedModificationId);
+  function _incrementPatentUseCount(bytes memory bytecode) public {
+    bytes32 patentId = keccak256(abi.encodePacked(bytecode));
+    bytes memory potentialExistingBytecode = Patent.getBytecode(patentId);
 
-    if (keccak256(abi.encodePacked(potentialExistingBytecode)) == savedModificationId) {
-      uint256 existingBytecodeUseCount = SavedModification.getUseCount(savedModificationId);
-      SavedModification.setUseCount(savedModificationId, existingBytecodeUseCount + 1);
+    if (keccak256(abi.encodePacked(potentialExistingBytecode)) == patentId) {
+      uint256 existingBytecodeUseCount = Patent.getUseCount(patentId);
+      Patent.setUseCount(patentId, existingBytecodeUseCount + 1);
     }
   }
 }

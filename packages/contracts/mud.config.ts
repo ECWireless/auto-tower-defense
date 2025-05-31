@@ -47,7 +47,7 @@ export default defineWorld({
       },
       key: [],
     },
-    CurrentGame: "bytes32", // globalPlayerId || tower Id
+    CurrentGame: "bytes32", // globalPlayerId || tower ID
     DefaultLogic: {
       schema: {
         value: "address",
@@ -68,7 +68,7 @@ export default defineWorld({
         playerId: "bytes32",
         savedKingdomId: "bytes32",
         timestamp: "uint256",
-        authors: "bytes32[]", // globalPlayerIds of all who authored the tower modifications used in the game
+        patentees: "bytes32[]", // globalPlayerIds of all patentees of the tower patents used in the battle
       },
       type: "offchainTable",
     },
@@ -174,7 +174,7 @@ export default defineWorld({
         playerId: "bytes32", // globalPlayerId
         savedKingdomId: "bytes32",
         timestamp: "uint256",
-        authors: "bytes32[]", // globalPlayerIds of all who authored the tower modifications used in the game
+        patentees: "bytes32[]", // globalPlayerIds of all patentees of the tower patents used in the battle
       },
       type: "offchainTable",
     },
@@ -195,9 +195,9 @@ export default defineWorld({
       wins: "uint256",
       actions: "bytes32[]",
     },
-    SavedModification: {
+    Patent: {
       id: "bytes32", // keccak256(abi.encodePacked(bytecode))
-      author: "bytes32", // globalPlayerId
+      patentee: "bytes32", // globalPlayerId
       size: "uint256",
       timestamp: "uint256",
       useCount: "uint256",
@@ -206,10 +206,10 @@ export default defineWorld({
       name: "string",
       sourceCode: "string",
     },
-    SavedModNameTaken: {
+    PatentNameTaken: {
       schema: {
         nameAsBytes: "bytes32", // keccak256(abi.encodePacked(name))
-        value: "bytes32", // savedModificationId
+        value: "bytes32", // patentId
       },
       key: ["nameAsBytes"],
       codegen: {

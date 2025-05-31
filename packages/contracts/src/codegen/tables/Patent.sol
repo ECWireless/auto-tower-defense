@@ -16,8 +16,8 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
-struct SavedModificationData {
-  bytes32 author;
+struct PatentData {
+  bytes32 patentee;
   uint256 size;
   uint256 timestamp;
   uint256 useCount;
@@ -27,9 +27,9 @@ struct SavedModificationData {
   string sourceCode;
 }
 
-library SavedModification {
-  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "SavedModificatio", typeId: RESOURCE_TABLE });`
-  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000053617665644d6f64696669636174696f);
+library Patent {
+  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "Patent", typeId: RESOURCE_TABLE });`
+  ResourceId constant _tableId = ResourceId.wrap(0x74626170700000000000000000000000506174656e7400000000000000000000);
 
   FieldLayout constant _fieldLayout =
     FieldLayout.wrap(0x0080040420202020000000000000000000000000000000000000000000000000);
@@ -54,7 +54,7 @@ library SavedModification {
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
     fieldNames = new string[](8);
-    fieldNames[0] = "author";
+    fieldNames[0] = "patentee";
     fieldNames[1] = "size";
     fieldNames[2] = "timestamp";
     fieldNames[3] = "useCount";
@@ -79,9 +79,9 @@ library SavedModification {
   }
 
   /**
-   * @notice Get author.
+   * @notice Get patentee.
    */
-  function getAuthor(bytes32 id) internal view returns (bytes32 author) {
+  function getPatentee(bytes32 id) internal view returns (bytes32 patentee) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -90,9 +90,9 @@ library SavedModification {
   }
 
   /**
-   * @notice Get author.
+   * @notice Get patentee.
    */
-  function _getAuthor(bytes32 id) internal view returns (bytes32 author) {
+  function _getPatentee(bytes32 id) internal view returns (bytes32 patentee) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -101,23 +101,23 @@ library SavedModification {
   }
 
   /**
-   * @notice Set author.
+   * @notice Set patentee.
    */
-  function setAuthor(bytes32 id, bytes32 author) internal {
+  function setPatentee(bytes32 id, bytes32 patentee) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((author)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((patentee)), _fieldLayout);
   }
 
   /**
-   * @notice Set author.
+   * @notice Set patentee.
    */
-  function _setAuthor(bytes32 id, bytes32 author) internal {
+  function _setPatentee(bytes32 id, bytes32 patentee) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((author)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((patentee)), _fieldLayout);
   }
 
   /**
@@ -897,7 +897,7 @@ library SavedModification {
   /**
    * @notice Get the full data.
    */
-  function get(bytes32 id) internal view returns (SavedModificationData memory _table) {
+  function get(bytes32 id) internal view returns (PatentData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -912,7 +912,7 @@ library SavedModification {
   /**
    * @notice Get the full data.
    */
-  function _get(bytes32 id) internal view returns (SavedModificationData memory _table) {
+  function _get(bytes32 id) internal view returns (PatentData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -929,7 +929,7 @@ library SavedModification {
    */
   function set(
     bytes32 id,
-    bytes32 author,
+    bytes32 patentee,
     uint256 size,
     uint256 timestamp,
     uint256 useCount,
@@ -938,7 +938,7 @@ library SavedModification {
     string memory name,
     string memory sourceCode
   ) internal {
-    bytes memory _staticData = encodeStatic(author, size, timestamp, useCount);
+    bytes memory _staticData = encodeStatic(patentee, size, timestamp, useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(bytecode, description, name, sourceCode);
     bytes memory _dynamicData = encodeDynamic(bytecode, description, name, sourceCode);
@@ -954,7 +954,7 @@ library SavedModification {
    */
   function _set(
     bytes32 id,
-    bytes32 author,
+    bytes32 patentee,
     uint256 size,
     uint256 timestamp,
     uint256 useCount,
@@ -963,7 +963,7 @@ library SavedModification {
     string memory name,
     string memory sourceCode
   ) internal {
-    bytes memory _staticData = encodeStatic(author, size, timestamp, useCount);
+    bytes memory _staticData = encodeStatic(patentee, size, timestamp, useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(bytecode, description, name, sourceCode);
     bytes memory _dynamicData = encodeDynamic(bytecode, description, name, sourceCode);
@@ -977,8 +977,8 @@ library SavedModification {
   /**
    * @notice Set the full data using the data struct.
    */
-  function set(bytes32 id, SavedModificationData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.author, _table.size, _table.timestamp, _table.useCount);
+  function set(bytes32 id, PatentData memory _table) internal {
+    bytes memory _staticData = encodeStatic(_table.patentee, _table.size, _table.timestamp, _table.useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.bytecode, _table.description, _table.name, _table.sourceCode);
     bytes memory _dynamicData = encodeDynamic(_table.bytecode, _table.description, _table.name, _table.sourceCode);
@@ -992,8 +992,8 @@ library SavedModification {
   /**
    * @notice Set the full data using the data struct.
    */
-  function _set(bytes32 id, SavedModificationData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.author, _table.size, _table.timestamp, _table.useCount);
+  function _set(bytes32 id, PatentData memory _table) internal {
+    bytes memory _staticData = encodeStatic(_table.patentee, _table.size, _table.timestamp, _table.useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.bytecode, _table.description, _table.name, _table.sourceCode);
     bytes memory _dynamicData = encodeDynamic(_table.bytecode, _table.description, _table.name, _table.sourceCode);
@@ -1009,8 +1009,8 @@ library SavedModification {
    */
   function decodeStatic(
     bytes memory _blob
-  ) internal pure returns (bytes32 author, uint256 size, uint256 timestamp, uint256 useCount) {
-    author = (Bytes.getBytes32(_blob, 0));
+  ) internal pure returns (bytes32 patentee, uint256 size, uint256 timestamp, uint256 useCount) {
+    patentee = (Bytes.getBytes32(_blob, 0));
 
     size = (uint256(Bytes.getBytes32(_blob, 32)));
 
@@ -1066,8 +1066,8 @@ library SavedModification {
     bytes memory _staticData,
     EncodedLengths _encodedLengths,
     bytes memory _dynamicData
-  ) internal pure returns (SavedModificationData memory _table) {
-    (_table.author, _table.size, _table.timestamp, _table.useCount) = decodeStatic(_staticData);
+  ) internal pure returns (PatentData memory _table) {
+    (_table.patentee, _table.size, _table.timestamp, _table.useCount) = decodeStatic(_staticData);
 
     (_table.bytecode, _table.description, _table.name, _table.sourceCode) = decodeDynamic(
       _encodedLengths,
@@ -1100,12 +1100,12 @@ library SavedModification {
    * @return The static data, encoded into a sequence of bytes.
    */
   function encodeStatic(
-    bytes32 author,
+    bytes32 patentee,
     uint256 size,
     uint256 timestamp,
     uint256 useCount
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(author, size, timestamp, useCount);
+    return abi.encodePacked(patentee, size, timestamp, useCount);
   }
 
   /**
@@ -1149,7 +1149,7 @@ library SavedModification {
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
   function encode(
-    bytes32 author,
+    bytes32 patentee,
     uint256 size,
     uint256 timestamp,
     uint256 useCount,
@@ -1158,7 +1158,7 @@ library SavedModification {
     string memory name,
     string memory sourceCode
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(author, size, timestamp, useCount);
+    bytes memory _staticData = encodeStatic(patentee, size, timestamp, useCount);
 
     EncodedLengths _encodedLengths = encodeLengths(bytecode, description, name, sourceCode);
     bytes memory _dynamicData = encodeDynamic(bytecode, description, name, sourceCode);
