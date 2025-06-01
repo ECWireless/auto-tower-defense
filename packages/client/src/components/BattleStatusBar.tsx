@@ -7,18 +7,18 @@ import { zeroHash } from 'viem';
 import { Badge } from '@/components/ui/badge';
 import { useMUD } from '@/hooks/useMUD';
 import { formatWattHours } from '@/utils/helpers';
-import { Castle, type Game } from '@/utils/types';
+import { type Battle, Castle } from '@/utils/types';
 
-type GameStatusBarProps = {
+type BattleStatusBarProps = {
+  battle: Battle;
   enemyCastlePosition?: Castle;
-  game: Game;
   myCastlePosition?: Castle;
   stakedBalance: bigint;
 };
 
-export const GameStatusBar: React.FC<GameStatusBarProps> = ({
+export const BattleStatusBar: React.FC<BattleStatusBarProps> = ({
+  battle,
   enemyCastlePosition,
-  game,
   myCastlePosition,
   stakedBalance,
 }) => {
@@ -27,7 +27,7 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({
   } = useMUD();
 
   const savedKingdomId =
-    useComponentValue(LoadedKingdomActions, game.id)?.savedKingdomId ??
+    useComponentValue(LoadedKingdomActions, battle.id)?.savedKingdomId ??
     zeroHash;
 
   const savedKingdomBalance =
@@ -40,9 +40,9 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({
       <div className="col-span-2 sm:col-span-2 text-left pl-1 sm:pl-4">
         <div className="flex items-center">
           <div className="sm:text-sm text-[10px] text-purple-300">
-            {game.player1Username}
+            {battle.player1Username}
           </div>
-          {game.turn === game.player1Id && (
+          {battle.turn === battle.player1Id && (
             <Badge
               className="border-purple-500 flex-shrink-0 h-4 ml-1 px-1 sm:h-5 sm:ml-2 sm:text-xs text-[8px] text-purple-400"
               variant="outline"
@@ -73,46 +73,46 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({
         </div>
       </div>
 
-      {/* Game Info - Desktop */}
+      {/* Battle Info - Desktop */}
       <div className="col-span-3 hidden justify-around pl-[20px] sm:flex">
         <div>
           <div className="text-cyan-300 text-xs">LEVEL</div>
           <div className="font-medium text-cyan-400 text-lg">
-            {game.level.toString()}
+            {battle.level.toString()}
           </div>
         </div>
         <div className="flex flex-col items-center">
           <div className="text-cyan-300 text-xs">ROUND</div>
           <div className="font-medium text-cyan-400 text-lg">
-            {game.roundCount}
+            {battle.roundCount}
           </div>
         </div>
         <div>
           <div className="text-cyan-300 text-xs">ACTIONS</div>
           <div className="font-medium text-cyan-400 text-lg">
-            {game.actionCount}
+            {battle.actionCount}
           </div>
         </div>
       </div>
 
-      {/* Game Info - Mobile */}
+      {/* Battle Info - Mobile */}
       <div className="col-span-3 flex justify-around pl-[20px] sm:hidden">
         <div>
           <div className="text-[8px] text-cyan-300">LVL</div>
           <div className="font-medium text-cyan-400 text-xs">
-            {game.level.toString()}
+            {battle.level.toString()}
           </div>
         </div>
         <div className="flex flex-col items-center">
           <div className="text-[8px] text-cyan-300">ROUND</div>
           <div className="font-medium text-cyan-400 text-xs">
-            {game.roundCount}
+            {battle.roundCount}
           </div>
         </div>
         <div>
           <div className="text-[8px] text-cyan-300">ACTIONS</div>
           <div className="font-medium text-cyan-400 text-xs">
-            {game.actionCount}
+            {battle.actionCount}
           </div>
         </div>
       </div>
@@ -120,7 +120,7 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({
       {/* Player 2 */}
       <div className="col-span-2 pr-1 sm:col-span-2 sm:pr-4 text-right">
         <div className="flex items-center justify-end">
-          {game.turn === game.player2Id && (
+          {battle.turn === battle.player2Id && (
             <Badge
               className="border-pink-500 flex-shrink-0 h-4 mr-1 px-1 sm:h-5 sm:mr-2 sm:text-xs text-[8px] text-pink-400"
               variant="outline"
@@ -129,7 +129,7 @@ export const GameStatusBar: React.FC<GameStatusBarProps> = ({
             </Badge>
           )}
           <div className="sm:text-sm text-[10px] text-pink-300">
-            {game.player2Username}
+            {battle.player2Username}
           </div>
         </div>
         <div className="flex gap-1 items-center justify-end mt-1">

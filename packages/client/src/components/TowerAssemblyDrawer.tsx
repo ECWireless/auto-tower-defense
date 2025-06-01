@@ -5,7 +5,6 @@ import {
   Has,
   runQuery,
 } from '@latticexyz/recs';
-import { encodeEntity } from '@latticexyz/store-sync/recs';
 // eslint-disable-next-line import/no-named-as-default
 import Editor, { loader } from '@monaco-editor/react';
 import {
@@ -21,9 +20,9 @@ import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { zeroAddress, zeroHash } from 'viem';
+import { zeroHash } from 'viem';
 
-import { SystemsList } from '@/components/SystemsList';
+import { PatentsList } from '@/components/PatentsList';
 import {
   Dialog,
   DialogContent,
@@ -48,41 +47,41 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { NO_ACTIONS_ERROR, useGame } from '@/contexts/GameContext';
+import { NO_ACTIONS_ERROR, useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
 import { API_ENDPOINT } from '@/utils/constants';
-import type { SavedModification, Tower } from '@/utils/types';
+import type { Patent as PatentType, Tower } from '@/utils/types';
 
 import { Button } from './ui/button';
 
-type SystemModificationDrawerProps = {
-  isSystemDrawerOpen: boolean;
-  setIsSystemDrawerOpen: (isOpen: boolean) => void;
+type TowerAssemblyDrawerProps = {
+  isAssemblyDrawerOpen: boolean;
+  setIsAssemblyDrawerOpen: (isOpen: boolean) => void;
   tower: Tower;
 };
 
-export const SystemModificationDrawer: React.FC<
-  SystemModificationDrawerProps
-> = ({ isSystemDrawerOpen, setIsSystemDrawerOpen, tower }) => {
+export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
+  isAssemblyDrawerOpen,
+  setIsAssemblyDrawerOpen,
+  tower,
+}) => {
   const {
-    components: { Projectile, SavedModification, Username },
+    components: { Patent, Projectile, Username },
     systemCalls: {
-      deleteModification,
-      editModification,
+      amendPatent,
+      disclaimPatent,
       getContractSize,
       modifyTowerSystem,
-      saveModification,
+      registerPatent,
     },
   } = useMUD();
-  const { game, isPlayer1, refreshGame, setIsNoActionsDialogOpen } = useGame();
+  const { battle, isPlayer1, refreshBattle, setIsNoActionsDialogOpen } =
+    useBattle();
   const { playSfx } = useSettings();
 
-  const [savedModifications, setSavedModifications] = useState<
-    SavedModification[]
-  >([]);
-  const [selectedModification, setSelectedModification] =
-    useState<SavedModification | null>(null);
+  const [patents, setPatents] = useState<PatentType[]>([]);
+  const [selectedPatent, setSelectedPatent] = useState<PatentType | null>(null);
   const [tooltipSelection, setTooltipSelection] = useState<string | null>(null);
 
   const [isSemiTransparent, setIsSemiTransparent] = useState<boolean>(false);
@@ -90,7 +89,7 @@ export const SystemModificationDrawer: React.FC<
   const [sourceCode, setSourceCode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
 
-  const [showSaveSystemModal, setShowSaveSystemModal] = useState(false);
+  const [showRegisterPatentModal, setShowRegisterPatentModal] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -101,63 +100,50 @@ export const SystemModificationDrawer: React.FC<
     }[]
   >([]);
 
-  const [showDeleteSystemModal, setShowDeleteSystemModal] = useState(false);
+  const [showDisclaimPatentModal, setShowDisclaimPatentModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchSavedModifications = useCallback(() => {
+  const fetchPatents = useCallback(() => {
     try {
-      const _savedModifications = Array.from(
-        runQuery([Has(SavedModification)]),
-      ).map(entity => {
-        const _savedModification = getComponentValueStrict(
-          SavedModification,
-          entity as Entity,
-        );
-        const authorEntity = encodeEntity(
-          { address: 'address' },
-          { address: _savedModification.author as `0x${string}` },
-        );
+      const _patents = Array.from(runQuery([Has(Patent)])).map(entity => {
+        const _patent = getComponentValueStrict(Patent, entity as Entity);
         const authorUsername =
-          getComponentValue(Username, authorEntity)?.value ?? 'Unknown';
+          getComponentValue(Username, _patent.patentee as Entity)?.value ??
+          'Unknown';
 
         return {
           id: entity as Entity,
-          author:
-            _savedModification.author === zeroAddress
-              ? 'Template'
-              : authorUsername,
-          bytecode: _savedModification.bytecode,
-          description: _savedModification.description,
-          name: _savedModification.name,
-          size: `${_savedModification.size.toString()} bytes`,
-          sourceCode: _savedModification.sourceCode,
-          timestamp: _savedModification.timestamp,
-          useCount: Number(_savedModification.useCount),
-        } as SavedModification;
+          bytecode: _patent.bytecode,
+          description: _patent.description,
+          name: _patent.name,
+          patentee: _patent.patentee === zeroHash ? 'Template' : authorUsername,
+          size: `${_patent.size.toString()} bytes`,
+          sourceCode: _patent.sourceCode,
+          timestamp: _patent.timestamp,
+          useCount: Number(_patent.useCount),
+        } as PatentType;
       });
-      return _savedModifications.sort(
-        (a, b) => Number(b.useCount) - Number(a.useCount),
-      );
+      return _patents.sort((a, b) => Number(b.useCount) - Number(a.useCount));
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error fetching saved systems:', error);
-      toast.error('Error Fetching Saved Systems', {
+      console.error('Error fetching patents:', error);
+      toast.error('Error Fetching patents', {
         description: (error as Error).message,
       });
       return [];
     }
-  }, [SavedModification, Username]);
+  }, [Patent, Username]);
 
-  const onRefreshSystemList = useCallback((): SavedModification[] => {
+  const onRefreshPatentList = useCallback((): PatentType[] => {
     try {
-      if (!game) return [];
-      const _savedModifications = fetchSavedModifications();
-      const newModification = {
+      if (!battle) return [];
+      const _patents = fetchPatents();
+      const newPatent = {
         id: zeroHash as Entity,
-        author: game.player1Username,
         bytecode: zeroHash,
-        description: 'Create a new system!',
-        name: 'New System',
+        description: 'Create a new patent!',
+        name: 'New Patent',
+        patentee: battle.player1Username,
         size: '0 bytes',
         sourceCode: '',
         timestamp: BigInt(Date.now()),
@@ -174,16 +160,16 @@ export const SystemModificationDrawer: React.FC<
           const flattenedSourceCode = formattedSourceCode
             .replace(/\s+/g, ' ')
             .trim();
-          newModification.sourceCode = flattenedSourceCode.trim();
+          newPatent.sourceCode = flattenedSourceCode.trim();
 
-          const savedModificationMatch = _savedModifications.find(
+          const patentMatch = _patents.find(
             s => s.sourceCode === flattenedSourceCode,
           );
 
-          if (savedModificationMatch) {
-            setSelectedModification(savedModificationMatch);
+          if (patentMatch) {
+            setSelectedPatent(patentMatch);
           } else {
-            setSelectedModification(newModification);
+            setSelectedPatent(newPatent);
           }
           setSizeLimit(projectile.sizeLimit);
           setSourceCode(formattedSourceCode.trim());
@@ -192,31 +178,28 @@ export const SystemModificationDrawer: React.FC<
         setSourceCode('');
       }
 
-      const savedModWithDummy = [newModification, ..._savedModifications];
-      setSavedModifications(savedModWithDummy);
-      return savedModWithDummy;
+      const savedPatentsWithDummy = [newPatent, ..._patents];
+      setPatents(savedPatentsWithDummy);
+      return savedPatentsWithDummy;
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error refreshing system list:', error);
-      toast.error('Error Refreshing System List', {
+      console.error('Error refreshing patent list:', error);
+      toast.error('Error Refreshing patent List', {
         description: (error as Error).message,
       });
       return [];
     }
-  }, [fetchSavedModifications, game, Projectile, tower.id]);
+  }, [battle, fetchPatents, Projectile, tower.id]);
 
-  const onSelectSavedModification = useCallback(
-    (modification: SavedModification) => {
-      format(modification.sourceCode, {
-        parser: 'solidity-parse',
-        plugins: [solidityPlugin],
-      }).then(formattedSourceCode => {
-        setSourceCode(formattedSourceCode.trim());
-        setSelectedModification(modification);
-      });
-    },
-    [],
-  );
+  const onSelectPatent = useCallback((patent: PatentType) => {
+    format(patent.sourceCode, {
+      parser: 'solidity-parse',
+      plugins: [solidityPlugin],
+    }).then(formattedSourceCode => {
+      setSourceCode(formattedSourceCode.trim());
+      setSelectedPatent(patent);
+    });
+  }, []);
 
   const onCompileCode = useCallback(async (): Promise<string | null> => {
     try {
@@ -247,7 +230,7 @@ export const SystemModificationDrawer: React.FC<
     }
   }, [sourceCode]);
 
-  const onModifyTowerSystem = useCallback(async () => {
+  const onModifyTower = useCallback(async () => {
     try {
       setIsDeploying(true);
       playSfx('click3');
@@ -278,19 +261,19 @@ export const SystemModificationDrawer: React.FC<
         throw new Error(error);
       }
 
-      toast.success('System Deployed!');
+      toast.success('Modification Deployed!');
 
-      refreshGame();
-      setIsSystemDrawerOpen(false);
+      refreshBattle();
+      setIsAssemblyDrawerOpen(false);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
       if (error instanceof Error && error.message === NO_ACTIONS_ERROR) {
-        setIsSystemDrawerOpen(false);
+        setIsAssemblyDrawerOpen(false);
         setIsNoActionsDialogOpen(true);
       } else {
-        toast.error('Error Deploying System', {
+        toast.error('Error Deploying Modification', {
           description: (error as Error).message,
         });
       }
@@ -302,9 +285,9 @@ export const SystemModificationDrawer: React.FC<
     modifyTowerSystem,
     onCompileCode,
     playSfx,
-    refreshGame,
+    refreshBattle,
     setIsNoActionsDialogOpen,
-    setIsSystemDrawerOpen,
+    setIsAssemblyDrawerOpen,
     sizeLimit,
     sourceCode,
     tower,
@@ -314,7 +297,7 @@ export const SystemModificationDrawer: React.FC<
     if (!name) {
       setFormErrors(prev => [
         ...(prev || []),
-        { field: 'system-name', message: 'Name is required' },
+        { field: 'patent-name', message: 'Name is required' },
       ]);
       return true;
     }
@@ -322,7 +305,7 @@ export const SystemModificationDrawer: React.FC<
     if (!description) {
       setFormErrors(prev => [
         ...prev,
-        { field: 'system-description', message: 'Description is required' },
+        { field: 'patent-description', message: 'Description is required' },
       ]);
       return true;
     }
@@ -331,7 +314,7 @@ export const SystemModificationDrawer: React.FC<
       setFormErrors(prev => [
         ...(prev || []),
         {
-          field: 'system-name',
+          field: 'patent-name',
           message: 'Name must be 32 characters or less',
         },
       ]);
@@ -342,34 +325,25 @@ export const SystemModificationDrawer: React.FC<
       setFormErrors(prev => [
         ...prev,
         {
-          field: 'system-description',
+          field: 'patent-description',
           message: 'Description must be 256 characters or less',
         },
       ]);
       return true;
     }
 
-    if (
-      savedModifications.some(s => s.name === name) &&
-      selectedModification?.name !== name
-    ) {
+    if (patents.some(s => s.name === name) && selectedPatent?.name !== name) {
       setFormErrors(prev => [
         ...(prev || []),
-        { field: 'system-name', message: 'Name already exists' },
+        { field: 'patent-name', message: 'Name already exists' },
       ]);
       return true;
     }
 
     return false;
-  }, [
-    description,
-    name,
-    savedModifications,
-    selectedModification,
-    setFormErrors,
-  ]);
+  }, [description, name, patents, selectedPatent, setFormErrors]);
 
-  const onSaveModification = useCallback(async () => {
+  const onRegisterPatent = useCallback(async () => {
     try {
       setIsSaving(true);
 
@@ -393,7 +367,7 @@ export const SystemModificationDrawer: React.FC<
         );
       }
 
-      const { error, success } = await saveModification(
+      const { error, success } = await registerPatent(
         bytecode,
         description,
         name,
@@ -404,24 +378,24 @@ export const SystemModificationDrawer: React.FC<
         throw new Error(error);
       }
 
-      toast.success('System Saved!');
+      toast.success('Patent Registered!');
 
-      setShowSaveSystemModal(false);
+      setShowRegisterPatentModal(false);
       setName('');
       setDescription('');
-      const _savedModifications = onRefreshSystemList();
+      const _patents = onRefreshPatentList();
 
-      const matchingModification = _savedModifications.find(
+      const matchingPatent = _patents.find(
         s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
       );
-      if (matchingModification) {
-        onSelectSavedModification(matchingModification);
+      if (matchingPatent) {
+        onSelectPatent(matchingPatent);
       }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toast.error('Error Saving System', {
+      toast.error('Error Registering Patent', {
         description: (error as Error).message,
       });
     } finally {
@@ -433,14 +407,14 @@ export const SystemModificationDrawer: React.FC<
     getHasError,
     onCompileCode,
     name,
-    onRefreshSystemList,
-    onSelectSavedModification,
-    saveModification,
+    onRefreshPatentList,
+    onSelectPatent,
+    registerPatent,
     sizeLimit,
     sourceCode,
   ]);
 
-  const onEditModification = useCallback(async () => {
+  const onAmendPatent = useCallback(async () => {
     try {
       setIsSaving(true);
 
@@ -448,18 +422,18 @@ export const SystemModificationDrawer: React.FC<
       if (hasError) return;
 
       if (
-        name === selectedModification?.name &&
-        description === selectedModification?.description
+        name === selectedPatent?.name &&
+        description === selectedPatent?.description
       ) {
-        throw new Error('No changes made to the system');
+        throw new Error('No changes made to the patent');
       }
 
-      if (!selectedModification) {
-        throw new Error('No modification selected');
+      if (!selectedPatent) {
+        throw new Error('No patent selected');
       }
 
-      const { error, success } = await editModification(
-        selectedModification.id,
+      const { error, success } = await amendPatent(
+        selectedPatent.id,
         description,
         name,
       );
@@ -468,76 +442,69 @@ export const SystemModificationDrawer: React.FC<
         throw new Error(error);
       }
 
-      toast.success('System Saved!');
+      toast.success('Patent Amended!');
 
-      setShowSaveSystemModal(false);
-      const _savedModifications = onRefreshSystemList();
+      setShowRegisterPatentModal(false);
+      const _patents = onRefreshPatentList();
 
-      const matchingModification = _savedModifications.find(
+      const matchingPatent = _patents.find(
         s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
       );
-      if (matchingModification) {
-        onSelectSavedModification(matchingModification);
+      if (matchingPatent) {
+        onSelectPatent(matchingPatent);
       }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toast.error('Error Editing System', {
+      toast.error('Error Amending Patent', {
         description: (error as Error).message,
       });
     } finally {
       setIsSaving(false);
     }
   }, [
+    amendPatent,
     description,
-    editModification,
     getHasError,
     name,
-    onRefreshSystemList,
-    onSelectSavedModification,
-    selectedModification,
+    onRefreshPatentList,
+    onSelectPatent,
+    selectedPatent,
     sourceCode,
   ]);
 
-  const onDeleteModification = useCallback(async () => {
+  const onDisclaimPatent = useCallback(async () => {
     try {
       setIsDeleting(true);
 
-      if (!selectedModification) {
-        throw new Error('No modification selected');
+      if (!selectedPatent) {
+        throw new Error('No patent selected');
       }
 
-      const { error, success } = await deleteModification(
-        selectedModification.id,
-      );
+      const { error, success } = await disclaimPatent(selectedPatent.id);
 
       if (error && !success) {
         throw new Error(error);
       }
 
-      toast.success('System Deleted!');
+      toast.success('Patent Deleted!');
 
-      setShowDeleteSystemModal(false);
-      const _savedModifications = onRefreshSystemList();
+      setShowDisclaimPatentModal(false);
+      const _patents = onRefreshPatentList();
 
-      onSelectSavedModification(_savedModifications[0]);
+      onSelectPatent(_patents[0]);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toast.error('Error Deleting System', {
+      toast.error('Error Deleting Patent', {
         description: (error as Error).message,
       });
     } finally {
       setIsDeleting(false);
     }
-  }, [
-    deleteModification,
-    onRefreshSystemList,
-    onSelectSavedModification,
-    selectedModification,
-  ]);
+  }, [disclaimPatent, onRefreshPatentList, onSelectPatent, selectedPatent]);
 
   useEffect(() => {
     setFormErrors([]);
@@ -545,25 +512,23 @@ export const SystemModificationDrawer: React.FC<
 
   const isMyTower = useMemo(() => {
     if (!isPlayer1) return false;
-    if (!game) return false;
-    return game.player1Id === tower.owner;
-  }, [game, isPlayer1, tower.owner]);
+    if (!battle) return false;
+    return battle.player1Id === tower.owner;
+  }, [battle, isPlayer1, tower.owner]);
 
-  const isSystemSaved = useMemo(() => {
+  const isPatentRegistered = useMemo(() => {
     if (!sourceCode) return false;
     const flattenedSourceCode = sourceCode.replace(/\s+/g, ' ').trim();
 
-    return savedModifications
-      .slice(1)
-      .some(s => s.sourceCode === flattenedSourceCode);
-  }, [savedModifications, sourceCode]);
+    return patents.slice(1).some(s => s.sourceCode === flattenedSourceCode);
+  }, [patents, sourceCode]);
 
-  const canEditSystem = useMemo(() => {
-    if (!(game && selectedModification)) return false;
-    if (selectedModification.bytecode === zeroHash) return false;
-    if (selectedModification.author === 'Template') return false;
-    return selectedModification?.author === game.player1Username;
-  }, [game, selectedModification]);
+  const canAmendPatent = useMemo(() => {
+    if (!(battle && selectedPatent)) return false;
+    if (selectedPatent.bytecode === zeroHash) return false;
+    if (selectedPatent.patentee === 'Template') return false;
+    return selectedPatent?.patentee === battle.player1Username;
+  }, [battle, selectedPatent]);
 
   // Configure Solidity language
   loader.init().then(monacoInstance => {
@@ -593,8 +558,8 @@ export const SystemModificationDrawer: React.FC<
 
   return (
     <Sheet
-      onOpenChange={open => setIsSystemDrawerOpen(open)}
-      open={isSystemDrawerOpen}
+      onOpenChange={open => setIsAssemblyDrawerOpen(open)}
+      open={isAssemblyDrawerOpen}
     >
       <SheetContent
         aria-describedby={undefined}
@@ -603,7 +568,7 @@ export const SystemModificationDrawer: React.FC<
       >
         <SheetHeader>
           <SheetTitle className="font-bold text-cyan-400 text-2xl">
-            SYSTEM MODIFICATION
+            TOWER ASSEMBLY
           </SheetTitle>
         </SheetHeader>
         <div className="mt-6 overflow-y-auto pb-[100px]">
@@ -665,31 +630,29 @@ export const SystemModificationDrawer: React.FC<
           </Dialog>
 
           <div className="flex gap-2 items-center">
-            <h3 className="font-semibold my-4 text-white text-xl">
-              Saved Systems
-            </h3>
+            <h3 className="font-semibold my-4 text-white text-xl">Patents</h3>
             <TooltipProvider>
-              <Tooltip open={tooltipSelection === 'systemsTooltip'}>
+              <Tooltip open={tooltipSelection === 'patentsTooltip'}>
                 <TooltipTrigger
                   className="h-6 hover:cursor-pointer hover:text-white text-gray-400 w-6"
-                  onClick={() => setTooltipSelection('systemsTooltip')}
-                  onMouseEnter={() => setTooltipSelection('systemsTooltip')}
+                  onClick={() => setTooltipSelection('patentsTooltip')}
+                  onMouseEnter={() => setTooltipSelection('patentsTooltip')}
                   onMouseLeave={() => setTooltipSelection(null)}
                 >
                   <Info className="h-3 w-3" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Basic templates are included in your list of systems</p>
+                  <p>Basic templates are included in your list of patents</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
 
-          {selectedModification && (
-            <SystemsList
-              onSelectSavedModification={onSelectSavedModification}
-              savedModifications={savedModifications}
-              selectedModification={selectedModification}
+          {selectedPatent && (
+            <PatentsList
+              onSelectPatent={onSelectPatent}
+              patents={patents}
+              selectedPatent={selectedPatent}
             />
           )}
 
@@ -699,7 +662,7 @@ export const SystemModificationDrawer: React.FC<
                 <Button
                   className="bg-cyan-950/30 border-cyan-500 hover:bg-cyan-900/50 hover:text-cyan-300 text-cyan-400"
                   disabled={isDeploying}
-                  onClick={onModifyTowerSystem}
+                  onClick={onModifyTower}
                   variant="outline"
                 >
                   {isDeploying ? (
@@ -719,42 +682,42 @@ export const SystemModificationDrawer: React.FC<
                 View Board
               </Button>
             </div>
-            {isMyTower && (!isSystemSaved || canEditSystem) && (
+            {isMyTower && (!isPatentRegistered || canAmendPatent) && (
               <div className="flex gap-3">
                 <Button
                   className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
                   onClick={() => {
-                    setShowSaveSystemModal(true);
+                    setShowRegisterPatentModal(true);
 
-                    if (canEditSystem && selectedModification) {
-                      setName(selectedModification.name);
-                      setDescription(selectedModification.description);
+                    if (canAmendPatent && selectedPatent) {
+                      setName(selectedPatent.name);
+                      setDescription(selectedPatent.description);
                     }
                   }}
                   variant="outline"
                 >
-                  {isSystemSaved ? (
+                  {isPatentRegistered ? (
                     <Pencil className="h-4 mr-2 w-4" />
                   ) : (
                     <FileText className="h-4 mr-2 w-4" />
                   )}
-                  {isSystemSaved ? 'Edit' : 'Save'} System
+                  {isPatentRegistered ? 'Amend' : 'Register'} Patent
                 </Button>
-                {canEditSystem && (
+                {canAmendPatent && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
                         <Button
-                          aria-label="Delete System"
+                          aria-label="Delete Patent"
                           className="border-pink-500 hover:bg-pink-950/50 hover:text-pink-300 text-pink-400"
-                          onClick={() => setShowDeleteSystemModal(true)}
+                          onClick={() => setShowDisclaimPatentModal(true)}
                           variant="outline"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Delete System</p>
+                        <p>Delete Patent</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -765,59 +728,59 @@ export const SystemModificationDrawer: React.FC<
 
           {/* SAVE AND EDIT DIALOG */}
           <Dialog
-            open={showSaveSystemModal}
-            onOpenChange={setShowSaveSystemModal}
+            open={showRegisterPatentModal}
+            onOpenChange={setShowRegisterPatentModal}
           >
             <DialogContent className="bg-gray-900/95 border border-pink-900/50 text-white">
               <DialogHeader>
                 <DialogTitle className="font-bold text-pink-400 text-2xl">
-                  {canEditSystem ? 'Edit' : 'Save'} System
+                  {canAmendPatent ? 'Amend' : 'Register'} Patent
                 </DialogTitle>
                 <DialogDescription className="mt-2 text-gray-300">
-                  {canEditSystem
-                    ? 'Edit your custom projectile system.'
-                    : 'Save your custom projectile system for future use.'}
+                  {canAmendPatent
+                    ? 'Edit your custom projectile patent.'
+                    : 'Save your custom projectile patent for future use.'}
                 </DialogDescription>
               </DialogHeader>
               <div className="mt-4 space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-white" htmlFor="system-name">
-                    System Name
+                  <Label className="text-white" htmlFor="patent-name">
+                    Patent Name
                   </Label>
                   <Input
                     className="bg-gray-800 border-gray-700 text-white"
                     disabled={isSaving}
-                    id="system-name"
+                    id="patent-name"
                     onChange={e => setName(e.target.value)}
-                    placeholder="Enter a name for your system"
+                    placeholder="Enter a name for your patent"
                     type="text"
                     value={name}
                   />
-                  {formErrors?.find(e => e.field === 'system-name') && (
+                  {formErrors?.find(e => e.field === 'patent-name') && (
                     <p className="text-red-500 text-sm">
                       {
-                        formErrors?.find(e => e.field === 'system-name')
+                        formErrors?.find(e => e.field === 'patent-name')
                           ?.message
                       }
                     </p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-white" htmlFor="system-description">
+                  <Label className="text-white" htmlFor="patent-description">
                     Description
                   </Label>
                   <Textarea
                     className="bg-gray-800 border border-gray-700 h-24 p-2 rounded-md text-white text-sm w-full"
                     disabled={isSaving}
-                    id="system-description"
+                    id="patent-description"
                     onChange={e => setDescription(e.target.value)}
-                    placeholder="Describe what your system does"
+                    placeholder="Describe what your patent does"
                     value={description}
                   />
-                  {formErrors?.find(e => e.field === 'system-description') && (
+                  {formErrors?.find(e => e.field === 'patent-description') && (
                     <p className="text-red-500 text-sm">
                       {
-                        formErrors?.find(e => e.field === 'system-description')
+                        formErrors?.find(e => e.field === 'patent-description')
                           ?.message
                       }
                     </p>
@@ -828,7 +791,7 @@ export const SystemModificationDrawer: React.FC<
                 <Button
                   className="border-gray-700 text-gray-400"
                   disabled={isSaving}
-                  onClick={() => setShowSaveSystemModal(false)}
+                  onClick={() => setShowRegisterPatentModal(false)}
                   variant="outline"
                 >
                   Cancel
@@ -836,16 +799,14 @@ export const SystemModificationDrawer: React.FC<
                 <Button
                   className="bg-pink-800 hover:bg-pink-700 text-white"
                   disabled={isSaving}
-                  onClick={
-                    canEditSystem ? onEditModification : onSaveModification
-                  }
+                  onClick={canAmendPatent ? onAmendPatent : onRegisterPatent}
                 >
                   {isSaving ? (
                     <Loader2 className="animate-spin h-6 w-6" />
-                  ) : canEditSystem ? (
+                  ) : canAmendPatent ? (
                     'Save Changes'
                   ) : (
-                    'Save System'
+                    'Register Patent'
                   )}
                 </Button>
               </DialogFooter>
@@ -854,8 +815,8 @@ export const SystemModificationDrawer: React.FC<
 
           {/* DELETE DIALOG */}
           <Dialog
-            open={showDeleteSystemModal}
-            onOpenChange={setShowDeleteSystemModal}
+            open={showDisclaimPatentModal}
+            onOpenChange={setShowDisclaimPatentModal}
           >
             <DialogContent
               aria-describedby={undefined}
@@ -863,30 +824,31 @@ export const SystemModificationDrawer: React.FC<
             >
               <DialogHeader>
                 <DialogTitle className="font-bold text-pink-400 text-2xl">
-                  Delete System
+                  Delete Patent
                 </DialogTitle>
               </DialogHeader>
               <DialogDescription className="mt-2 text-gray-300">
-                Are you sure you want to delete this system?{' '}
+                Are you sure you want to delete this patent?{' '}
                 <strong>This action cannot be undone.</strong>
               </DialogDescription>
               <DialogFooter className="mt-6">
                 <Button
                   className="border-gray-700 text-gray-400"
                   disabled={isDeleting}
-                  onClick={() => setShowSaveSystemModal(false)}
+                  onClick={() => setShowDisclaimPatentModal(false)}
                   variant="outline"
                 >
                   Cancel
                 </Button>
                 <Button
                   className="bg-pink-800 hover:bg-pink-700 text-white"
-                  onClick={onDeleteModification}
+                  disabled={isDeleting}
+                  onClick={onDisclaimPatent}
                 >
                   {isDeleting ? (
                     <Loader2 className="animate-spin h-6 w-6" />
                   ) : (
-                    'Delete System'
+                    'Delete Patent'
                   )}
                 </Button>
               </DialogFooter>
@@ -904,18 +866,18 @@ export const SystemModificationDrawer: React.FC<
                 if (!value) return;
                 const flattenedSourceCode = value.replace(/\s+/g, ' ').trim();
 
-                const savedModificationMatch = savedModifications
+                const patentMatch = patents
                   .slice(1)
                   .find(s => s.sourceCode === flattenedSourceCode);
 
-                if (savedModificationMatch) {
-                  setSelectedModification(savedModificationMatch);
+                if (patentMatch) {
+                  setSelectedPatent(patentMatch);
                 } else {
-                  setSelectedModification(savedModifications[0]);
+                  setSelectedPatent(patents[0]);
                 }
                 setSourceCode(value ?? '');
               }}
-              onMount={onRefreshSystemList}
+              onMount={onRefreshPatentList}
               options={{
                 fontSize: 14,
                 minimap: { enabled: false },

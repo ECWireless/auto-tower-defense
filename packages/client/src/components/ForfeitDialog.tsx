@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useGame } from '@/contexts/GameContext';
+import { useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
 import { HOME_PATH } from '@/Routes';
@@ -31,7 +31,7 @@ export const ForfeitDialog: React.FC<ForfeitDialogProps> = ({
     systemCalls: { forfeitRun },
   } = useMUD();
   const { playSfx } = useSettings();
-  const { game } = useGame();
+  const { battle } = useBattle();
 
   const [isForfeiting, setIsForfeiting] = useState(false);
 
@@ -40,8 +40,8 @@ export const ForfeitDialog: React.FC<ForfeitDialogProps> = ({
       setIsForfeiting(true);
       playSfx('click2');
 
-      if (!game) {
-        throw new Error('Game not found.');
+      if (!battle) {
+        throw new Error('Battle not found.');
       }
 
       const { error, success } = await forfeitRun();
@@ -63,7 +63,7 @@ export const ForfeitDialog: React.FC<ForfeitDialogProps> = ({
     } finally {
       setIsForfeiting(false);
     }
-  }, [forfeitRun, game, navigate, playSfx, setIsForfeitDialogOpen]);
+  }, [battle, forfeitRun, navigate, playSfx, setIsForfeitDialogOpen]);
 
   return (
     <Dialog

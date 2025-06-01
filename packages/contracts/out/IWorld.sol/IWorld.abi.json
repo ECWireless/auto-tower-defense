@@ -1,6 +1,29 @@
 [
   {
     "type": "function",
+    "name": "app__amendPatent",
+    "inputs": [
+      {
+        "name": "patentId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__buyElectricity",
     "inputs": [
       {
@@ -39,7 +62,7 @@
   },
   {
     "type": "function",
-    "name": "app__createGame",
+    "name": "app__createBattle",
     "inputs": [
       {
         "name": "username",
@@ -63,35 +86,12 @@
   },
   {
     "type": "function",
-    "name": "app__deleteModification",
+    "name": "app__disclaimPatent",
     "inputs": [
       {
-        "name": "savedModificationId",
+        "name": "patentId",
         "type": "bytes32",
         "internalType": "bytes32"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__editModification",
-    "inputs": [
-      {
-        "name": "savedModificationId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "description",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "name",
-        "type": "string",
-        "internalType": "string"
       }
     ],
     "outputs": [],
@@ -159,7 +159,7 @@
     "name": "app__nextTurn",
     "inputs": [
       {
-        "name": "gameId",
+        "name": "battleId",
         "type": "bytes32",
         "internalType": "bytes32"
       }
@@ -256,7 +256,7 @@
   },
   {
     "type": "function",
-    "name": "app__saveModification",
+    "name": "app__registerPatent",
     "inputs": [
       {
         "name": "bytecode",
@@ -281,7 +281,7 @@
     ],
     "outputs": [
       {
-        "name": "savedModificationId",
+        "name": "patentId",
         "type": "bytes32",
         "internalType": "bytes32"
       }
@@ -290,7 +290,7 @@
   },
   {
     "type": "function",
-    "name": "app__saveSystemTemplate",
+    "name": "app__registerTemplatePatent",
     "inputs": [
       {
         "name": "bytecode",
@@ -315,7 +315,7 @@
     ],
     "outputs": [
       {
-        "name": "savedModificationId",
+        "name": "patentId",
         "type": "bytes32",
         "internalType": "bytes32"
       }

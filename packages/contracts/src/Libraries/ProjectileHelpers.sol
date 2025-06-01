@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Castle, CurrentGame, EntityAtPosition, Game, GameData, Health, HighestLevel, KingdomsByLevel, LastGameWonInRun, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedGame, SavedKingdom, SavedKingdomData, TopLevel, WinStreak } from "../codegen/index.sol";
+import { Castle, CurrentBattle, EntityAtPosition, Battle, BattleData, Health, HighestLevel, KingdomsByLevel, LastBattleWonInRun, Level, MapConfig, Owner, OwnerTowers, Position, Projectile, ProjectileTrajectory, SavedBattle, SavedKingdom, SavedKingdomData, TopLevel, WinStreak } from "../codegen/index.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { BatteryHelpers } from "./BatteryHelpers.sol";
@@ -12,20 +12,20 @@ import { MAX_ROUNDS, MAX_TICKS, MAX_HEALTH_WALL } from "../../constants.sol";
  * @notice This library contains helper functions for projectile calculations
  */
 library ProjectileHelpers {
-  function executeRoundResults(bytes32 gameId) public {
-    GameData memory game = Game.get(gameId);
+  function executeRoundResults(bytes32 battleId) public {
+    BattleData memory battle = Battle.get(battleId);
 
-    bytes32 localPlayer1Id = EntityHelpers.globalToLocalPlayerId(game.player1Id, gameId);
-    bytes32 localPlayer2Id = EntityHelpers.globalToLocalPlayerId(game.player2Id, gameId);
+    bytes32 localPlayer1Id = EntityHelpers.globalToLocalPlayerId(battle.player1Id, battleId);
+    bytes32 localPlayer2Id = EntityHelpers.globalToLocalPlayerId(battle.player2Id, battleId);
 
     bytes32[] memory allTowers = getAllTowers(localPlayer1Id, localPlayer2Id);
     TowerDetails[] memory towers = _getTowerDetails(allTowers);
 
     _simulateTicks(towers);
 
-    bool isGameOver = Game.getEndTimestamp(gameId) != 0;
-    if (game.roundCount > MAX_ROUNDS && !isGameOver) {
-      endGame(gameId, game.player2Id);
+    bool isBattleOver = Battle.getEndTimestamp(battleId) != 0;
+    if (battle.roundCount > MAX_ROUNDS && !isBattleOver) {
+      endBattle(battleId, battle.player2Id);
     }
   }
 
@@ -196,9 +196,9 @@ library ProjectileHelpers {
     int16 newProjectileX,
     int16 newProjectileY
   ) internal {
-    bytes32 gameId = CurrentGame.get(towers[i].id);
+    bytes32 battleId = CurrentBattle.get(towers[i].id);
     (int16 actualX, int16 actualY) = getActualCoordinates(newProjectileX, newProjectileY);
-    bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, actualX, actualY));
+    bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(battleId, actualX, actualY));
     bytes32 entityOwner = Owner.get(positionEntity);
 
     if (positionEntity != 0 && towers[i].id != positionEntity && entityOwner != towers[i].owner) {
@@ -222,14 +222,14 @@ library ProjectileHelpers {
       towers[i].projectileAddress = address(0);
 
       if (newHealth == 0) {
-        bytes32 gameId = CurrentGame.get(towers[i].id);
-        if (gameId == 0) {
-          gameId = CurrentGame.get(positionEntity);
+        bytes32 battleId = CurrentBattle.get(towers[i].id);
+        if (battleId == 0) {
+          battleId = CurrentBattle.get(positionEntity);
         }
 
         // Preference is given to player 1 if both castles are destroyed at the same time
-        if (Game.getEndTimestamp(gameId) == 0) {
-          endGame(gameId, Owner.get(towers[i].id));
+        if (Battle.getEndTimestamp(battleId) == 0) {
+          endBattle(battleId, Owner.get(towers[i].id));
         }
       }
     } else {
@@ -260,11 +260,11 @@ library ProjectileHelpers {
   }
 
   function _removeDestroyedTower(bytes32 positionEntity) internal {
-    bytes32 gameId = CurrentGame.get(positionEntity);
+    bytes32 battleId = CurrentBattle.get(positionEntity);
 
     Health.set(positionEntity, 0, MAX_HEALTH_WALL);
     EntityAtPosition.set(
-      EntityHelpers.positionToEntityKey(gameId, Position.getX(positionEntity), Position.getY(positionEntity)),
+      EntityHelpers.positionToEntityKey(battleId, Position.getX(positionEntity), Position.getY(positionEntity)),
       0
     );
     Position.set(positionEntity, -1, -1);
@@ -283,61 +283,61 @@ library ProjectileHelpers {
     return a >= b ? a : b;
   }
 
-  function endGame(bytes32 gameId, bytes32 winner) public {
-    require(Game.getWinner(gameId) == bytes32(0), "GameSystem: game has already ended");
-    require(Game.getEndTimestamp(gameId) == 0, "GameSystem: game has already ended");
+  function endBattle(bytes32 battleId, bytes32 winner) public {
+    require(Battle.getWinner(battleId) == bytes32(0), "BattleSystem: battle has already ended");
+    require(Battle.getEndTimestamp(battleId) == 0, "BattleSystem: battle has already ended");
 
-    Game.setEndTimestamp(gameId, block.timestamp);
-    Game.setWinner(gameId, winner);
+    Battle.setEndTimestamp(battleId, block.timestamp);
+    Battle.setWinner(battleId, winner);
 
     (int16 mapHeight, int16 mapWidth) = MapConfig.get();
 
-    GameData memory game = Game.get(gameId);
-    bool isWinnerPlayer1 = game.player1Id == winner;
+    BattleData memory battle = Battle.get(battleId);
+    bool isWinnerPlayer1 = battle.player1Id == winner;
     bytes32 loserCastleId = isWinnerPlayer1
-      ? EntityHelpers.positionToEntityKey(gameId, mapWidth - 5, mapHeight / 2)
-      : EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2);
+      ? EntityHelpers.positionToEntityKey(battleId, mapWidth - 5, mapHeight / 2)
+      : EntityHelpers.positionToEntityKey(battleId, 5, mapHeight / 2);
 
     uint8 loserCastleHealth = Health.getCurrentHealth(loserCastleId);
-    require(loserCastleHealth == 0, "GameSystem: loser castle health is not zero");
+    require(loserCastleHealth == 0, "BattleSystem: loser castle health is not zero");
 
-    bytes32 globalPlayer1Id = game.player1Id;
+    bytes32 globalPlayer1Id = battle.player1Id;
     uint256 winStreak = WinStreak.get(globalPlayer1Id);
 
     if (isWinnerPlayer1) {
-      // If they win, save their last game won in run, but don't save to KingdomsByLevel
-      // However, if they have the highest level, set won game in KingdomsByLevel
+      // If they win, save their last battle won in run, but don't save to KingdomsByLevel
+      // However, if they have the highest level, set won battle in KingdomsByLevel
 
       _setHighestLevel(globalPlayer1Id, winStreak);
       winStreak++;
       WinStreak.set(globalPlayer1Id, winStreak);
-      bytes32[] memory savedGameActions = SavedGame.getActions(gameId);
+      bytes32[] memory savedBattleActions = SavedBattle.getActions(battleId);
 
       // Create ID by hashing all actions
-      bytes32 savedKingdomId = keccak256(abi.encode(savedGameActions));
+      bytes32 savedKingdomId = keccak256(abi.encode(savedBattleActions));
       uint256 savedKingdomTimestamp = SavedKingdom.getCreatedAtTimestamp(savedKingdomId);
 
-      BatteryHelpers.winStake(gameId, globalPlayer1Id);
+      BatteryHelpers.winStake(battleId, globalPlayer1Id);
 
       // If this saved kingdom already exists, skip everything below
       if (savedKingdomTimestamp != 0) {
         return;
       }
 
-      _saveKingdom(winner, savedGameActions, savedKingdomId);
+      _saveKingdom(winner, savedBattleActions, savedKingdomId);
 
       bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(winStreak);
       if (kingdomsByLevel.length == 0) {
         TopLevel.set(winStreak);
         _updateKingdomsByLevel(kingdomsByLevel, savedKingdomId, winStreak, globalPlayer1Id);
       } else {
-        LastGameWonInRun.set(globalPlayer1Id, savedKingdomId);
+        LastBattleWonInRun.set(globalPlayer1Id, savedKingdomId);
       }
 
-      // Only save the game in KingdomsByLevel if the loser is player 1, and they have a LastGameWonInRun
+      // Only save the battle in KingdomsByLevel if the loser is player 1, and they have a LastBattleWonInRun
     } else {
       bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(winStreak);
-      bytes32 savedKingdomId = LastGameWonInRun.get(globalPlayer1Id);
+      bytes32 savedKingdomId = LastBattleWonInRun.get(globalPlayer1Id);
 
       if (savedKingdomId != bytes32(0) && winStreak > 0) {
         _updateKingdomsByLevel(kingdomsByLevel, savedKingdomId, winStreak, globalPlayer1Id);
@@ -345,7 +345,7 @@ library ProjectileHelpers {
 
       WinStreak.set(globalPlayer1Id, 0);
 
-      BatteryHelpers.loseStake(gameId, globalPlayer1Id);
+      BatteryHelpers.loseStake(battleId, globalPlayer1Id);
     }
   }
 
@@ -375,17 +375,17 @@ library ProjectileHelpers {
     KingdomsByLevel.set(winStreak, updatedKingdomsByLevel);
     Level.set(savedKingdomId, winStreak);
 
-    LastGameWonInRun.set(globalPlayer1Id, bytes32(0));
+    LastBattleWonInRun.set(globalPlayer1Id, bytes32(0));
   }
 
-  function _saveKingdom(bytes32 winner, bytes32[] memory savedGameActions, bytes32 savedKingdomId) internal {
+  function _saveKingdom(bytes32 winner, bytes32[] memory savedBattleActions, bytes32 savedKingdomId) internal {
     SavedKingdomData memory savedKingdom = SavedKingdomData({
       author: winner,
       createdAtTimestamp: block.timestamp,
       electricityBalance: 0,
       losses: 0,
       wins: 0,
-      actions: savedGameActions
+      actions: savedBattleActions
     });
     SavedKingdom.set(savedKingdomId, savedKingdom);
   }

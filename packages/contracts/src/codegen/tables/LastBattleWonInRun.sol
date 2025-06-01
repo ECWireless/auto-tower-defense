@@ -16,9 +16,9 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
-library LastGameWonInRun {
-  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "LastGameWonInRun", typeId: RESOURCE_TABLE });`
-  ResourceId constant _tableId = ResourceId.wrap(0x746261707000000000000000000000004c61737447616d65576f6e496e52756e);
+library LastBattleWonInRun {
+  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "LastBattleWonInR", typeId: RESOURCE_TABLE });`
+  ResourceId constant _tableId = ResourceId.wrap(0x746261707000000000000000000000004c617374426174746c65576f6e496e52);
 
   FieldLayout constant _fieldLayout =
     FieldLayout.wrap(0x0020010020000000000000000000000000000000000000000000000000000000);

@@ -5,20 +5,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useGame } from '@/contexts/GameContext';
+import { useBattle } from '@/contexts/BattleContext';
 
 import { Button } from './ui/button';
 
 export const CastleHitDialog: React.FC = () => {
   const {
-    game,
+    battle,
     isCastleHitDialogOpen,
     isMyCastleHit,
     setIsCastleHitDialogOpen,
     triggerAnimation,
-  } = useGame();
+  } = useBattle();
 
-  if (!game || triggerAnimation) {
+  if (!battle || triggerAnimation) {
     return null;
   }
 
@@ -64,11 +64,11 @@ export const CastleHitDialog: React.FC = () => {
       >
         <DialogHeader>
           <DialogTitle className="text-cyan-400 text-xl">
-            You Hit {game.player2Username}&apos;s Castle!
+            You Hit {battle.player2Username}&apos;s Castle!
           </DialogTitle>
         </DialogHeader>
         <p>
-          {game.player2Username}&apos;s castle only has <strong>1 HP</strong>{' '}
+          {battle.player2Username}&apos;s castle only has <strong>1 HP</strong>{' '}
           remaining.
         </p>
         <DialogFooter className="sm:justify-center">

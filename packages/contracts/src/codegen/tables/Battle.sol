@@ -16,7 +16,7 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
-struct GameData {
+struct BattleData {
   uint8 actionCount;
   uint256 endTimestamp;
   bytes32 player1Id;
@@ -27,9 +27,9 @@ struct GameData {
   bytes32 winner;
 }
 
-library Game {
-  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "Game", typeId: RESOURCE_TABLE });`
-  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000047616d65000000000000000000000000);
+library Battle {
+  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "Battle", typeId: RESOURCE_TABLE });`
+  ResourceId constant _tableId = ResourceId.wrap(0x74626170700000000000000000000000426174746c6500000000000000000000);
 
   FieldLayout constant _fieldLayout =
     FieldLayout.wrap(0x00c2080001202020012020200000000000000000000000000000000000000000);
@@ -417,7 +417,7 @@ library Game {
   /**
    * @notice Get the full data.
    */
-  function get(bytes32 id) internal view returns (GameData memory _table) {
+  function get(bytes32 id) internal view returns (BattleData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -432,7 +432,7 @@ library Game {
   /**
    * @notice Get the full data.
    */
-  function _get(bytes32 id) internal view returns (GameData memory _table) {
+  function _get(bytes32 id) internal view returns (BattleData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -515,7 +515,7 @@ library Game {
   /**
    * @notice Set the full data using the data struct.
    */
-  function set(bytes32 id, GameData memory _table) internal {
+  function set(bytes32 id, BattleData memory _table) internal {
     bytes memory _staticData = encodeStatic(
       _table.actionCount,
       _table.endTimestamp,
@@ -539,7 +539,7 @@ library Game {
   /**
    * @notice Set the full data using the data struct.
    */
-  function _set(bytes32 id, GameData memory _table) internal {
+  function _set(bytes32 id, BattleData memory _table) internal {
     bytes memory _staticData = encodeStatic(
       _table.actionCount,
       _table.endTimestamp,
@@ -606,7 +606,7 @@ library Game {
     bytes memory _staticData,
     EncodedLengths,
     bytes memory
-  ) internal pure returns (GameData memory _table) {
+  ) internal pure returns (BattleData memory _table) {
     (
       _table.actionCount,
       _table.endTimestamp,

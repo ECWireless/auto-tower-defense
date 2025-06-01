@@ -37,7 +37,7 @@ export const HowToPlayDialog: React.FC<HowToPlayDialogProps> = ({
             <p className="mt-4 text-gray-300">
               The primary way of playing the game is by{' '}
               <span className="text-white font-semibold">
-                modifying the system logic of your towers
+                modifying your towers
               </span>
               . For instance, you can change the formula for your tower&apos;s
               projectile trajectory, which can be as simple as a straight line
@@ -50,9 +50,9 @@ export const HowToPlayDialog: React.FC<HowToPlayDialogProps> = ({
               </span>
               . Players create levels for other players simply by playing. If
               you beat 5 levels, for instance, then lose on the 6th, then your
-              game (your actions) is saved as a level 6 game for other players
-              to face. The top player is the one whose game has never been
-              beaten.
+              battle (your actions) is saved as a level 6 battle for other
+              players to face. The top player is the one whose saved battle has
+              never been beaten.
             </p>
           </div>
 
@@ -74,13 +74,12 @@ export const HowToPlayDialog: React.FC<HowToPlayDialogProps> = ({
               <li>
                 Each turn, you can perform{' '}
                 <span className="text-white font-semibold">1 action</span>:
-                install a tower, move a tower, or modify a tower&apos;s system
-                logic.
+                install a tower, move a tower, or modify a tower.
               </li>
               <li>
                 After your opponent&apos;s turn, round results will render.
-                These are the results of your tower&apos;s system logic (like
-                shooting a projectile a certain way).
+                These are the results of your tower modifications (like shooting
+                a projectile a certain way).
               </li>
             </ol>
           </div>
@@ -89,10 +88,9 @@ export const HowToPlayDialog: React.FC<HowToPlayDialogProps> = ({
             <h2 className="text-xl font-semibold text-cyan-400 mb-3">Notes</h2>
             <ul className="space-y-3 text-gray-300 list-disc list-outside ml-4">
               <li>
-                To modify a tower&apos;s system logic, click on the tower you
-                want to modify, change the{' '}
-                <span className="text-white font-semibold">Solidity</span> code,
-                then click the &quot;deploy&quot; button.
+                To modify a tower, click on the tower you want to modify, change
+                the <span className="text-white font-semibold">Solidity</span>{' '}
+                code, then click the &quot;deploy&quot; button.
               </li>
               <li>
                 If your logic cannot compile, you&apos;ll receive an error. If

@@ -56,14 +56,14 @@ contract RelayTest is MudTest {
     vm.stopPrank();
   }
 
-  function _endGame(address player, bytes32 gameId) internal {
+  function _endBattle(address player, bytes32 battleId) internal {
     vm.startPrank(player);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
 
-    // Need to go through 2 turns to end the game
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    // Need to go through 2 turns to end the battle
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
     vm.stopPrank();
   }
 
@@ -301,10 +301,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
     vm.prank(aliceAddress);
     relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
   }
@@ -320,10 +320,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
     vm.prank(aliceAddress);
     vm.expectRevert("Invalid signature");
     relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
@@ -340,10 +340,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
     vm.prank(aliceAddress);
     relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
 
@@ -365,10 +365,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
     vm.prank(aliceAddress);
     relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
     SolarFarmDetailsData memory solarFarmDetails = SolarFarmDetails.get();
@@ -397,10 +397,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
     vm.prank(aliceAddress);
     vm.expectRevert("SolarFarmSystem: USDC amount must be greater than 0");
     relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
@@ -432,10 +432,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
     vm.prank(aliceAddress);
     vm.expectRevert("SolarFarmSystem: amount must be greater than 0.01 USDC");
     relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
@@ -452,10 +452,10 @@ contract RelayTest is MudTest {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, ethHash);
     bytes memory signature = abi.encodePacked(r, s, v);
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
     vm.prank(aliceAddress);
     relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
 
@@ -484,10 +484,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
 
     // Buy 1 USDC worth of electricity, so that it can be sold
     vm.prank(aliceAddress);
@@ -517,10 +517,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
 
     // Buy 1 USDC worth of electricity, so that it can be sold
     vm.prank(aliceAddress);
@@ -542,10 +542,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
 
     // Buy 1 USDC worth of electricity, so that it can be sold
     vm.prank(aliceAddress);
@@ -567,10 +567,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
 
     // Buy 1 USDC worth of electricity, so that it can be sold
     vm.prank(aliceAddress);
@@ -592,10 +592,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
 
     // Buy 1 USDC worth of electricity, so that it can be sold
     vm.prank(aliceAddress);
@@ -671,10 +671,10 @@ contract RelayTest is MudTest {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.prank(aliceAddress);
-    // Create a game to get battery
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
-    // End game to have stake returned
-    _endGame(aliceAddress, gameId);
+    // Create a battle to get battery
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
+    // End battle to have stake returned
+    _endBattle(aliceAddress, battleId);
 
     // Buy 1 USDC worth of electricity, so that it can be sold
     vm.prank(aliceAddress);

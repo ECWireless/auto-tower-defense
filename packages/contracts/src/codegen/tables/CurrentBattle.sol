@@ -16,9 +16,9 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
-library SavedModNameTaken {
-  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "SavedModNameTake", typeId: RESOURCE_TABLE });`
-  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000053617665644d6f644e616d6554616b65);
+library CurrentBattle {
+  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "CurrentBattle", typeId: RESOURCE_TABLE });`
+  ResourceId constant _tableId = ResourceId.wrap(0x7462617070000000000000000000000043757272656e74426174746c65000000);
 
   FieldLayout constant _fieldLayout =
     FieldLayout.wrap(0x0020010020000000000000000000000000000000000000000000000000000000);
@@ -34,7 +34,7 @@ library SavedModNameTaken {
    */
   function getKeyNames() internal pure returns (string[] memory keyNames) {
     keyNames = new string[](1);
-    keyNames[0] = "nameAsBytes";
+    keyNames[0] = "id";
   }
 
   /**
@@ -63,9 +63,9 @@ library SavedModNameTaken {
   /**
    * @notice Get value.
    */
-  function getValue(bytes32 nameAsBytes) internal view returns (bytes32 value) {
+  function getValue(bytes32 id) internal view returns (bytes32 value) {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
     return (bytes32(_blob));
@@ -74,9 +74,9 @@ library SavedModNameTaken {
   /**
    * @notice Get value.
    */
-  function _getValue(bytes32 nameAsBytes) internal view returns (bytes32 value) {
+  function _getValue(bytes32 id) internal view returns (bytes32 value) {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
     return (bytes32(_blob));
@@ -85,9 +85,9 @@ library SavedModNameTaken {
   /**
    * @notice Get value.
    */
-  function get(bytes32 nameAsBytes) internal view returns (bytes32 value) {
+  function get(bytes32 id) internal view returns (bytes32 value) {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
     return (bytes32(_blob));
@@ -96,9 +96,9 @@ library SavedModNameTaken {
   /**
    * @notice Get value.
    */
-  function _get(bytes32 nameAsBytes) internal view returns (bytes32 value) {
+  function _get(bytes32 id) internal view returns (bytes32 value) {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
     return (bytes32(_blob));
@@ -107,9 +107,9 @@ library SavedModNameTaken {
   /**
    * @notice Set value.
    */
-  function setValue(bytes32 nameAsBytes, bytes32 value) internal {
+  function setValue(bytes32 id, bytes32 value) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((value)), _fieldLayout);
   }
@@ -117,9 +117,9 @@ library SavedModNameTaken {
   /**
    * @notice Set value.
    */
-  function _setValue(bytes32 nameAsBytes, bytes32 value) internal {
+  function _setValue(bytes32 id, bytes32 value) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((value)), _fieldLayout);
   }
@@ -127,9 +127,9 @@ library SavedModNameTaken {
   /**
    * @notice Set value.
    */
-  function set(bytes32 nameAsBytes, bytes32 value) internal {
+  function set(bytes32 id, bytes32 value) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((value)), _fieldLayout);
   }
@@ -137,9 +137,9 @@ library SavedModNameTaken {
   /**
    * @notice Set value.
    */
-  function _set(bytes32 nameAsBytes, bytes32 value) internal {
+  function _set(bytes32 id, bytes32 value) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((value)), _fieldLayout);
   }
@@ -147,9 +147,9 @@ library SavedModNameTaken {
   /**
    * @notice Delete all data for given keys.
    */
-  function deleteRecord(bytes32 nameAsBytes) internal {
+  function deleteRecord(bytes32 id) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     StoreSwitch.deleteRecord(_tableId, _keyTuple);
   }
@@ -157,9 +157,9 @@ library SavedModNameTaken {
   /**
    * @notice Delete all data for given keys.
    */
-  function _deleteRecord(bytes32 nameAsBytes) internal {
+  function _deleteRecord(bytes32 id) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     StoreCore.deleteRecord(_tableId, _keyTuple, _fieldLayout);
   }
@@ -190,9 +190,9 @@ library SavedModNameTaken {
   /**
    * @notice Encode keys as a bytes32 array using this table's field layout.
    */
-  function encodeKeyTuple(bytes32 nameAsBytes) internal pure returns (bytes32[] memory) {
+  function encodeKeyTuple(bytes32 id) internal pure returns (bytes32[] memory) {
     bytes32[] memory _keyTuple = new bytes32[](1);
-    _keyTuple[0] = nameAsBytes;
+    _keyTuple[0] = id;
 
     return _keyTuple;
   }

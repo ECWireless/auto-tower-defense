@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "save-games-as-kingdoms": "tsx saveGamesAsKingdoms.ts",
+    "save-battles-as-kingdoms": "tsx saveBattlesAsKingdoms.ts",
     "grant-batteries": "tsx grantPlayersBatteries.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -987,6 +987,7 @@ export const SolarFarmDialog: React.FC = () => {
             <div className="flex flex-row gap-2 justify-end">
               <Button
                 className="border-gray-700 text-gray-400"
+                disabled={isProcessing}
                 onClick={() => setIsSolarFarmDialogOpen(false)}
                 variant="outline"
               >

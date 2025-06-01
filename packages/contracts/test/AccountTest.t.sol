@@ -14,7 +14,7 @@ contract AccountTests is MudTest {
 
   function testTransferAccount() public {
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 aliceGlobalPlayerId = AddressToPlayerId.get(EntityHelpers.addressToKey(aliceAddress));
     address aliceAccountAddress = PlayerIdToAddress.get(aliceGlobalPlayerId);
     assertEq(aliceAccountAddress, aliceAddress);

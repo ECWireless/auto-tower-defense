@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/hooks/useMUD';
-import { GAMES_PATH } from '@/Routes';
+import { BATTLES_PATH } from '@/Routes';
 import { BATTERY_STORAGE_LIMIT, MAX_PLAYERS } from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
@@ -34,8 +34,8 @@ export const Home = (): JSX.Element => {
     components: {
       AddressToPlayerId,
       BatteryDetails,
-      CurrentGame,
-      Game,
+      Battle,
+      CurrentBattle,
       KingdomsByLevel,
       PlayerCount,
       SavedKingdom,
@@ -45,14 +45,14 @@ export const Home = (): JSX.Element => {
       WinStreak,
     },
     network: { globalPlayerId },
-    systemCalls: { claimRecharge, createGame },
+    systemCalls: { claimRecharge, createBattle },
   } = useMUD();
   const { playSfx } = useSettings();
   const { setIsSolarFarmDialogOpen } = useSolarFarm();
 
   const [username, setUsername] = useState('');
   const [usernameSaved, setUsernameSaved] = useState(false);
-  const [isCreatingGame, setIsCreatingGame] = useState(false);
+  const [isCreatingBattle, setIsCreatingBattle] = useState(false);
 
   const [isMaxPlayersDialogOpen, setIsMaxPlayersDialogOpen] = useState(false);
   const [isClaimingRecharge, setIsClaimingRecharge] = useState(false);
@@ -88,11 +88,11 @@ export const Home = (): JSX.Element => {
     );
   }, [batteryDetails, solarFarmDetails]);
 
-  const onCreateGame = useCallback(
+  const onCreateBattle = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       try {
-        setIsCreatingGame(true);
+        setIsCreatingBattle(true);
         playSfx('click1');
 
         if (!address) {
@@ -100,12 +100,12 @@ export const Home = (): JSX.Element => {
         }
 
         if (!globalPlayerId) {
-          const { error, success } = await createGame(username, true);
+          const { error, success } = await createBattle(username, true);
           if (error && !success) {
             throw new Error(error);
           }
 
-          toast.success('Game Created!');
+          toast.success('Battle Created!');
           const newGlobalPlayerId = getComponentValue(
             AddressToPlayerId,
             encodeEntity(
@@ -121,24 +121,30 @@ export const Home = (): JSX.Element => {
           if (!newGlobalPlayerId) {
             throw new Error('No player ID found for the connected address');
           }
-          const currentGame = getComponentValue(
-            CurrentGame,
+          const currentBattle = getComponentValue(
+            CurrentBattle,
             newGlobalPlayerId,
           )?.value;
 
-          if (!currentGame) {
-            throw new Error('No recent game found');
+          if (!currentBattle) {
+            throw new Error('No recent battle found');
           }
 
-          navigate(`${GAMES_PATH}/${currentGame}`);
+          navigate(`${BATTLES_PATH}/${currentBattle}`);
           return;
         }
 
-        let currentGame = getComponentValue(CurrentGame, globalPlayerId)?.value;
-        if (currentGame) {
-          const game = getComponentValueStrict(Game, currentGame as Entity);
-          if (game.endTimestamp === BigInt(0)) {
-            navigate(`${GAMES_PATH}/${currentGame}`);
+        let currentBattle = getComponentValue(
+          CurrentBattle,
+          globalPlayerId,
+        )?.value;
+        if (currentBattle) {
+          const battle = getComponentValueStrict(
+            Battle,
+            currentBattle as Entity,
+          );
+          if (battle.endTimestamp === BigInt(0)) {
+            navigate(`${BATTLES_PATH}/${currentBattle}`);
             return;
           }
         }
@@ -188,36 +194,36 @@ export const Home = (): JSX.Element => {
           return;
         }
 
-        const { error, success } = await createGame(username, resetLevel);
+        const { error, success } = await createBattle(username, resetLevel);
         if (error && !success) {
           throw new Error(error);
         }
 
-        toast.success('Game Created!');
-        currentGame = getComponentValue(CurrentGame, globalPlayerId)?.value;
-        if (!currentGame) {
-          throw new Error('No recent game found');
+        toast.success('Battle Created!');
+        currentBattle = getComponentValue(CurrentBattle, globalPlayerId)?.value;
+        if (!currentBattle) {
+          throw new Error('No recent battle found');
         }
 
-        navigate(`${GAMES_PATH}/${currentGame}`);
+        navigate(`${BATTLES_PATH}/${currentBattle}`);
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
 
-        toast.error('Error Creating Game', {
+        toast.error('Error Creating Battle', {
           description: (error as Error).message,
         });
       } finally {
-        setIsCreatingGame(false);
+        setIsCreatingBattle(false);
       }
     },
     [
       address,
       AddressToPlayerId,
       batteryDetails,
-      createGame,
-      CurrentGame,
-      Game,
+      Battle,
+      createBattle,
+      CurrentBattle,
       KingdomsByLevel,
       navigate,
       globalPlayerId,
@@ -376,7 +382,7 @@ export const Home = (): JSX.Element => {
           )}
 
           <div className="max-w-md mb-8 mx-auto w-full">
-            <form className="space-y-6" onSubmit={onCreateGame}>
+            <form className="space-y-6" onSubmit={onCreateBattle}>
               {!usernameSaved && (
                 <div className="space-y-2">
                   <Label className="text-lg text-cyan-300" htmlFor="username">
@@ -384,7 +390,7 @@ export const Home = (): JSX.Element => {
                   </Label>
                   <Input
                     className="bg-transparent border-cyan-800 focus:border-cyan-100 text-cyan-100"
-                    disabled={isCreatingGame}
+                    disabled={isCreatingBattle}
                     id="username"
                     onChange={e => setUsername(e.target.value)}
                     placeholder="ROB"
@@ -401,12 +407,12 @@ export const Home = (): JSX.Element => {
                 <Button
                   aria-label="Submit username and play"
                   className="active:bg-cyan-900 active:scale-95 bg-cyan-900/20 border-cyan-500 duration-200 focus:bg-cyan-900/30 focus:text-cyan-300 h-16 rounded-full text-cyan-400 w-16 hover:bg-cyan-900/50 hover:border-cyan-400 hover:text-cyan-300 neon-border transition-all"
-                  disabled={isCreatingGame}
+                  disabled={isCreatingBattle}
                   size="icon"
                   type="submit"
                   variant="outline"
                 >
-                  {isCreatingGame ? (
+                  {isCreatingBattle ? (
                     <Loader2 className="animate-spin h-8 w-8" />
                   ) : (
                     <Play className="h-8 w-8" />

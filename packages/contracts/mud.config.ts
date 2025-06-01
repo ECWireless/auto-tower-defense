@@ -40,6 +40,17 @@ export default defineWorld({
       reserveBalance: "uint256", // Electricity in watt-hours
       stakedBalance: "uint256", // Electricity in watt-hours
     },
+    Battle: {
+      id: "bytes32", // keccak256(abi.encodePacked(globalPlayer1Id, globalPlayer2Id, timestamp));
+      actionCount: "uint8",
+      endTimestamp: "uint256",
+      player1Id: "bytes32", // globalPlayerId
+      player2Id: "bytes32", // globalPlayerId
+      roundCount: "uint8",
+      startTimestamp: "uint256",
+      turn: "bytes32", // globalPlayerId
+      winner: "bytes32", // globalPlayerId
+    },
     Castle: "bool",
     Counter: {
       schema: {
@@ -47,7 +58,7 @@ export default defineWorld({
       },
       key: [],
     },
-    CurrentGame: "bytes32", // globalPlayerId || tower Id
+    CurrentBattle: "bytes32", // globalPlayerId || tower ID
     DefaultLogic: {
       schema: {
         value: "address",
@@ -61,27 +72,16 @@ export default defineWorld({
     ExpenseReceipt: {
       key: ["id"],
       schema: {
-        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, gameId))
+        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, battleId))
         amountToBattery: "uint256", // Electricity in watt-hours
         amountToKingdom: "uint256", // Electricity in watt-hours
-        gameId: "bytes32", // The gameId of the game that generated this expense
+        battleId: "bytes32", // The battleId of the battle that generated this expense
         playerId: "bytes32",
         savedKingdomId: "bytes32",
         timestamp: "uint256",
-        authors: "bytes32[]", // globalPlayerIds of all who authored the tower modifications used in the game
+        patentees: "bytes32[]", // globalPlayerIds of all patentees of the tower patents used in the battle
       },
       type: "offchainTable",
-    },
-    Game: {
-      id: "bytes32", // keccak256(abi.encodePacked(globalPlayer1Id, globalPlayer2Id, timestamp));
-      actionCount: "uint8",
-      endTimestamp: "uint256",
-      player1Id: "bytes32", // globalPlayerId
-      player2Id: "bytes32", // globalPlayerId
-      roundCount: "uint8",
-      startTimestamp: "uint256",
-      turn: "bytes32", // globalPlayerId
-      winner: "bytes32", // globalPlayerId
     },
     Health: {
       schema: {
@@ -102,11 +102,11 @@ export default defineWorld({
         savedKingdomIds: "bytes32[]",
       },
     },
-    LastGameWonInRun: "bytes32", // ID is global player ID; value is savedGameId
+    LastBattleWonInRun: "bytes32", // ID is global player ID; value is savedBattleId
     Level: "uint256",
     LoadedKingdomActions: {
-      // When a game is created, the enemy SavedKingdom's actions are loaded into the game
-      id: "bytes32", // gameId of the game being played
+      // When a battle is created, the enemy SavedKingdom's actions are loaded into the battle
+      id: "bytes32", // battleId of the battle being played
       savedKingdomId: "bytes32", // The SavedKindom the actions are loaded from
       actions: "bytes32[]",
     },
@@ -167,27 +167,27 @@ export default defineWorld({
     RevenueReceipt: {
       key: ["id"],
       schema: {
-        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, gameId))
+        id: "bytes32", // keccak256(abi.encodePacked(savedKingdomId, battleId))
         amountToKingdom: "uint256", // Electricity in watt-hours
         amountToReserve: "uint256", // Electricity in watt-hours
-        gameId: "bytes32", // The gameId of the game that generated this revenue
+        battleId: "bytes32", // The battleId of the battle that generated this revenue
         playerId: "bytes32", // globalPlayerId
         savedKingdomId: "bytes32",
         timestamp: "uint256",
-        authors: "bytes32[]", // globalPlayerIds of all who authored the tower modifications used in the game
+        patentees: "bytes32[]", // globalPlayerIds of all patentees of the tower patents used in the battle
       },
       type: "offchainTable",
     },
-    SavedGame: {
-      // This is the table that accumulates actions throughout a game; at the end of a run, it is copied to SavedKingdom
-      id: "bytes32", // gameId of the game being played
-      gameId: "bytes32",
+    SavedBattle: {
+      // This is the table that accumulates actions throughout a battle; at the end of a run, it is copied to SavedKingdom
+      id: "bytes32", // battleId of the battle being played
+      battleId: "bytes32",
       winner: "bytes32", // globalPlayerId
       actions: "bytes32[]",
     },
     SavedKingdom: {
       // This is the table accumulates revenue for each player (author)
-      id: "bytes32", // This is a deterministic hash of all actions by the author in the game; keccak256(abi.encodePacked(actions[]))
+      id: "bytes32", // This is a deterministic hash of all actions by the author in the battle; keccak256(abi.encodePacked(actions[]))
       author: "bytes32", // globalPlayerId
       createdAtTimestamp: "uint256",
       electricityBalance: "uint256",
@@ -195,9 +195,9 @@ export default defineWorld({
       wins: "uint256",
       actions: "bytes32[]",
     },
-    SavedModification: {
+    Patent: {
       id: "bytes32", // keccak256(abi.encodePacked(bytecode))
-      author: "bytes32", // globalPlayerId
+      patentee: "bytes32", // globalPlayerId
       size: "uint256",
       timestamp: "uint256",
       useCount: "uint256",
@@ -206,10 +206,10 @@ export default defineWorld({
       name: "string",
       sourceCode: "string",
     },
-    SavedModNameTaken: {
+    PatentNameTaken: {
       schema: {
         nameAsBytes: "bytes32", // keccak256(abi.encodePacked(name))
-        value: "bytes32", // savedModificationId
+        value: "bytes32", // patentId
       },
       key: ["nameAsBytes"],
       codegen: {

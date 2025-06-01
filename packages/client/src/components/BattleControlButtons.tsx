@@ -2,13 +2,13 @@ import { HelpCircle, Loader2, Play } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
-type GameControlButtonsProps = {
+type BattleControlButtonsProps = {
   isChangingTurn: boolean;
   onNextTurn: () => void;
   setIsHelpDialogOpen: (open: boolean) => void;
 };
 
-export const GameControlButtons: React.FC<GameControlButtonsProps> = ({
+export const BattleControlButtons: React.FC<BattleControlButtonsProps> = ({
   isChangingTurn,
   onNextTurn,
   setIsHelpDialogOpen,

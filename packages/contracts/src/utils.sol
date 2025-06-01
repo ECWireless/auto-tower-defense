@@ -13,6 +13,6 @@ function _solarFarmSystemId() pure returns (ResourceId) {
 }
 
 function _solarFarmSystemAddress() view returns (address) {
-  (address gameAddress, ) = Systems.get(_solarFarmSystemId());
-  return gameAddress;
+  (address solarFarmAddress, ) = Systems.get(_solarFarmSystemId());
+  return solarFarmAddress;
 }

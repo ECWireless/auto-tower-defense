@@ -19,19 +19,19 @@ import { useAccount } from 'wagmi';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { BatteryInfoDialog } from '@/components/BatteryInfoDialog';
+import { BattleBoard, INSTALLABLE_TOWERS } from '@/components/BattleBoard';
+import { BattleControlButtons } from '@/components/BattleControlButtons';
+import { BattleStatusBar } from '@/components/BattleStatusBar';
 import { CastleHitDialog } from '@/components/CastleHitDialog';
 import { ForfeitDialog } from '@/components/ForfeitDialog';
-import { GameBoard, INSTALLABLE_TOWERS } from '@/components/GameBoard';
-import { GameControlButtons } from '@/components/GameControlButtons';
-import { GameStatusBar } from '@/components/GameStatusBar';
 import { HowToPlayDialog } from '@/components/HowToPlayDialog';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { NoActionsDialog } from '@/components/NoActionsDialog';
-import { NoGameScreen } from '@/components/NoGameScreen';
+import { NoBattleScreen } from '@/components/NoBattleScreen';
 import { PlayAgainDialog } from '@/components/PlayAgainDialog';
 import { TowerSelection } from '@/components/TowerSelection';
 import { Button } from '@/components/ui/button';
-import { GameProvider, useGame } from '@/contexts/GameContext';
+import { BattleProvider, useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
 import { BATTERY_STORAGE_LIMIT } from '@/utils/constants';
@@ -39,16 +39,16 @@ import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
 const BATTERY_INFO_SEEN_KEY = 'battery-info-seen';
 
-export const GamePage = (): JSX.Element => {
+export const BattlePage = (): JSX.Element => {
   const { id } = useParams();
   return (
-    <GameProvider gameId={id as Entity}>
-      <InnerGamePage />
-    </GameProvider>
+    <BattleProvider battleId={id as Entity}>
+      <InnerBattlePage />
+    </BattleProvider>
   );
 };
 
-export const InnerGamePage = (): JSX.Element => {
+export const InnerBattlePage = (): JSX.Element => {
   const navigate = useNavigate();
   const { isConnected, isReconnecting } = useAccount();
   const { data: sessionClient } = useSessionClient();
@@ -59,8 +59,8 @@ export const InnerGamePage = (): JSX.Element => {
   } = useMUD();
   const {
     activeTowerId,
+    battle,
     enemyCastlePosition,
-    game,
     handleDragStart,
     isChangingTurn,
     isPlayer1,
@@ -70,7 +70,7 @@ export const InnerGamePage = (): JSX.Element => {
     onMoveTower,
     onNextTurn,
     towers,
-  } = useGame();
+  } = useBattle();
   const { playSfx } = useSettings();
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: {
@@ -79,12 +79,12 @@ export const InnerGamePage = (): JSX.Element => {
   });
   const sensors = useSensors(pointerSensor);
 
-  // Add game ID to tab title
+  // Add battle ID to tab title
   useEffect(() => {
-    if (game) {
-      document.title = `Game ${game.id} - Auto Tower Defense`;
+    if (battle) {
+      document.title = `Battle ${battle.id} - Auto Tower Defense`;
     }
-  }, [game]);
+  }, [battle]);
 
   useEffect(() => {
     if (!isReconnecting && !(isConnected && sessionClient)) {
@@ -94,21 +94,21 @@ export const InnerGamePage = (): JSX.Element => {
 
   const [isForfeitDialogOpen, setShowForfeitDialog] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
-  const [isGameOverDialogOpen, setIsGameOverDialogOpen] = useState(false);
+  const [isBattleOverDialogOpen, setIsBattleOverDialogOpen] = useState(false);
   const [isBatteryInfoDialogOpen, setIsBatteryInfoDialogOpen] = useState(false);
   const [isClaimingRecharge, setIsClaimingRecharge] = useState(false);
 
   useEffect(() => {
-    if (!game) return;
-    if (game.winner === zeroHash && game.endTimestamp === BigInt(0)) return;
-    if (globalPlayerId !== game.player1Id) return;
-    if (game.winner === globalPlayerId) {
+    if (!battle) return;
+    if (battle.winner === zeroHash && battle.endTimestamp === BigInt(0)) return;
+    if (globalPlayerId !== battle.player1Id) return;
+    if (battle.winner === globalPlayerId) {
       playSfx('win');
     }
-    setIsGameOverDialogOpen(true);
-  }, [game, globalPlayerId, playSfx]);
+    setIsBattleOverDialogOpen(true);
+  }, [battle, globalPlayerId, playSfx]);
 
-  // Open Battery Info Dialog if this is the first time the user is playing a game.
+  // Open Battery Info Dialog if this is the first time the user is playing a battle.
   useEffect(() => {
     const hasSeenBatteryInfo = localStorage.getItem(BATTERY_INFO_SEEN_KEY);
     if (hasSeenBatteryInfo) return;
@@ -220,8 +220,8 @@ export const InnerGamePage = (): JSX.Element => {
     return <LoadingScreen width={100} />;
   }
 
-  if (!game) {
-    return <NoGameScreen />;
+  if (!battle) {
+    return <NoBattleScreen />;
   }
 
   return (
@@ -316,7 +316,7 @@ export const InnerGamePage = (): JSX.Element => {
           </div>
         )}
 
-        {/* Game Container */}
+        {/* Battle Container */}
         <div className="flex justify-center items-center flex-1 p-4 pt-16 z-1">
           <div className="w-full max-w-3xl">
             {/* Battery Information - Mobile (inline) */}
@@ -370,30 +370,30 @@ export const InnerGamePage = (): JSX.Element => {
                   )}
               </div>
             )}
-            <GameStatusBar
+            <BattleStatusBar
+              battle={battle}
               enemyCastlePosition={enemyCastlePosition}
-              game={game}
               myCastlePosition={myCastlePosition}
               stakedBalance={batteryDetails?.stakedBalance ?? BigInt(0)}
             />
 
             {/* Control Buttons - Desktop */}
             <div className="hidden justify-center mb-1 sm:flex space-x-2">
-              <GameControlButtons
+              <BattleControlButtons
                 isChangingTurn={isChangingTurn}
                 onNextTurn={onNextTurn}
                 setIsHelpDialogOpen={setIsHelpDialogOpen}
               />
             </div>
 
-            <GameBoard />
+            <BattleBoard />
 
             {/* Tower Selection Row */}
             <TowerSelection />
 
             {/* Control Buttons - Mobile */}
             <div className="flex justify-center mt-4 sm:hidden space-x-2">
-              <GameControlButtons
+              <BattleControlButtons
                 isChangingTurn={isChangingTurn}
                 onNextTurn={onNextTurn}
                 setIsHelpDialogOpen={setIsHelpDialogOpen}
@@ -415,8 +415,8 @@ export const InnerGamePage = (): JSX.Element => {
           onChangeBatteryInfoDialog={onChangeBatteryInfoDialog}
         />
         <PlayAgainDialog
-          isGameOverDialogOpen={isGameOverDialogOpen}
-          setIsGameOverDialogOpen={setIsGameOverDialogOpen}
+          isBattleOverDialogOpen={isBattleOverDialogOpen}
+          setIsBattleOverDialogOpen={setIsBattleOverDialogOpen}
         />
         <NoActionsDialog />
         <CastleHitDialog />

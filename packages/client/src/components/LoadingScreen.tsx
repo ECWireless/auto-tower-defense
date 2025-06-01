@@ -14,7 +14,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ width }) => {
             <div className="absolute inset-0 h-16 w-16 rounded-full blur-md bg-cyan-400/20 animate-pulse"></div>
           </div>
           <h2 className="text-xl font-bold text-cyan-400 mt-6 mb-2">
-            Loading Game
+            Loading Battle
           </h2>
           <p className="text-gray-300 text-center">Please wait...</p>
           <div className="mt-8 w-full max-w-xs bg-gray-800/50 h-1.5 rounded-full overflow-hidden">

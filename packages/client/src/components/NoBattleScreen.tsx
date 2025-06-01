@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { Button } from '@/components/ui/button';
 
-export const NoGameScreen: React.FC = () => {
+export const NoBattleScreen: React.FC = () => {
   const navigate = useNavigate();
 
   return (
@@ -16,10 +16,10 @@ export const NoGameScreen: React.FC = () => {
             <div className="flex flex-col p-4 items-center">
               <AlertTriangle className="h-16 mb-4 text-red-500 w-16" />
               <h2 className="font-bold mb-2 sm:text-2xl text-red-400 text-xl">
-                Game Not Found
+                Battle Not Found
               </h2>
               <p className="mb-6 text-center text-gray-300">
-                The game with the provided ID does not exist.
+                The battle with the provided ID does not exist.
               </p>
               <div className="flex mt-4">
                 <Button

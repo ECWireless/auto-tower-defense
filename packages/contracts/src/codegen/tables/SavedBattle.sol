@@ -16,15 +16,15 @@ import { Schema } from "@latticexyz/store/src/Schema.sol";
 import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/EncodedLengths.sol";
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
-struct SavedGameData {
-  bytes32 gameId;
+struct SavedBattleData {
+  bytes32 battleId;
   bytes32 winner;
   bytes32[] actions;
 }
 
-library SavedGame {
-  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "SavedGame", typeId: RESOURCE_TABLE });`
-  ResourceId constant _tableId = ResourceId.wrap(0x74626170700000000000000000000000536176656447616d6500000000000000);
+library SavedBattle {
+  // Hex below is the result of `WorldResourceIdLib.encode({ namespace: "app", name: "SavedBattle", typeId: RESOURCE_TABLE });`
+  ResourceId constant _tableId = ResourceId.wrap(0x746261707000000000000000000000005361766564426174746c650000000000);
 
   FieldLayout constant _fieldLayout =
     FieldLayout.wrap(0x0040020120200000000000000000000000000000000000000000000000000000);
@@ -49,7 +49,7 @@ library SavedGame {
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
     fieldNames = new string[](3);
-    fieldNames[0] = "gameId";
+    fieldNames[0] = "battleId";
     fieldNames[1] = "winner";
     fieldNames[2] = "actions";
   }
@@ -69,9 +69,9 @@ library SavedGame {
   }
 
   /**
-   * @notice Get gameId.
+   * @notice Get battleId.
    */
-  function getGameId(bytes32 id) internal view returns (bytes32 gameId) {
+  function getBattleId(bytes32 id) internal view returns (bytes32 battleId) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -80,9 +80,9 @@ library SavedGame {
   }
 
   /**
-   * @notice Get gameId.
+   * @notice Get battleId.
    */
-  function _getGameId(bytes32 id) internal view returns (bytes32 gameId) {
+  function _getBattleId(bytes32 id) internal view returns (bytes32 battleId) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -91,23 +91,23 @@ library SavedGame {
   }
 
   /**
-   * @notice Set gameId.
+   * @notice Set battleId.
    */
-  function setGameId(bytes32 id, bytes32 gameId) internal {
+  function setBattleId(bytes32 id, bytes32 battleId) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((gameId)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((battleId)), _fieldLayout);
   }
 
   /**
-   * @notice Set gameId.
+   * @notice Set battleId.
    */
-  function _setGameId(bytes32 id, bytes32 gameId) internal {
+  function _setBattleId(bytes32 id, bytes32 battleId) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((gameId)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((battleId)), _fieldLayout);
   }
 
   /**
@@ -317,7 +317,7 @@ library SavedGame {
   /**
    * @notice Get the full data.
    */
-  function get(bytes32 id) internal view returns (SavedGameData memory _table) {
+  function get(bytes32 id) internal view returns (SavedBattleData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -332,7 +332,7 @@ library SavedGame {
   /**
    * @notice Get the full data.
    */
-  function _get(bytes32 id) internal view returns (SavedGameData memory _table) {
+  function _get(bytes32 id) internal view returns (SavedBattleData memory _table) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
@@ -347,8 +347,8 @@ library SavedGame {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(bytes32 id, bytes32 gameId, bytes32 winner, bytes32[] memory actions) internal {
-    bytes memory _staticData = encodeStatic(gameId, winner);
+  function set(bytes32 id, bytes32 battleId, bytes32 winner, bytes32[] memory actions) internal {
+    bytes memory _staticData = encodeStatic(battleId, winner);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
     bytes memory _dynamicData = encodeDynamic(actions);
@@ -362,8 +362,8 @@ library SavedGame {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(bytes32 id, bytes32 gameId, bytes32 winner, bytes32[] memory actions) internal {
-    bytes memory _staticData = encodeStatic(gameId, winner);
+  function _set(bytes32 id, bytes32 battleId, bytes32 winner, bytes32[] memory actions) internal {
+    bytes memory _staticData = encodeStatic(battleId, winner);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
     bytes memory _dynamicData = encodeDynamic(actions);
@@ -377,8 +377,8 @@ library SavedGame {
   /**
    * @notice Set the full data using the data struct.
    */
-  function set(bytes32 id, SavedGameData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.gameId, _table.winner);
+  function set(bytes32 id, SavedBattleData memory _table) internal {
+    bytes memory _staticData = encodeStatic(_table.battleId, _table.winner);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.actions);
     bytes memory _dynamicData = encodeDynamic(_table.actions);
@@ -392,8 +392,8 @@ library SavedGame {
   /**
    * @notice Set the full data using the data struct.
    */
-  function _set(bytes32 id, SavedGameData memory _table) internal {
-    bytes memory _staticData = encodeStatic(_table.gameId, _table.winner);
+  function _set(bytes32 id, SavedBattleData memory _table) internal {
+    bytes memory _staticData = encodeStatic(_table.battleId, _table.winner);
 
     EncodedLengths _encodedLengths = encodeLengths(_table.actions);
     bytes memory _dynamicData = encodeDynamic(_table.actions);
@@ -407,8 +407,8 @@ library SavedGame {
   /**
    * @notice Decode the tightly packed blob of static data using this table's field layout.
    */
-  function decodeStatic(bytes memory _blob) internal pure returns (bytes32 gameId, bytes32 winner) {
-    gameId = (Bytes.getBytes32(_blob, 0));
+  function decodeStatic(bytes memory _blob) internal pure returns (bytes32 battleId, bytes32 winner) {
+    battleId = (Bytes.getBytes32(_blob, 0));
 
     winner = (Bytes.getBytes32(_blob, 32));
   }
@@ -438,8 +438,8 @@ library SavedGame {
     bytes memory _staticData,
     EncodedLengths _encodedLengths,
     bytes memory _dynamicData
-  ) internal pure returns (SavedGameData memory _table) {
-    (_table.gameId, _table.winner) = decodeStatic(_staticData);
+  ) internal pure returns (SavedBattleData memory _table) {
+    (_table.battleId, _table.winner) = decodeStatic(_staticData);
 
     (_table.actions) = decodeDynamic(_encodedLengths, _dynamicData);
   }
@@ -468,8 +468,8 @@ library SavedGame {
    * @notice Tightly pack static (fixed length) data using this table's schema.
    * @return The static data, encoded into a sequence of bytes.
    */
-  function encodeStatic(bytes32 gameId, bytes32 winner) internal pure returns (bytes memory) {
-    return abi.encodePacked(gameId, winner);
+  function encodeStatic(bytes32 battleId, bytes32 winner) internal pure returns (bytes memory) {
+    return abi.encodePacked(battleId, winner);
   }
 
   /**
@@ -498,11 +498,11 @@ library SavedGame {
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
   function encode(
-    bytes32 gameId,
+    bytes32 battleId,
     bytes32 winner,
     bytes32[] memory actions
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(gameId, winner);
+    bytes memory _staticData = encodeStatic(battleId, winner);
 
     EncodedLengths _encodedLengths = encodeLengths(actions);
     bytes memory _dynamicData = encodeDynamic(actions);

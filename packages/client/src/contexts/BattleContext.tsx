@@ -22,14 +22,14 @@ import { Address, zeroAddress, zeroHash } from 'viem';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
 import { MAX_TICKS } from '@/utils/constants';
-import type { Castle, Game, Tower } from '@/utils/types';
+import type { Battle, Castle, Tower } from '@/utils/types';
 
 export const NO_ACTIONS_ERROR = 'TowerSystem: player has no actions remaining';
 
-type GameContextType = {
+type BattleContextType = {
   activeTowerId: string | null;
+  battle: Battle | null;
   enemyCastlePosition: Castle;
-  game: Game | null;
   handleDragStart: (towerId: string, type: 'offense' | 'defense') => void;
   handleTowerSelect: (towerId: string, type: 'offense' | 'defense') => void;
   installingPosition: { x: number; y: number } | null;
@@ -44,7 +44,7 @@ type GameContextType = {
   onInstallTower: (row: number, col: number) => void;
   onMoveTower: (row: number, col: number) => void;
   onNextTurn: () => Promise<void>;
-  refreshGame: () => void;
+  refreshBattle: () => void;
   setIsCastleHitDialogOpen: (isOpen: boolean) => void;
   setIsNoActionsDialogOpen: (isOpen: boolean) => void;
   setTowers: (towers: Tower[]) => void;
@@ -54,8 +54,9 @@ type GameContextType = {
   triggerAnimation: boolean;
 };
 
-const GameContext = createContext<GameContextType>({
+const BattleContext = createContext<BattleContextType>({
   activeTowerId: null,
+  battle: null,
   enemyCastlePosition: {
     id: zeroHash as Entity,
     currentHealth: 0,
@@ -63,7 +64,6 @@ const GameContext = createContext<GameContextType>({
     x: 0,
     y: 0,
   },
-  game: null,
   handleDragStart: () => {},
   handleTowerSelect: () => {},
   installingPosition: null,
@@ -84,7 +84,7 @@ const GameContext = createContext<GameContextType>({
   onInstallTower: () => {},
   onMoveTower: () => {},
   onNextTurn: async () => {},
-  refreshGame: async () => {},
+  refreshBattle: async () => {},
   setIsCastleHitDialogOpen: () => {},
   setIsNoActionsDialogOpen: () => {},
   setTowers: () => {},
@@ -94,20 +94,20 @@ const GameContext = createContext<GameContextType>({
   triggerAnimation: false,
 });
 
-export type GameProviderProps = {
+export type BattleProviderProps = {
   children: ReactNode;
-  gameId: Entity;
+  battleId: Entity;
 };
 
-export const GameProvider = ({
+export const BattleProvider = ({
   children,
-  gameId,
-}: GameProviderProps): JSX.Element => {
+  battleId,
+}: BattleProviderProps): JSX.Element => {
   const {
     components: {
+      Battle: BattleComponent,
       Castle,
-      CurrentGame,
-      Game: GameComponent,
+      CurrentBattle,
       Health,
       Level,
       Owner,
@@ -122,8 +122,8 @@ export const GameProvider = ({
   } = useMUD();
   const { playSfx } = useSettings();
 
-  const [game, setGame] = useState<Game | null>(null);
-  const [isLoadingGame, setIsLoadingGame] = useState(true);
+  const [battle, setBattle] = useState<Battle | null>(null);
+  const [isLoadingBattle, setIsLoadingBattle] = useState(true);
 
   const [activeTowerId, setActiveTowerId] = useState<string | null>(null);
   const [isInstallingTower, setIsInstallingTower] = useState(false);
@@ -147,8 +147,8 @@ export const GameProvider = ({
 
   const myCastlePosition = useEntityQuery([
     Has(Castle),
-    HasValue(CurrentGame, { value: game?.id }),
-    HasValue(Owner, { value: game?.player1Id }),
+    HasValue(CurrentBattle, { value: battle?.id }),
+    HasValue(Owner, { value: battle?.player1Id }),
   ]).map(entity => {
     const _myCastlePosition = getComponentValueStrict(Position, entity);
     const _myCastleHealth = getComponentValueStrict(Health, entity);
@@ -163,8 +163,8 @@ export const GameProvider = ({
 
   const enemyCastlePosition = useEntityQuery([
     Has(Castle),
-    HasValue(CurrentGame, { value: game?.id }),
-    HasValue(Owner, { value: game?.player2Id }),
+    HasValue(CurrentBattle, { value: battle?.id }),
+    HasValue(Owner, { value: battle?.player2Id }),
   ]).map(entity => {
     const _enemyCastlePosition = getComponentValueStrict(Position, entity);
     const _enemyCastleHealth = getComponentValueStrict(Health, entity);
@@ -177,38 +177,38 @@ export const GameProvider = ({
     };
   })[0];
 
-  const fetchGame = useCallback(() => {
-    if (!gameId) return;
-    const _game = getComponentValue(GameComponent, gameId as Entity);
-    if (_game) {
+  const fetchBattle = useCallback(() => {
+    if (!battleId) return;
+    const _battle = getComponentValue(BattleComponent, battleId as Entity);
+    if (_battle) {
       const _player1Username = getComponentValueStrict(
         Username,
-        _game.player1Id as Entity,
+        _battle.player1Id as Entity,
       ).value;
       const _player2Username = getComponentValueStrict(
         Username,
-        _game.player2Id as Entity,
+        _battle.player2Id as Entity,
       ).value;
       const _level =
-        getComponentValue(Level, gameId as Entity)?.value ?? BigInt(0);
+        getComponentValue(Level, battleId as Entity)?.value ?? BigInt(0);
 
-      setGame({
-        id: gameId,
-        actionCount: _game.actionCount,
-        endTimestamp: _game.endTimestamp,
+      setBattle({
+        id: battleId,
+        actionCount: _battle.actionCount,
+        endTimestamp: _battle.endTimestamp,
         level: _level,
-        player1Id: _game.player1Id as Entity,
+        player1Id: _battle.player1Id as Entity,
         player1Username: _player1Username,
-        player2Id: _game.player2Id as Entity,
+        player2Id: _battle.player2Id as Entity,
         player2Username: _player2Username,
-        roundCount: _game.roundCount,
-        startTimestamp: _game.startTimestamp,
-        turn: _game.turn as Entity,
-        winner: _game.winner as Entity,
+        roundCount: _battle.roundCount,
+        startTimestamp: _battle.startTimestamp,
+        turn: _battle.turn as Entity,
+        winner: _battle.winner as Entity,
       });
 
       const _towers = Array.from(
-        runQuery([Has(Tower), HasValue(CurrentGame, { value: gameId })]),
+        runQuery([Has(Tower), HasValue(CurrentBattle, { value: battleId })]),
       ).map(entity => {
         const health = getComponentValueStrict(Health, entity);
         const owner = getComponentValueStrict(Owner, entity).value;
@@ -242,11 +242,11 @@ export const GameProvider = ({
       });
       setTowers(_towers.filter(tower => tower.currentHealth > 0));
     }
-    setIsLoadingGame(false);
+    setIsLoadingBattle(false);
   }, [
-    CurrentGame,
-    GameComponent,
-    gameId,
+    BattleComponent,
+    battleId,
+    CurrentBattle,
     Health,
     Level,
     Owner,
@@ -258,8 +258,8 @@ export const GameProvider = ({
   ]);
 
   useEffect(() => {
-    fetchGame();
-  }, [fetchGame]);
+    fetchBattle();
+  }, [fetchBattle]);
 
   const onInstallTower = useCallback(
     async (row: number, col: number) => {
@@ -272,8 +272,8 @@ export const GameProvider = ({
           throw new Error('Installed tower selected. Please move it instead.');
         }
 
-        if (!game) {
-          throw new Error('Game not found.');
+        if (!battle) {
+          throw new Error('Battle not found.');
         }
 
         const hasProjectile = activePiece === 'offense';
@@ -290,7 +290,7 @@ export const GameProvider = ({
 
         toast.success('Tower Installed!');
 
-        fetchGame();
+        fetchBattle();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
@@ -308,7 +308,7 @@ export const GameProvider = ({
         setActiveTowerId(null);
       }
     },
-    [activePiece, activeTowerId, fetchGame, game, installTower, playSfx],
+    [activePiece, activeTowerId, battle, fetchBattle, installTower, playSfx],
   );
 
   const onMoveTower = useCallback(
@@ -322,8 +322,8 @@ export const GameProvider = ({
           throw new Error('No active tower selected.');
         }
 
-        if (!game) {
-          throw new Error('Game not found.');
+        if (!battle) {
+          throw new Error('Battle not found.');
         }
 
         const { error, success } = await moveTower(
@@ -338,7 +338,7 @@ export const GameProvider = ({
 
         toast.success('Tower Moved!');
 
-        fetchGame();
+        fetchBattle();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error(`Smart contract error: ${(error as Error).message}`);
@@ -356,7 +356,7 @@ export const GameProvider = ({
         setActiveTowerId(null);
       }
     },
-    [activeTowerId, fetchGame, game, moveTower, playSfx],
+    [activeTowerId, battle, fetchBattle, moveTower, playSfx],
   );
 
   const handleDragStart = useCallback(
@@ -385,10 +385,10 @@ export const GameProvider = ({
 
       setIsChangingTurn(true);
 
-      if (!game) {
-        throw new Error('Game not found.');
+      if (!battle) {
+        throw new Error('Battle not found.');
       }
-      const { error, success } = await nextTurn(game.id);
+      const { error, success } = await nextTurn(battle.id);
 
       if (error && !success) {
         throw new Error(error);
@@ -444,8 +444,8 @@ export const GameProvider = ({
       setIsChangingTurn(false);
     }
   }, [
+    battle,
     enemyCastlePosition,
-    game,
     Health,
     myCastlePosition,
     nextTurn,
@@ -459,22 +459,22 @@ export const GameProvider = ({
       setIsChangingTurn(true);
       playSfx('click3');
 
-      if (!game) {
-        throw new Error('Game not found.');
+      if (!battle) {
+        throw new Error('Battle not found.');
       }
 
-      if (game.turn === game.player2Id) {
+      if (battle.turn === battle.player2Id) {
         await onNextRound();
         return;
       }
 
-      const { error, success } = await nextTurn(game.id);
+      const { error, success } = await nextTurn(battle.id);
 
       if (error && !success) {
         throw new Error(error);
       }
 
-      fetchGame();
+      fetchBattle();
       await onNextRound();
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -486,15 +486,15 @@ export const GameProvider = ({
     } finally {
       setIsChangingTurn(false);
     }
-  }, [fetchGame, game, nextTurn, onNextRound, playSfx]);
+  }, [battle, fetchBattle, nextTurn, onNextRound, playSfx]);
 
   useEffect(() => {
-    if (!game) return () => {};
-    if (game.turn !== game.player2Id) return () => {};
+    if (!battle) return () => {};
+    if (battle.turn !== battle.player2Id) return () => {};
     if (!triggerAnimation) return () => {};
 
     const _towers = Array.from(
-      runQuery([Has(Tower), HasValue(CurrentGame, { value: game.id })]),
+      runQuery([Has(Tower), HasValue(CurrentBattle, { value: battle.id })]),
     ).map(entity => {
       const projectileTrajectoryUnformatted = getComponentValue(
         ProjectileTrajectory,
@@ -538,7 +538,7 @@ export const GameProvider = ({
       if (_tickCount >= MAX_TICKS - 1) {
         setTriggerAnimation(false);
         setTickCount(0);
-        fetchGame();
+        fetchBattle();
         return;
       }
       _tickCount += 1;
@@ -546,9 +546,9 @@ export const GameProvider = ({
     }, 50);
     return () => clearInterval(interval);
   }, [
-    CurrentGame,
-    fetchGame,
-    game,
+    battle,
+    CurrentBattle,
+    fetchBattle,
     Health,
     Position,
     Projectile,
@@ -559,16 +559,16 @@ export const GameProvider = ({
   ]);
 
   const isPlayer1 = useMemo(
-    () => globalPlayerId === game?.player1Id,
-    [game, globalPlayerId],
+    () => globalPlayerId === battle?.player1Id,
+    [battle, globalPlayerId],
   );
 
   return (
-    <GameContext.Provider
+    <BattleContext.Provider
       value={{
         activeTowerId,
+        battle,
         enemyCastlePosition,
-        game,
         handleDragStart,
         handleTowerSelect,
         installingPosition,
@@ -578,12 +578,12 @@ export const GameProvider = ({
         isMyCastleHit,
         isNoActionsDialogOpen,
         isPlayer1,
-        isRefreshing: isLoadingGame,
+        isRefreshing: isLoadingBattle,
         myCastlePosition,
         onInstallTower,
         onMoveTower,
         onNextTurn,
-        refreshGame: fetchGame,
+        refreshBattle: fetchBattle,
         setIsCastleHitDialogOpen,
         setIsNoActionsDialogOpen,
         setTowers,
@@ -594,8 +594,8 @@ export const GameProvider = ({
       }}
     >
       {children}
-    </GameContext.Provider>
+    </BattleContext.Provider>
   );
 };
 
-export const useGame = (): GameContextType => useContext(GameContext);
+export const useBattle = (): BattleContextType => useContext(BattleContext);

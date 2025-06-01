@@ -31,6 +31,14 @@ export const useMUD = (): {
   components: typeof components;
   network: { globalPlayerId: Entity | undefined };
   systemCalls: {
+    amendPatent: (
+      patentId: string,
+      description: string,
+      name: string,
+    ) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
     buyElectricity: (electricityAmount: bigint) => Promise<{
       error: string | undefined;
       success: boolean;
@@ -39,22 +47,14 @@ export const useMUD = (): {
       error: string | undefined;
       success: boolean;
     }>;
-    createGame: (
+    createBattle: (
       username: string,
       resetLevel: boolean,
     ) => Promise<{
       error: string | undefined;
       success: boolean;
     }>;
-    deleteModification: (savedModificationId: string) => Promise<{
-      error: string | undefined;
-      success: boolean;
-    }>;
-    editModification: (
-      savedModificationId: string,
-      description: string,
-      name: string,
-    ) => Promise<{
+    disclaimPatent: (patentId: string) => Promise<{
       error: string | undefined;
       success: boolean;
     }>;
@@ -87,11 +87,11 @@ export const useMUD = (): {
       error: string | undefined;
       success: boolean;
     }>;
-    nextTurn: (gameId: string) => Promise<{
+    nextTurn: (battleId: string) => Promise<{
       error: string | undefined;
       success: boolean;
     }>;
-    saveModification: (
+    registerPatent: (
       bytecode: string,
       description: string,
       name: string,
@@ -120,14 +120,16 @@ export const useMUD = (): {
 
   const globalPlayerId = (useComponentValue(
     components.AddressToPlayerId,
-    encodeEntity(
-      {
-        address: 'address',
-      },
-      {
-        address: playerAddress as `0x${string}`,
-      },
-    ),
+    playerAddress
+      ? encodeEntity(
+          {
+            address: 'address',
+          },
+          {
+            address: playerAddress as `0x${string}`,
+          },
+        )
+      : undefined,
   )?.value ?? undefined) as Entity | undefined;
 
   const publicClient = useMemo(
@@ -139,6 +141,45 @@ export const useMUD = (): {
       }),
     [],
   );
+
+  const amendPatent = async (
+    patentId: string,
+    description: string,
+    name: string,
+  ) => {
+    try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [patentId as `0x${string}`, description, name],
+        functionName: 'app__amendPatent',
+      });
+
+      const tx = await worldContract.write.app__amendPatent([
+        patentId as `0x${string}`,
+        description,
+        name,
+      ]);
+      const txResult = await sync.data.waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to amend patent.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
 
   const buyElectricity = async (electricityAmount: bigint) => {
     try {
@@ -204,7 +245,7 @@ export const useMUD = (): {
     }
   };
 
-  const createGame = async (username: string, resetLevel: boolean) => {
+  const createBattle = async (username: string, resetLevel: boolean) => {
     try {
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
@@ -215,10 +256,10 @@ export const useMUD = (): {
         account: playerAddress,
         address: worldContract.address,
         args: [username, resetLevel],
-        functionName: 'app__createGame',
+        functionName: 'app__createBattle',
       });
 
-      const tx = await worldContract.write.app__createGame(
+      const tx = await worldContract.write.app__createBattle(
         [username, resetLevel],
         // Because the system function uses prevrandao and a loop, automatic gas estimation can be wrong
         {
@@ -230,7 +271,7 @@ export const useMUD = (): {
       const success = status === 'success';
 
       return {
-        error: success ? undefined : 'Failed to create game.',
+        error: success ? undefined : 'Failed to create battle.',
         success,
       };
     } catch (error) {
@@ -241,7 +282,7 @@ export const useMUD = (): {
     }
   };
 
-  const deleteModification = async (savedModificationId: string) => {
+  const disclaimPatent = async (patentId: string) => {
     try {
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
@@ -251,58 +292,19 @@ export const useMUD = (): {
         abi: worldContract.abi,
         account: playerAddress,
         address: worldContract.address,
-        args: [savedModificationId as `0x${string}`],
-        functionName: 'app__deleteModification',
+        args: [patentId as `0x${string}`],
+        functionName: 'app__disclaimPatent',
       });
 
-      const tx = await worldContract.write.app__deleteModification([
-        savedModificationId as `0x${string}`,
+      const tx = await worldContract.write.app__disclaimPatent([
+        patentId as `0x${string}`,
       ]);
       const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
 
       return {
-        error: success ? undefined : 'Failed to delete system.',
-        success,
-      };
-    } catch (error) {
-      return {
-        error: getContractError(error as BaseError),
-        success: false,
-      };
-    }
-  };
-
-  const editModification = async (
-    savedModificationId: string,
-    description: string,
-    name: string,
-  ) => {
-    try {
-      if (!(worldContract && sync.data)) {
-        throw new Error('World contract or sync data not found');
-      }
-
-      await publicClient.simulateContract({
-        abi: worldContract.abi,
-        account: playerAddress,
-        address: worldContract.address,
-        args: [savedModificationId as `0x${string}`, description, name],
-        functionName: 'app__editModification',
-      });
-
-      const tx = await worldContract.write.app__editModification([
-        savedModificationId as `0x${string}`,
-        description,
-        name,
-      ]);
-      const txResult = await sync.data.waitForTransaction(tx);
-      const { status } = txResult;
-      const success = status === 'success';
-
-      return {
-        error: success ? undefined : 'Failed to edit system.',
+        error: success ? undefined : 'Failed to disclaim patent.',
         success,
       };
     } catch (error) {
@@ -473,7 +475,7 @@ export const useMUD = (): {
     }
   };
 
-  const nextTurn = async (gameId: string) => {
+  const nextTurn = async (battleId: string) => {
     try {
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
@@ -483,12 +485,12 @@ export const useMUD = (): {
         abi: worldContract.abi,
         account: playerAddress,
         address: worldContract.address,
-        args: [gameId as `0x${string}`],
+        args: [battleId as `0x${string}`],
         functionName: 'app__nextTurn',
       });
 
       const tx = await worldContract.write.app__nextTurn([
-        gameId as `0x${string}`,
+        battleId as `0x${string}`,
       ]);
       const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
@@ -506,7 +508,7 @@ export const useMUD = (): {
     }
   };
 
-  const saveModification = async (
+  const registerPatent = async (
     bytecode: string,
     description: string,
     name: string,
@@ -522,10 +524,10 @@ export const useMUD = (): {
         account: playerAddress,
         address: worldContract.address,
         args: [bytecode as `0x${string}`, description, name, sourceCode],
-        functionName: 'app__saveModification',
+        functionName: 'app__registerPatent',
       });
 
-      const tx = await worldContract.write.app__saveModification([
+      const tx = await worldContract.write.app__registerPatent([
         bytecode as `0x${string}`,
         description,
         name,
@@ -536,7 +538,7 @@ export const useMUD = (): {
       const success = status === 'success';
 
       return {
-        error: success ? undefined : 'Failed to save modification.',
+        error: success ? undefined : 'Failed to register patent.',
         success,
       };
     } catch (error) {
@@ -635,18 +637,18 @@ export const useMUD = (): {
   };
 
   const systemCalls = {
+    amendPatent,
     buyElectricity,
     claimRecharge,
-    createGame,
-    deleteModification,
-    editModification,
+    createBattle,
+    disclaimPatent,
     forfeitRun,
     getContractSize,
     installTower,
     modifyTowerSystem,
     moveTower,
     nextTurn,
-    saveModification,
+    registerPatent,
     sellElectricity,
     sellElectricityThroughRelay,
   };

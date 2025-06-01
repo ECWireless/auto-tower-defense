@@ -12,14 +12,14 @@ import { useAccount } from 'wagmi';
 
 import { Draggable } from '@/components/Draggable';
 import { Droppable } from '@/components/Droppable';
-import { SystemModificationDrawer } from '@/components/SystemModificationDrawer';
+import { TowerAssemblyDrawer } from '@/components/TowerAssemblyDrawer';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useGame } from '@/contexts/GameContext';
+import { useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { type Tower } from '@/utils/types';
 
@@ -44,12 +44,12 @@ export const INSTALLABLE_TOWERS = [
 const GRID_ROWS = 7;
 const GRID_COLS = 14;
 
-export const GameBoard: React.FC = () => {
+export const BattleBoard: React.FC = () => {
   const { address: playerAddress } = useAccount();
   const {
     activeTowerId,
+    battle,
     enemyCastlePosition,
-    game,
     handleTowerSelect,
     installingPosition,
     isInstallingTower,
@@ -61,33 +61,33 @@ export const GameBoard: React.FC = () => {
     tickCount,
     towers,
     triggerAnimation,
-  } = useGame();
+  } = useBattle();
   const { playSfx } = useSettings();
   const { over: draggingOver, active: draggingActive } = useDndContext();
 
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
-  const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
+  const [isAssemblyDrawerOpen, setIsAssemblyDrawerOpen] = useState(false);
   const [tooltipSelection, setTooltipSelection] = useState<string | null>(null);
 
   const onViewTower = useCallback(
     (tower: Tower) => {
       setSelectedTower(tower);
-      setIsSystemDrawerOpen(true);
+      setIsAssemblyDrawerOpen(true);
     },
     [setSelectedTower],
   );
 
   const canChangeTurn = useMemo(() => {
-    if (!game) return false;
-    if (game.endTimestamp !== BigInt(0)) return false;
-    if (game.turn === game.player2Id) return true;
-    return game.turn === game.player1Id && game.actionCount === 0;
-  }, [game]);
+    if (!battle) return false;
+    if (battle.endTimestamp !== BigInt(0)) return false;
+    if (battle.turn === battle.player2Id) return true;
+    return battle.turn === battle.player1Id && battle.actionCount === 0;
+  }, [battle]);
 
   useEffect(() => {
     if (!canChangeTurn) return () => {};
     if (triggerAnimation) return () => {};
-    if (isSystemDrawerOpen) return () => {};
+    if (isAssemblyDrawerOpen) return () => {};
 
     const listener = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -99,9 +99,9 @@ export const GameBoard: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', listener);
     };
-  }, [canChangeTurn, isSystemDrawerOpen, onNextTurn, triggerAnimation]);
+  }, [canChangeTurn, isAssemblyDrawerOpen, onNextTurn, triggerAnimation]);
 
-  if (!game) return null;
+  if (!battle) return null;
 
   return (
     <div className="bg-gray-900 overflow-x-auto w-full sm:overflow-hidden">
@@ -132,7 +132,7 @@ export const GameBoard: React.FC = () => {
           <div className="w-4" />
         </div>
 
-        {/* Game grid with row numbers */}
+        {/* Battle grid with row numbers */}
         {[...Array(GRID_ROWS)].map((_, rowIndex) => (
           <div
             key={rowIndex}
@@ -201,10 +201,10 @@ export const GameBoard: React.FC = () => {
                     className={`aspect-square relative ${draggingOver?.id === tileId ? 'hover' : ''} ${isLeftSide ? 'left' : ''} ${isTowerSelected ? 'selected' : ''} 
                         ${
                           isBlueBase
-                            ? 'base-blue flex game-cell items-center justify-center'
+                            ? 'base-blue flex battle-cell items-center justify-center'
                             : isOrangeBase
-                              ? 'base-orange flex game-cell items-center justify-center'
-                              : `game-cell ${playerSideClass}`
+                              ? 'base-orange flex battle-cell items-center justify-center'
+                              : `battle-cell ${playerSideClass}`
                         }`}
                     onClick={() => {
                       if (
@@ -288,7 +288,7 @@ export const GameBoard: React.FC = () => {
                                   onDoubleClick={() => onViewTower(towerOnTile)}
                                   style={{
                                     transform:
-                                      towerOnTile.owner === game.player2Id
+                                      towerOnTile.owner === battle.player2Id
                                         ? 'rotateY(180deg)'
                                         : 'none',
                                     touchAction: 'none',
@@ -509,9 +509,9 @@ export const GameBoard: React.FC = () => {
       </div>
 
       {selectedTower && (
-        <SystemModificationDrawer
-          isSystemDrawerOpen={isSystemDrawerOpen}
-          setIsSystemDrawerOpen={setIsSystemDrawerOpen}
+        <TowerAssemblyDrawer
+          isAssemblyDrawerOpen={isAssemblyDrawerOpen}
+          setIsAssemblyDrawerOpen={setIsAssemblyDrawerOpen}
           tower={selectedTower}
         />
       )}
