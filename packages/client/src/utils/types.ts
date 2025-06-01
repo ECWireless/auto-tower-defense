@@ -16,7 +16,7 @@ export type Castle = {
   y: number;
 };
 
-export type Game = {
+export type Battle = {
   id: Entity;
   actionCount: number;
   endTimestamp: bigint;

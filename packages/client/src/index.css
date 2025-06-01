@@ -180,33 +180,33 @@
   box-shadow: 0 0 15px hsl(var(--neon-cyan) / 0.5);
 }
 
-.game-cell {
+.battle-cell {
   background: #1a1a2e;
   border: 1px solid #2a2a4e;
   transition: all 0.2s ease;
 }
 
-.game-cell.selected {
+.battle-cell.selected {
   background: #2a2a4e;
   border: 1px solid hsl(var(--neon-cyan) / 0.5);
 }
 
-.game-cell.hover {
+.battle-cell.hover {
   background: #2a2a4e;
   cursor: pointer;
 }
 
-.game-cell.left:hover {
+.battle-cell.left:hover {
   background: #2a2a4e;
   cursor: pointer;
 }
 
-.game-cell.base-blue {
+.battle-cell.base-blue {
   background: linear-gradient(135deg, #1a1a2e, #16213e);
   border: 1px solid hsl(var(--neon-blue) / 0.5);
 }
 
-.game-cell.base-orange {
+.battle-cell.base-orange {
   background: linear-gradient(135deg, #1a1a2e, #3e1e16);
   border: 1px solid hsl(var(--neon-pink) / 0.5);
 }

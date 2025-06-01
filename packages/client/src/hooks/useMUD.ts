@@ -47,7 +47,7 @@ export const useMUD = (): {
       error: string | undefined;
       success: boolean;
     }>;
-    createGame: (
+    createBattle: (
       username: string,
       resetLevel: boolean,
     ) => Promise<{
@@ -87,7 +87,7 @@ export const useMUD = (): {
       error: string | undefined;
       success: boolean;
     }>;
-    nextTurn: (gameId: string) => Promise<{
+    nextTurn: (battleId: string) => Promise<{
       error: string | undefined;
       success: boolean;
     }>;
@@ -243,7 +243,7 @@ export const useMUD = (): {
     }
   };
 
-  const createGame = async (username: string, resetLevel: boolean) => {
+  const createBattle = async (username: string, resetLevel: boolean) => {
     try {
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
@@ -254,10 +254,10 @@ export const useMUD = (): {
         account: playerAddress,
         address: worldContract.address,
         args: [username, resetLevel],
-        functionName: 'app__createGame',
+        functionName: 'app__createBattle',
       });
 
-      const tx = await worldContract.write.app__createGame(
+      const tx = await worldContract.write.app__createBattle(
         [username, resetLevel],
         // Because the system function uses prevrandao and a loop, automatic gas estimation can be wrong
         {
@@ -269,7 +269,7 @@ export const useMUD = (): {
       const success = status === 'success';
 
       return {
-        error: success ? undefined : 'Failed to create game.',
+        error: success ? undefined : 'Failed to create battle.',
         success,
       };
     } catch (error) {
@@ -473,7 +473,7 @@ export const useMUD = (): {
     }
   };
 
-  const nextTurn = async (gameId: string) => {
+  const nextTurn = async (battleId: string) => {
     try {
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
@@ -483,12 +483,12 @@ export const useMUD = (): {
         abi: worldContract.abi,
         account: playerAddress,
         address: worldContract.address,
-        args: [gameId as `0x${string}`],
+        args: [battleId as `0x${string}`],
         functionName: 'app__nextTurn',
       });
 
       const tx = await worldContract.write.app__nextTurn([
-        gameId as `0x${string}`,
+        battleId as `0x${string}`,
       ]);
       const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
@@ -638,7 +638,7 @@ export const useMUD = (): {
     amendPatent,
     buyElectricity,
     claimRecharge,
-    createGame,
+    createBattle,
     disclaimPatent,
     forfeitRun,
     getContractSize,

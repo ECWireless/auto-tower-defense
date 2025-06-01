@@ -2,10 +2,10 @@ import { useDndContext } from '@dnd-kit/core';
 
 import { INSTALLABLE_TOWERS } from '@/components/BattleBoard';
 import { Draggable } from '@/components/Draggable';
-import { useGame } from '@/contexts/BattleContext';
+import { useBattle } from '@/contexts/BattleContext';
 
 export const TowerSelection = (): JSX.Element => {
-  const { activeTowerId, handleTowerSelect, isPlayer1 } = useGame();
+  const { activeTowerId, handleTowerSelect, isPlayer1 } = useBattle();
   const { active: draggingActive } = useDndContext();
 
   return (

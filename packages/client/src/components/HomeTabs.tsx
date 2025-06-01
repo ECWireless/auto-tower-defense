@@ -40,20 +40,20 @@ import {
 } from '@/components/ui/tooltip';
 import { useCopy } from '@/hooks/useCopy';
 import { useMUD } from '@/hooks/useMUD';
-import { GAMES_PATH } from '@/Routes';
+import { BATTLES_PATH } from '@/Routes';
 import {
   formatDateFromTimestamp,
   formatTimeFromTimestamp,
   formatWattHours,
   shortenAddress,
 } from '@/utils/helpers';
-import { type Game } from '@/utils/types';
+import { type Battle } from '@/utils/types';
 
-const ActiveGameCard = ({
-  game,
+const ActiveBattleCard = ({
+  battle,
   onClick,
 }: {
-  game: Game;
+  battle: Battle;
   onClick: () => void;
 }) => {
   return (
@@ -66,7 +66,7 @@ const ActiveGameCard = ({
           <div className="flex gap-1 items-center">
             <Calendar className="h-3 mr-1 text-gray-400 w-3" />
             <span className="text-sm text-white">
-              {formatDateFromTimestamp(game.startTimestamp)}
+              {formatDateFromTimestamp(battle.startTimestamp)}
             </span>
           </div>
           <ArrowRight className="h-4 text-gray-400 w-4" />
@@ -76,8 +76,8 @@ const ActiveGameCard = ({
           <div className="flex gap-1 items-center">
             <Clock className="h-3 mr-1 text-gray-400 w-3" />
             <span className="text-sm text-white">
-              {formatTimeFromTimestamp(game.startTimestamp)} • Level{' '}
-              {game.level.toString()}
+              {formatTimeFromTimestamp(battle.startTimestamp)} • Level{' '}
+              {battle.level.toString()}
             </span>
           </div>
         </div>
@@ -85,8 +85,8 @@ const ActiveGameCard = ({
         <div className="flex gap-1 items-center mb-2">
           <Users className="h-3 mr-1 text-gray-400 w-3" />
           <div className="text-sm text-white">
-            <span>{game.player1Username}</span>
-            {game.turn === game.player1Id && (
+            <span>{battle.player1Username}</span>
+            {battle.turn === battle.player1Id && (
               <Badge
                 className="border-green-500 h-4 ml-1 px-1 text-green-500 text-xs"
                 variant="outline"
@@ -95,8 +95,8 @@ const ActiveGameCard = ({
               </Badge>
             )}
             <span className="mx-1">vs</span>
-            <span>{game.player2Username}</span>
-            {game.turn === game.player2Id && (
+            <span>{battle.player2Username}</span>
+            {battle.turn === battle.player2Id && (
               <Badge
                 className="border-green-500 h-4 ml-1 px-1 text-green-500 text-xs"
                 variant="outline"
@@ -108,18 +108,18 @@ const ActiveGameCard = ({
         </div>
 
         <div className="flex gap-1 items-center">
-          <span className="text-sm text-white">Round {game.roundCount}</span>
+          <span className="text-sm text-white">Round {battle.roundCount}</span>
         </div>
       </CardContent>
     </Card>
   );
 };
 
-const CompletedGameCard = ({
-  game,
+const CompletedBattleCard = ({
+  battle,
   onClick,
 }: {
-  game: Game;
+  battle: Battle;
   onClick: () => void;
 }) => {
   return (
@@ -132,7 +132,7 @@ const CompletedGameCard = ({
           <div className="flex gap-1 items-center">
             <Calendar className="h-3 mr-1 text-gray-400 w-3" />
             <span className="text-sm text-white">
-              {formatDateFromTimestamp(game.startTimestamp)}
+              {formatDateFromTimestamp(battle.startTimestamp)}
             </span>
           </div>
           <ArrowRight className="h-4 text-gray-400 w-4" />
@@ -142,8 +142,8 @@ const CompletedGameCard = ({
           <div className="flex  gap-1 items-center">
             <Clock className="h-3 mr-1 text-gray-400 w-3" />
             <span className="text-sm text-white">
-              {formatTimeFromTimestamp(game.startTimestamp)} • Level{' '}
-              {game.level.toString()}
+              {formatTimeFromTimestamp(battle.startTimestamp)} • Level{' '}
+              {battle.level.toString()}
             </span>
           </div>
         </div>
@@ -151,16 +151,16 @@ const CompletedGameCard = ({
         <div className="flex gap-1 items-center mb-2">
           <Users className="h-3 mr-1 text-gray-400 w-3" />
           <span className="text-sm text-white">
-            {game.player1Username} vs {game.player2Username}
+            {battle.player1Username} vs {battle.player2Username}
           </span>
         </div>
 
         <div className="flex gap-1 items-center">
           <Trophy className="h-3 mr-1 text-gray-400 w-3" />
           <span className="font-medium text-sm text-white">
-            {game.winner === game.player1Id
-              ? game.player1Username
-              : game.player2Username}
+            {battle.winner === battle.player1Id
+              ? battle.player1Username
+              : battle.player2Username}
           </span>
         </div>
       </CardContent>
@@ -173,7 +173,7 @@ export const HomeTabs: React.FC = () => {
   const { copiedText, copyToClipboard } = useCopy();
   const {
     components: {
-      Game,
+      Battle: BattleComponent,
       HighestLevel,
       KingdomsByLevel,
       Level,
@@ -184,15 +184,15 @@ export const HomeTabs: React.FC = () => {
     },
   } = useMUD();
 
-  const games = useEntityQuery([Has(Game)]).map(entity => {
-    const _game = getComponentValueStrict(Game, entity);
+  const battles = useEntityQuery([Has(BattleComponent)]).map(entity => {
+    const _battle = getComponentValueStrict(BattleComponent, entity);
     const _player1Username = getComponentValueStrict(
       Username,
-      _game.player1Id as Entity,
+      _battle.player1Id as Entity,
     ).value;
     const _player2Username = getComponentValueStrict(
       Username,
-      _game.player2Id as Entity,
+      _battle.player2Id as Entity,
     ).value;
 
     const _level =
@@ -200,19 +200,19 @@ export const HomeTabs: React.FC = () => {
 
     return {
       id: entity,
-      actionCount: _game.actionCount,
-      endTimestamp: _game.endTimestamp,
+      actionCount: _battle.actionCount,
+      endTimestamp: _battle.endTimestamp,
       level: _level,
-      player1Id: _game.player1Id as Entity,
+      player1Id: _battle.player1Id as Entity,
       player1Username: _player1Username,
-      player2Id: _game.player2Id as Entity,
+      player2Id: _battle.player2Id as Entity,
       player2Username: _player2Username,
-      roundCount: _game.roundCount,
-      startTimestamp: _game.startTimestamp,
-      turn: _game.turn as Entity,
-      winner: _game.winner as Entity,
+      roundCount: _battle.roundCount,
+      startTimestamp: _battle.startTimestamp,
+      turn: _battle.turn as Entity,
+      winner: _battle.winner as Entity,
     };
-  }) as Game[];
+  }) as Battle[];
 
   const topPlayers = useEntityQuery([Has(HighestLevel)])
     .map(entity => {
@@ -279,20 +279,20 @@ export const HomeTabs: React.FC = () => {
       (a, b) => Number(b.electricityBalance) - Number(a.electricityBalance),
     );
 
-  const activeGames = useMemo(
+  const activeBattles = useMemo(
     () =>
-      games
-        .filter(game => game.endTimestamp === BigInt(0))
+      battles
+        .filter(battle => battle.endTimestamp === BigInt(0))
         .sort((a, b) => Number(b.startTimestamp) - Number(a.startTimestamp)),
-    [games],
+    [battles],
   );
 
-  const completedGames = useMemo(
+  const completedBattles = useMemo(
     () =>
-      games
-        .filter(game => game.endTimestamp !== BigInt(0))
+      battles
+        .filter(battle => battle.endTimestamp !== BigInt(0))
         .sort((a, b) => Number(b.endTimestamp) - Number(a.endTimestamp)),
-    [games],
+    [battles],
   );
 
   return (
@@ -318,13 +318,13 @@ export const HomeTabs: React.FC = () => {
             className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 data-[state=active]:rounded-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
             value="active"
           >
-            Active ({activeGames.length})
+            Active ({activeBattles.length})
           </TabsTrigger>
           <TabsTrigger
             className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 data-[state=active]:rounded-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
             value="completed"
           >
-            Completed ({completedGames.length})
+            Completed ({completedBattles.length})
           </TabsTrigger>
         </TabsList>
 
@@ -514,7 +514,7 @@ export const HomeTabs: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="active" className="mt-6">
-          {/* Desktop view for active games */}
+          {/* Desktop view for active battles */}
           <div className="hidden md:block">
             <Table>
               <TableHeader>
@@ -528,31 +528,31 @@ export const HomeTabs: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activeGames.map(game => (
+                {activeBattles.map(battle => (
                   <TableRow
-                    key={game.id}
+                    key={battle.id}
                     className="border-gray-800 cursor-pointer hover:bg-gray-900"
-                    onClick={() => navigate(`${GAMES_PATH}/${game.id}`)}
+                    onClick={() => navigate(`${BATTLES_PATH}/${battle.id}`)}
                   >
                     <TableCell>
-                      {formatDateFromTimestamp(game.startTimestamp)}
+                      {formatDateFromTimestamp(battle.startTimestamp)}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1 items-center">
                         <Clock className="h-3 mr-1 text-gray-400 w-3" />
-                        {formatTimeFromTimestamp(game.startTimestamp)}
+                        {formatTimeFromTimestamp(battle.startTimestamp)}
                       </div>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <div className="flex gap-1 items-center">
-                        {game.level.toString()}
+                        {battle.level.toString()}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
                         <div className="flex gap-2 items-center">
-                          <span>{game.player1Username}</span>
-                          {game.turn === game.player1Id && (
+                          <span>{battle.player1Username}</span>
+                          {battle.turn === battle.player1Id && (
                             <Badge
                               className="border-green-500 h-5 px-1 text-green-500 text-xs"
                               variant="outline"
@@ -563,8 +563,8 @@ export const HomeTabs: React.FC = () => {
                         </div>
                         <span className="text-gray-400">vs</span>
                         <div className="flex gap-2 items-center">
-                          <span>{game.player2Username}</span>
-                          {game.turn === game.player2Id && (
+                          <span>{battle.player2Username}</span>
+                          {battle.turn === battle.player2Id && (
                             <Badge
                               className="border-green-500 h-5 px-1 text-green-500 text-xs"
                               variant="outline"
@@ -575,7 +575,7 @@ export const HomeTabs: React.FC = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{game.roundCount}</TableCell>
+                    <TableCell>{battle.roundCount}</TableCell>
                     <TableCell className="text-right">
                       <ArrowRight className="h-4 ml-auto text-gray-400 w-4" />
                     </TableCell>
@@ -585,20 +585,20 @@ export const HomeTabs: React.FC = () => {
             </Table>
           </div>
 
-          {/* Mobile view for active games */}
+          {/* Mobile view for active battles */}
           <div className="md:hidden">
-            {activeGames.map(game => (
-              <ActiveGameCard
-                key={game.id}
-                game={game}
-                onClick={() => navigate(`${GAMES_PATH}/${game.id}`)}
+            {activeBattles.map(battle => (
+              <ActiveBattleCard
+                key={battle.id}
+                battle={battle}
+                onClick={() => navigate(`${BATTLES_PATH}/${battle.id}`)}
               />
             ))}
           </div>
         </TabsContent>
 
         <TabsContent value="completed" className="mt-6">
-          {/* Desktop view for completed games */}
+          {/* Desktop view for completed battles */}
           <div className="hidden md:block">
             <Table>
               <TableHeader>
@@ -612,37 +612,37 @@ export const HomeTabs: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {completedGames.map(game => (
+                {completedBattles.map(battle => (
                   <TableRow
-                    key={game.id}
+                    key={battle.id}
                     className="border-gray-800 cursor-pointer hover:bg-gray-900"
-                    onClick={() => navigate(`${GAMES_PATH}/${game.id}`)}
+                    onClick={() => navigate(`${BATTLES_PATH}/${battle.id}`)}
                   >
                     <TableCell>
-                      {formatDateFromTimestamp(game.startTimestamp)}
+                      {formatDateFromTimestamp(battle.startTimestamp)}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1 items-center">
                         <Clock className="h-3 mr-1 text-gray-400 w-3" />
-                        {formatTimeFromTimestamp(game.startTimestamp)}
+                        {formatTimeFromTimestamp(battle.startTimestamp)}
                       </div>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <div className="flex gap-1 items-center">
-                        {game.level.toString()}
+                        {battle.level.toString()}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span>{game.player1Username}</span>
+                        <span>{battle.player1Username}</span>
                         <span className="text-gray-400">vs</span>
-                        <span>{game.player2Username}</span>
+                        <span>{battle.player2Username}</span>
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">
-                      {game.winner === game.player1Id
-                        ? game.player1Username
-                        : game.player2Username}
+                      {battle.winner === battle.player1Id
+                        ? battle.player1Username
+                        : battle.player2Username}
                     </TableCell>
                     <TableCell className="text-right">
                       <ArrowRight className="h-4 ml-auto text-gray-400 w-4" />
@@ -653,13 +653,13 @@ export const HomeTabs: React.FC = () => {
             </Table>
           </div>
 
-          {/* Mobile view for completed games */}
+          {/* Mobile view for completed battles */}
           <div className="md:hidden">
-            {completedGames.map(game => (
-              <CompletedGameCard
-                key={game.id}
-                game={game}
-                onClick={() => navigate(`${GAMES_PATH}/${game.id}`)}
+            {completedBattles.map(battle => (
+              <CompletedBattleCard
+                key={battle.id}
+                battle={battle}
+                onClick={() => navigate(`${BATTLES_PATH}/${battle.id}`)}
               />
             ))}
           </div>

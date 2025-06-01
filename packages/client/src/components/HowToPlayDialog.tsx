@@ -50,9 +50,9 @@ export const HowToPlayDialog: React.FC<HowToPlayDialogProps> = ({
               </span>
               . Players create levels for other players simply by playing. If
               you beat 5 levels, for instance, then lose on the 6th, then your
-              game (your actions) is saved as a level 6 game for other players
-              to face. The top player is the one whose game has never been
-              beaten.
+              battle (your actions) is saved as a level 6 battle for other
+              players to face. The top player is the one whose saved battle has
+              never been beaten.
             </p>
           </div>
 

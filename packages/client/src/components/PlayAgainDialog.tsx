@@ -21,30 +21,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useGame } from '@/contexts/BattleContext';
+import { useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/hooks/useMUD';
-import { GAMES_PATH } from '@/Routes';
+import { BATTLES_PATH } from '@/Routes';
 import { MAX_ROUNDS } from '@/utils/constants';
 import { formatWattHours } from '@/utils/helpers';
 
 import { Button } from './ui/button';
 
 type PlayAgainDialogProps = {
-  isGameOverDialogOpen: boolean;
-  setIsGameOverDialogOpen: (isOpen: boolean) => void;
+  isBattleOverDialogOpen: boolean;
+  setIsBattleOverDialogOpen: (isOpen: boolean) => void;
 };
 
 export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
-  isGameOverDialogOpen,
-  setIsGameOverDialogOpen,
+  isBattleOverDialogOpen,
+  setIsBattleOverDialogOpen,
 }) => {
   const navigate = useNavigate();
   const {
     components: {
       BatteryDetails,
-      CurrentGame,
+      CurrentBattle,
       ExpenseReceipt,
       KingdomsByLevel,
       LoadedKingdomActions,
@@ -55,13 +55,13 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
       WinStreak,
     },
     network: { globalPlayerId },
-    systemCalls: { createGame },
+    systemCalls: { createBattle },
   } = useMUD();
   const { playSfx } = useSettings();
   const { setIsSolarFarmDialogOpen } = useSolarFarm();
-  const { game } = useGame();
+  const { battle } = useBattle();
 
-  const [isCreatingGame, setIsCreatingGame] = useState(false);
+  const [isCreatingBattle, setIsCreatingBattle] = useState(false);
 
   const winStreak =
     useComponentValue(WinStreak, globalPlayerId)?.value ?? BigInt(0);
@@ -76,24 +76,24 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   )?.savedKingdomIds;
 
   const topLevelKingdomsICanPlay = useMemo(() => {
-    if (!(game && topLevelKingdoms)) return [];
+    if (!(battle && topLevelKingdoms)) return [];
 
     return topLevelKingdoms.filter(savedKingdomId => {
       const savedTopLevelKingdom = getComponentValueStrict(
         SavedKingdom,
         savedKingdomId as Entity,
       );
-      return savedTopLevelKingdom.author !== game.player1Id;
+      return savedTopLevelKingdom.author !== battle.player1Id;
     });
-  }, [game, SavedKingdom, topLevelKingdoms]);
+  }, [battle, SavedKingdom, topLevelKingdoms]);
 
-  const onCreateGame = useCallback(async () => {
+  const onCreateBattle = useCallback(async () => {
     try {
-      setIsCreatingGame(true);
+      setIsCreatingBattle(true);
       playSfx('click2');
 
-      if (!game) {
-        throw new Error('Game not found.');
+      if (!battle) {
+        throw new Error('Battle not found.');
       }
 
       if (!globalPlayerId) {
@@ -101,7 +101,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
       }
 
       const resetLevel =
-        game.winner !== game.player1Id ||
+        battle.winner !== battle.player1Id ||
         (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0);
 
       const savedUsername = getComponentValue(Username, globalPlayerId)?.value;
@@ -115,8 +115,8 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
         return;
       }
 
-      const { error, success } = await createGame(
-        game.player1Username,
+      const { error, success } = await createBattle(
+        battle.player1Username,
         resetLevel,
       );
 
@@ -124,34 +124,34 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
         throw new Error(error);
       }
 
-      toast.success('Game Created!');
+      toast.success('Battle Created!');
 
-      const newGame = getComponentValue(CurrentGame, globalPlayerId)?.value;
-      if (!newGame) {
-        throw new Error('No recent game found');
+      const newBattle = getComponentValue(CurrentBattle, globalPlayerId)?.value;
+      if (!newBattle) {
+        throw new Error('No recent battle found');
       }
 
-      navigate(`${GAMES_PATH}/${newGame}`);
-      setIsGameOverDialogOpen(false);
+      navigate(`${BATTLES_PATH}/${newBattle}`);
+      setIsBattleOverDialogOpen(false);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toast.error('Error Creating Game', {
+      toast.error('Error Creating Battle', {
         description: (error as Error).message,
       });
     } finally {
-      setIsCreatingGame(false);
+      setIsCreatingBattle(false);
     }
   }, [
     BatteryDetails,
-    createGame,
-    CurrentGame,
-    game,
+    battle,
+    createBattle,
+    CurrentBattle,
     navigate,
     globalPlayerId,
     playSfx,
-    setIsGameOverDialogOpen,
+    setIsBattleOverDialogOpen,
     setIsSolarFarmDialogOpen,
     topLevel,
     topLevelKingdomsICanPlay,
@@ -160,74 +160,66 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   ]);
 
   const savedKingdomId =
-    useComponentValue(LoadedKingdomActions, game?.id ?? (zeroHash as Entity))
+    useComponentValue(LoadedKingdomActions, battle?.id ?? (zeroHash as Entity))
       ?.savedKingdomId ?? zeroHash;
 
   const expenseReceipt =
     useEntityQuery([
       HasValue(ExpenseReceipt, {
-        gameId: game?.id ?? (zeroHash as Entity),
+        battleId: battle?.id ?? (zeroHash as Entity),
         savedKingdomId: savedKingdomId,
       }),
     ]).map(receiptId =>
       getComponentValueStrict(ExpenseReceipt, receiptId),
     )[0] ?? null;
 
-  const expenseAuthorUsernames = useMemo(() => {
+  const expensePatenteeUsernames = useMemo(() => {
     if (!expenseReceipt) return [];
-    if (expenseReceipt.authors.length === 0) return [];
-    return expenseReceipt.authors.map(author => {
-      const authorEntity = encodeEntity(
-        { author: 'address' },
-        { author: author as `0x${string}` },
-      );
-      return getComponentValueStrict(Username, authorEntity).value;
+    if (expenseReceipt.patentees.length === 0) return [];
+    return expenseReceipt.patentees.map(patentee => {
+      return getComponentValueStrict(Username, patentee as Entity).value;
     });
   }, [expenseReceipt, Username]);
 
-  const expenseAmountToAuthors = useMemo(() => {
+  const expenseAmountToPatentees = useMemo(() => {
     if (!expenseReceipt) return BigInt(0);
-    if (expenseReceipt.authors.length === 0) return BigInt(0);
+    if (expenseReceipt.patentees.length === 0) return BigInt(0);
     return (
-      expenseReceipt.amountToBattery / BigInt(expenseReceipt.authors.length)
+      expenseReceipt.amountToBattery / BigInt(expenseReceipt.patentees.length)
     );
   }, [expenseReceipt]);
 
   const revenueReceipt =
     useEntityQuery([
       HasValue(RevenueReceipt, {
-        gameId: game?.id ?? (zeroHash as Entity),
+        battleId: battle?.id ?? (zeroHash as Entity),
         savedKingdomId: savedKingdomId,
       }),
     ]).map(receiptId =>
       getComponentValueStrict(RevenueReceipt, receiptId),
     )[0] ?? null;
 
-  const revenueAuthorUsernames = useMemo(() => {
+  const revenuePatenteeUsernames = useMemo(() => {
     if (!revenueReceipt) return [];
-    if (revenueReceipt.authors.length === 0) return [];
-    return revenueReceipt.authors.map(author => {
-      const authorEntity = encodeEntity(
-        { author: 'address' },
-        { author: author as `0x${string}` },
-      );
-      return getComponentValueStrict(Username, authorEntity).value;
+    if (revenueReceipt.patentees.length === 0) return [];
+    return revenueReceipt.patentees.map(patentee => {
+      return getComponentValueStrict(Username, patentee as Entity).value;
     });
   }, [revenueReceipt, Username]);
 
-  const revenueAmountToAuthors = useMemo(() => {
+  const revenueAmountToPatentees = useMemo(() => {
     if (!revenueReceipt) return BigInt(0);
-    if (revenueReceipt.authors.length === 0) return BigInt(0);
+    if (revenueReceipt.patentees.length === 0) return BigInt(0);
     return (
-      revenueReceipt.amountToReserve / BigInt(revenueReceipt.authors.length)
+      revenueReceipt.amountToReserve / BigInt(revenueReceipt.patentees.length)
     );
   }, [revenueReceipt]);
 
-  if (!game) {
+  if (!battle) {
     return (
       <Dialog
-        open={isGameOverDialogOpen}
-        onOpenChange={open => setIsGameOverDialogOpen(open)}
+        open={isBattleOverDialogOpen}
+        onOpenChange={open => setIsBattleOverDialogOpen(open)}
       >
         <DialogContent
           aria-describedby={undefined}
@@ -249,8 +241,8 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
   if (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0) {
     return (
       <Dialog
-        open={isGameOverDialogOpen}
-        onOpenChange={open => setIsGameOverDialogOpen(open)}
+        open={isBattleOverDialogOpen}
+        onOpenChange={open => setIsBattleOverDialogOpen(open)}
       >
         <DialogContent
           aria-describedby={undefined}
@@ -267,7 +259,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
             <strong>top player</strong>!
           </p>
           <p>
-            Your game has been saved, and other players can try to beat it.
+            Your battle has been saved, and other players can try to beat it.
             Playing again does not affect your top position.
           </p>
 
@@ -326,17 +318,17 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
                       <span className="text-gray-300">Tower Royalties:</span>
                       <span className="font-medium text-yellow-400">
                         {formatWattHours(
-                          expenseAuthorUsernames.length > 0
+                          expensePatenteeUsernames.length > 0
                             ? expenseReceipt.amountToBattery
                             : BigInt(0),
                         )}
                       </span>
                     </div>
 
-                    {/* Individual Tower Authors */}
-                    {expenseAuthorUsernames.length > 0 && (
+                    {/* Individual Tower Component Patentees */}
+                    {expensePatenteeUsernames.length > 0 && (
                       <div className="bg-gray-900/50 ml-4 p-2 rounded space-y-2 text-sm">
-                        {expenseAuthorUsernames.map((author, index) => (
+                        {expensePatenteeUsernames.map((author, index) => (
                           <div
                             className="flex items-center justify-between"
                             key={`${author}-${index}`}
@@ -346,7 +338,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
                               <span className="text-gray-300">{author}</span>
                             </div>
                             <span className="font-medium text-cyan-400">
-                              {formatWattHours(expenseAmountToAuthors)}
+                              {formatWattHours(expenseAmountToPatentees)}
                             </span>
                           </div>
                         ))}
@@ -360,11 +352,11 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
 
           <DialogFooter className="sm:justify-center">
             <Button
-              disabled={isCreatingGame}
-              onClick={onCreateGame}
+              disabled={isCreatingBattle}
+              onClick={onCreateBattle}
               className="bg-blue-800 hover:bg-blue-700 text-white w-full"
             >
-              {isCreatingGame ? (
+              {isCreatingBattle ? (
                 <Loader2 className="animate-spin h-6 w-6" />
               ) : (
                 <Play className="h-4 mr-2 w-4" />
@@ -377,11 +369,11 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     );
   }
 
-  if (game.winner === game.player1Id) {
+  if (battle.winner === battle.player1Id) {
     return (
       <Dialog
-        open={isGameOverDialogOpen}
-        onOpenChange={open => setIsGameOverDialogOpen(open)}
+        open={isBattleOverDialogOpen}
+        onOpenChange={open => setIsBattleOverDialogOpen(open)}
       >
         <DialogContent className="bg-gray-900 border border-blue-900/50 max-h-[90vh] overflow-y-auto text-white">
           <DialogHeader>
@@ -393,7 +385,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
             </DialogDescription>
           </DialogHeader>
 
-          <p>{`You beat level ${game.level.toString()}! You can now continue to level ${(game.level + 1n).toString()}.`}</p>
+          <p>{`You beat level ${battle.level.toString()}! You can now continue to level ${(battle.level + 1n).toString()}.`}</p>
 
           {expenseReceipt && (
             <div className="my-4 space-y-6">
@@ -450,27 +442,27 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
                       <span className="text-gray-300">Tower Royalties:</span>
                       <span className="font-medium text-yellow-400">
                         {formatWattHours(
-                          expenseAuthorUsernames.length > 0
+                          expensePatenteeUsernames.length > 0
                             ? expenseReceipt.amountToBattery
                             : BigInt(0),
                         )}
                       </span>
                     </div>
 
-                    {/* Individual Tower Authors */}
-                    {expenseAuthorUsernames.length > 0 && (
+                    {/* Individual Tower Component Patentees */}
+                    {expensePatenteeUsernames.length > 0 && (
                       <div className="bg-gray-900/50 ml-4 p-2 rounded space-y-2 text-sm">
-                        {expenseAuthorUsernames.map((author, index) => (
+                        {expensePatenteeUsernames.map((patentee, index) => (
                           <div
                             className="flex items-center justify-between"
-                            key={`${author}-${index}`}
+                            key={`${patentee}-${index}`}
                           >
                             <div className="flex gap-2 items-center">
                               <GiCannon className="h-4 text-cyan-400 w-4" />
-                              <span className="text-gray-300">{author}</span>
+                              <span className="text-gray-300">{patentee}</span>
                             </div>
                             <span className="font-medium text-cyan-400">
-                              {formatWattHours(expenseAmountToAuthors)}
+                              {formatWattHours(expenseAmountToPatentees)}
                             </span>
                           </div>
                         ))}
@@ -484,11 +476,11 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
 
           <DialogFooter className="sm:justify-center">
             <Button
-              disabled={isCreatingGame}
-              onClick={onCreateGame}
+              disabled={isCreatingBattle}
+              onClick={onCreateBattle}
               className="bg-blue-800 hover:bg-blue-700 text-white w-full"
             >
-              {isCreatingGame ? (
+              {isCreatingBattle ? (
                 <Loader2 className="animate-spin h-6 w-6" />
               ) : (
                 <Play className="h-4 mr-2 w-4" />
@@ -503,8 +495,8 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
 
   return (
     <Dialog
-      open={isGameOverDialogOpen}
-      onOpenChange={open => setIsGameOverDialogOpen(open)}
+      open={isBattleOverDialogOpen}
+      onOpenChange={open => setIsBattleOverDialogOpen(open)}
     >
       <DialogContent className="bg-gray-900 border border-pink-900/50  max-h-[90vh] overflow-y-auto text-white">
         <DialogHeader>
@@ -513,11 +505,12 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
             Your castle has been destroyed by the enemy.
           </DialogDescription>
         </DialogHeader>
-        {game.winner !== game.player1Id && game.roundCount > MAX_ROUNDS && (
-          <p className="font-semibold mt-2">
-            You have reached the max rounds you can play in a game.
-          </p>
-        )}
+        {battle.winner !== battle.player1Id &&
+          battle.roundCount > MAX_ROUNDS && (
+            <p className="font-semibold mt-2">
+              You have reached the max rounds you can play in a battle.
+            </p>
+          )}
 
         {revenueReceipt && (
           <div className="my-4 space-y-6">
@@ -574,27 +567,27 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
                     <span className="text-gray-300">Tower Royalties:</span>
                     <span className="font-medium text-yellow-400">
                       {formatWattHours(
-                        revenueAuthorUsernames.length > 0
+                        revenuePatenteeUsernames.length > 0
                           ? revenueReceipt.amountToReserve
                           : BigInt(0),
                       )}
                     </span>
                   </div>
 
-                  {/* Individual Tower Authors */}
-                  {revenueAuthorUsernames.length > 0 && (
+                  {/* Individual Tower Component Patentees */}
+                  {revenuePatenteeUsernames.length > 0 && (
                     <div className="bg-gray-900/50 ml-4 p-2 rounded space-y-2 text-sm">
-                      {revenueAuthorUsernames.map((author, index) => (
+                      {revenuePatenteeUsernames.map((patentee, index) => (
                         <div
                           className="flex items-center justify-between"
-                          key={`${author}-${index}`}
+                          key={`${patentee}-${index}`}
                         >
                           <div className="flex gap-2 items-center">
                             <GiCannon className="h-4 text-cyan-400 w-4" />
-                            <span className="text-gray-300">{author}</span>
+                            <span className="text-gray-300">{patentee}</span>
                           </div>
                           <span className="font-medium text-cyan-400">
-                            {formatWattHours(revenueAmountToAuthors)}
+                            {formatWattHours(revenueAmountToPatentees)}
                           </span>
                         </div>
                       ))}
@@ -608,11 +601,11 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
 
         <DialogFooter className="sm:justify-center">
           <Button
-            disabled={isCreatingGame}
-            onClick={onCreateGame}
+            disabled={isCreatingBattle}
+            onClick={onCreateBattle}
             className="bg-pink-800 hover:bg-pink-700 text-white w-full"
           >
-            {isCreatingGame ? (
+            {isCreatingBattle ? (
               <Loader2 className="animate-spin h-6 w-6" />
             ) : (
               <Play className="h-4 mr-2 w-4" />

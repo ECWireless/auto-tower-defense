@@ -47,7 +47,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { NO_ACTIONS_ERROR, useGame } from '@/contexts/BattleContext';
+import { NO_ACTIONS_ERROR, useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
 import { API_ENDPOINT } from '@/utils/constants';
@@ -76,7 +76,8 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       registerPatent,
     },
   } = useMUD();
-  const { game, isPlayer1, refreshGame, setIsNoActionsDialogOpen } = useGame();
+  const { battle, isPlayer1, refreshBattle, setIsNoActionsDialogOpen } =
+    useBattle();
   const { playSfx } = useSettings();
 
   const [patents, setPatents] = useState<PatentType[]>([]);
@@ -135,14 +136,14 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
 
   const onRefreshPatentList = useCallback((): PatentType[] => {
     try {
-      if (!game) return [];
+      if (!battle) return [];
       const _patents = fetchPatents();
       const newPatent = {
         id: zeroHash as Entity,
         bytecode: zeroHash,
         description: 'Create a new patent!',
         name: 'New Patent',
-        patentee: game.player1Username,
+        patentee: battle.player1Username,
         size: '0 bytes',
         sourceCode: '',
         timestamp: BigInt(Date.now()),
@@ -188,7 +189,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       });
       return [];
     }
-  }, [fetchPatents, game, Projectile, tower.id]);
+  }, [battle, fetchPatents, Projectile, tower.id]);
 
   const onSelectPatent = useCallback((patent: PatentType) => {
     format(patent.sourceCode, {
@@ -262,7 +263,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
 
       toast.success('Modification Deployed!');
 
-      refreshGame();
+      refreshBattle();
       setIsAssemblyDrawerOpen(false);
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -284,7 +285,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
     modifyTowerSystem,
     onCompileCode,
     playSfx,
-    refreshGame,
+    refreshBattle,
     setIsNoActionsDialogOpen,
     setIsAssemblyDrawerOpen,
     sizeLimit,
@@ -511,9 +512,9 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
 
   const isMyTower = useMemo(() => {
     if (!isPlayer1) return false;
-    if (!game) return false;
-    return game.player1Id === tower.owner;
-  }, [game, isPlayer1, tower.owner]);
+    if (!battle) return false;
+    return battle.player1Id === tower.owner;
+  }, [battle, isPlayer1, tower.owner]);
 
   const isPatentRegistered = useMemo(() => {
     if (!sourceCode) return false;
@@ -523,11 +524,11 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
   }, [patents, sourceCode]);
 
   const canAmendPatent = useMemo(() => {
-    if (!(game && selectedPatent)) return false;
+    if (!(battle && selectedPatent)) return false;
     if (selectedPatent.bytecode === zeroHash) return false;
     if (selectedPatent.patentee === 'Template') return false;
-    return selectedPatent?.patentee === game.player1Username;
-  }, [game, selectedPatent]);
+    return selectedPatent?.patentee === battle.player1Username;
+  }, [battle, selectedPatent]);
 
   // Configure Solidity language
   loader.init().then(monacoInstance => {

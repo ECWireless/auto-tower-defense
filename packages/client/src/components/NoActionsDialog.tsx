@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useGame } from '@/contexts/BattleContext';
+import { useBattle } from '@/contexts/BattleContext';
 
 import { Button } from './ui/button';
 
@@ -17,7 +17,7 @@ export const NoActionsDialog: React.FC = () => {
     isNoActionsDialogOpen,
     onNextTurn,
     setIsNoActionsDialogOpen,
-  } = useGame();
+  } = useBattle();
 
   return (
     <Dialog
