@@ -5,7 +5,7 @@ import { System } from "@latticexyz/world/src/System.sol";
 import { CurrentBattle, Battle, BattleData, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
-import { BattleHelpers } from "../Libraries/GameHelpers.sol";
+import { BattleHelpers } from "../Libraries/BattleHelpers.sol";
 import { AccountHelpers } from "../Libraries/AccountHelpers.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { ActionStorageHelpers } from "../Libraries/ActionStorageHelpers.sol";
@@ -13,7 +13,7 @@ import { BatteryHelpers } from "../Libraries/BatteryHelpers.sol";
 import { MAX_ACTIONS, ROB_ID } from "../../constants.sol";
 import "forge-std/console.sol";
 
-contract GameSystem is System {
+contract BattleSystem is System {
   modifier onlyRegisteredPlayer() {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
     require(globalPlayerId != bytes32(0), "BattleSystem: player not registered");

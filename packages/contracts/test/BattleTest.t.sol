@@ -10,7 +10,7 @@ import { CurrentBattle, Battle, BattleData, Level, Username, UsernameTaken, WinS
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import { ROB_ID } from "../constants.sol";
 
-contract GameTest is MudTest {
+contract BattleTest is MudTest {
   address aliceAddress = vm.addr(1);
   address bobAddress = vm.addr(2);
 

@@ -42,9 +42,9 @@ function createViemClientConfig(chain: MUDChain): {
   } as const satisfies ClientConfig;
 }
 
-const saveGamesAsKingdoms = async () => {
+const saveBattlesAsKingdoms = async () => {
   try {
-    console.log("Beginning to copy SavedGames to SavedKingdoms...");
+    console.log("Beginning to copy SavedBattles to SavedKingdoms...");
 
     const mudConfig = defineWorld({
       namespace: "app",
@@ -55,11 +55,11 @@ const saveGamesAsKingdoms = async () => {
         ActionType: ["Skip", "Install", "Move", "Modify"],
       },
       tables: {
-        GamesByLevel: {
+        BattlesByLevel: {
           key: ["level"],
           schema: {
             level: "uint256",
-            gameIds: "bytes32[]",
+            battleIds: "bytes32[]",
           },
         },
         TopLevel: {
@@ -99,7 +99,7 @@ const saveGamesAsKingdoms = async () => {
           name: "app__addSavedKingdomRow",
           inputs: [
             {
-              name: "savedGameId",
+              name: "savedBattleId",
               type: "bytes32",
               internalType: "bytes32",
             },
@@ -131,7 +131,7 @@ const saveGamesAsKingdoms = async () => {
       indexerUrl: networkConfig.chain.indexerUrl,
     });
 
-    const { GamesByLevel, SyncProgress, TopLevel } = components;
+    const { BattlesByLevel, SyncProgress, TopLevel } = components;
 
     let syncProgress = getComponentValue(SyncProgress, singletonEntity);
     let pollIntervals = 0;
@@ -146,8 +146,8 @@ const saveGamesAsKingdoms = async () => {
       pollIntervals++;
     }
 
-    // Get and format all games by level
-    const allGamesByLevel: { [key: number]: string[] } = { 0: [zeroHash] };
+    // Get and format all battles by level
+    const allBattlesByLevel: { [key: number]: string[] } = { 0: [zeroHash] };
     const topLevel = getComponentValue(TopLevel, singletonEntity)?.level ?? 0n;
     const topLevelAsNumber = Number(topLevel);
     if (topLevelAsNumber > 0) {
@@ -156,29 +156,29 @@ const saveGamesAsKingdoms = async () => {
           { level: "uint256" },
           { level: BigInt(i) ?? 0n }
         );
-        const gamesByLevel = getComponentValue(GamesByLevel, levelAsEntity);
-        if (gamesByLevel) {
-          allGamesByLevel[i] = [
-            ...(allGamesByLevel[i] ?? []),
-            ...gamesByLevel.gameIds,
+        const battlesByLevel = getComponentValue(BattlesByLevel, levelAsEntity);
+        if (battlesByLevel) {
+          allBattlesByLevel[i] = [
+            ...(allBattlesByLevel[i] ?? []),
+            ...battlesByLevel.battleIds,
           ];
         }
       }
     }
 
-    // Remap allGamesByLevel to an array of objects with level and gameId
-    const allGameIds: { level: number; gameId: string }[] = [];
-    for (const [level, gameIds] of Object.entries(allGamesByLevel)) {
+    // Remap allBattlesByLevel to an array of objects with level and battleId
+    const allBattleIds: { level: number; battleId: string }[] = [];
+    for (const [level, battleIds] of Object.entries(allBattlesByLevel)) {
       const levelAsNumber = Number(level);
-      for (const gameId of gameIds) {
-        allGameIds.push({ level: levelAsNumber, gameId });
+      for (const battleId of battleIds) {
+        allBattleIds.push({ level: levelAsNumber, battleId });
       }
     }
 
-    let copiedGames = 0;
-    // Iterate through allGameIds and add them to the SavedKingdoms table
-    for (const savedGame of allGameIds) {
-      const { gameId, level } = savedGame;
+    let copiedBattles = 0;
+    // Iterate through allBattleIds and add them to the SavedKingdoms table
+    for (const savedBattle of allBattleIds) {
+      const { battleId, level } = savedBattle;
       let retries = 0;
       let success = false;
 
@@ -188,36 +188,36 @@ const saveGamesAsKingdoms = async () => {
             abi: worldContract.abi,
             account: serverWalletClient.account,
             address: worldContract.address,
-            args: [gameId as Hex, BigInt(level)],
+            args: [battleId as Hex, BigInt(level)],
             functionName: "app__addSavedKingdomRow",
           });
 
           if (result === false) {
-            success = true; // This game ID already exists, skip it
-            continue; // This game ID already exists, skip it
+            success = true; // This battle ID already exists, skip it
+            continue; // This battle ID already exists, skip it
           }
 
           const tx = await worldContract.write.app__addSavedKingdomRow([
-            gameId as Hex,
+            battleId as Hex,
             BigInt(level),
           ]);
 
           const { status } = await waitForTransaction(tx);
 
           if (status === "success") {
-            console.log(`Added saved kingdom row for game ID: ${gameId}`);
+            console.log(`Added saved kingdom row for battle ID: ${battleId}`);
             success = true;
-            copiedGames++;
+            copiedBattles++;
           } else {
             console.error(
-              `Transaction reverted for game ID: ${gameId}. Retrying...`
+              `Transaction reverted for battle ID: ${battleId}. Retrying...`
             );
             retries++;
             await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
           }
         } catch (error) {
           console.error(
-            `Error adding saved kingdom row for game ID: ${gameId}. Retrying...`,
+            `Error adding saved kingdom row for battle ID: ${battleId}. Retrying...`,
             error
           );
           retries++;
@@ -227,15 +227,17 @@ const saveGamesAsKingdoms = async () => {
 
       if (!success) {
         console.error(
-          `Failed to add saved kingdom row for game ID: ${gameId} after ${MAX_RETRIES} retries.`
+          `Failed to add saved kingdom row for battle ID: ${battleId} after ${MAX_RETRIES} retries.`
         );
       }
     }
 
-    console.log(`Finished copying ${copiedGames} SavedGames to SavedKingdoms.`);
+    console.log(
+      `Finished copying ${copiedBattles} SavedBattles to SavedKingdoms.`
+    );
   } catch (error) {
-    console.error("Error fetching saved games:", error);
+    console.error("Error fetching saved battles:", error);
   }
 };
 
-saveGamesAsKingdoms();
+saveBattlesAsKingdoms();

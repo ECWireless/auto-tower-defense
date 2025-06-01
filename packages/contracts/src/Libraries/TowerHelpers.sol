@@ -8,7 +8,7 @@ import { CurrentBattle, DefaultLogic, EntityAtPosition, Battle, BattleData, Heal
 import { ActionType } from "../codegen/common.sol";
 import { TowerDetails } from "../interfaces/Structs.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
-import { BattleHelpers } from "./GameHelpers.sol";
+import { BattleHelpers } from "./BattleHelpers.sol";
 import { ProjectileHelpers } from "./ProjectileHelpers.sol";
 import { ActionStorageHelpers } from "./ActionStorageHelpers.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT, MAX_HEALTH_CANNON, MAX_HEALTH_WALL } from "../../constants.sol";
@@ -129,7 +129,13 @@ library TowerHelpers {
     }
   }
 
-  function _validateMoveTower(bytes32 battleId, bytes32 globalPlayerId, bytes32 towerId, int16 x, int16 y) internal view {
+  function _validateMoveTower(
+    bytes32 battleId,
+    bytes32 globalPlayerId,
+    bytes32 towerId,
+    int16 x,
+    int16 y
+  ) internal view {
     bytes32 towerBattleId = CurrentBattle.get(towerId);
     require(battleId != 0, "TowerSystem: player has no ongoing battle");
     require(battleId == towerBattleId, "TowerSystem: tower is not in player's ongoing battle");

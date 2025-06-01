@@ -18,14 +18,14 @@ contract TowerSystem is System {
 
   function playerInstallTower(bool projectile, int16 x, int16 y) external onlyRegisteredPlayer returns (bytes32) {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
-    bytes32 gameId = CurrentBattle.get(globalPlayerId);
-    return TowerHelpers.installTower(globalPlayerId, gameId, projectile, x, y);
+    bytes32 battleId = CurrentBattle.get(globalPlayerId);
+    return TowerHelpers.installTower(globalPlayerId, battleId, projectile, x, y);
   }
 
   function playerMoveTower(bytes32 towerId, int16 x, int16 y) external onlyRegisteredPlayer returns (bytes32) {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
-    bytes32 gameId = CurrentBattle.get(globalPlayerId);
-    return TowerHelpers.moveTower(globalPlayerId, gameId, towerId, x, y);
+    bytes32 battleId = CurrentBattle.get(globalPlayerId);
+    return TowerHelpers.moveTower(globalPlayerId, battleId, towerId, x, y);
   }
 
   function playerModifyTowerSystem(
@@ -34,7 +34,7 @@ contract TowerSystem is System {
     string memory sourceCode
   ) external onlyRegisteredPlayer returns (address projectileLogicAddress) {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
-    bytes32 gameId = CurrentBattle.get(globalPlayerId);
-    return TowerHelpers.modifyTowerSystem(globalPlayerId, gameId, towerId, bytecode, sourceCode);
+    bytes32 battleId = CurrentBattle.get(globalPlayerId);
+    return TowerHelpers.modifyTowerSystem(globalPlayerId, battleId, towerId, bytecode, sourceCode);
   }
 }
