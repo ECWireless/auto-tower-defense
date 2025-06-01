@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useGame } from '@/contexts/GameContext';
+import { useGame } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/hooks/useMUD';

@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useGame } from '@/contexts/GameContext';
+import { useGame } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { type Tower } from '@/utils/types';
 

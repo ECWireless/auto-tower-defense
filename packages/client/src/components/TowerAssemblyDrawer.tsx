@@ -47,7 +47,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { NO_ACTIONS_ERROR, useGame } from '@/contexts/GameContext';
+import { NO_ACTIONS_ERROR, useGame } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
 import { API_ENDPOINT } from '@/utils/constants';

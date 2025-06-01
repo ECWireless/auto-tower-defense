@@ -2,7 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { Synced } from '@/mud/Synced';
-import { GamePage } from '@/pages/Game';
+import { GamePage } from '@/pages/Battle';
 import { Home } from '@/pages/Home';
 
 export const HOME_PATH = '/';
