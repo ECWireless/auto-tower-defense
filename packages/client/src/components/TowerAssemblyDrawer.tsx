@@ -841,6 +841,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
                 </Button>
                 <Button
                   className="bg-pink-800 hover:bg-pink-700 text-white"
+                  disabled={isDeleting}
                   onClick={onDisclaimPatent}
                 >
                   {isDeleting ? (
