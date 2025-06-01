@@ -19,7 +19,7 @@ import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 struct RevenueReceiptData {
   uint256 amountToKingdom;
   uint256 amountToReserve;
-  bytes32 gameId;
+  bytes32 battleId;
   bytes32 playerId;
   bytes32 savedKingdomId;
   uint256 timestamp;
@@ -55,7 +55,7 @@ library RevenueReceipt {
     fieldNames = new string[](7);
     fieldNames[0] = "amountToKingdom";
     fieldNames[1] = "amountToReserve";
-    fieldNames[2] = "gameId";
+    fieldNames[2] = "battleId";
     fieldNames[3] = "playerId";
     fieldNames[4] = "savedKingdomId";
     fieldNames[5] = "timestamp";
@@ -117,23 +117,23 @@ library RevenueReceipt {
   }
 
   /**
-   * @notice Set gameId.
+   * @notice Set battleId.
    */
-  function setGameId(bytes32 id, bytes32 gameId) internal {
+  function setBattleId(bytes32 id, bytes32 battleId) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((gameId)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((battleId)), _fieldLayout);
   }
 
   /**
-   * @notice Set gameId.
+   * @notice Set battleId.
    */
-  function _setGameId(bytes32 id, bytes32 gameId) internal {
+  function _setBattleId(bytes32 id, bytes32 battleId) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((gameId)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((battleId)), _fieldLayout);
   }
 
   /**
@@ -203,7 +203,7 @@ library RevenueReceipt {
     bytes32 id,
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    bytes32 gameId,
+    bytes32 battleId,
     bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp,
@@ -212,7 +212,7 @@ library RevenueReceipt {
     bytes memory _staticData = encodeStatic(
       amountToKingdom,
       amountToReserve,
-      gameId,
+      battleId,
       playerId,
       savedKingdomId,
       timestamp
@@ -234,7 +234,7 @@ library RevenueReceipt {
     bytes32 id,
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    bytes32 gameId,
+    bytes32 battleId,
     bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp,
@@ -243,7 +243,7 @@ library RevenueReceipt {
     bytes memory _staticData = encodeStatic(
       amountToKingdom,
       amountToReserve,
-      gameId,
+      battleId,
       playerId,
       savedKingdomId,
       timestamp
@@ -265,7 +265,7 @@ library RevenueReceipt {
     bytes memory _staticData = encodeStatic(
       _table.amountToKingdom,
       _table.amountToReserve,
-      _table.gameId,
+      _table.battleId,
       _table.playerId,
       _table.savedKingdomId,
       _table.timestamp
@@ -287,7 +287,7 @@ library RevenueReceipt {
     bytes memory _staticData = encodeStatic(
       _table.amountToKingdom,
       _table.amountToReserve,
-      _table.gameId,
+      _table.battleId,
       _table.playerId,
       _table.savedKingdomId,
       _table.timestamp
@@ -313,7 +313,7 @@ library RevenueReceipt {
     returns (
       uint256 amountToKingdom,
       uint256 amountToReserve,
-      bytes32 gameId,
+      bytes32 battleId,
       bytes32 playerId,
       bytes32 savedKingdomId,
       uint256 timestamp
@@ -323,7 +323,7 @@ library RevenueReceipt {
 
     amountToReserve = (uint256(Bytes.getBytes32(_blob, 32)));
 
-    gameId = (Bytes.getBytes32(_blob, 64));
+    battleId = (Bytes.getBytes32(_blob, 64));
 
     playerId = (Bytes.getBytes32(_blob, 96));
 
@@ -361,7 +361,7 @@ library RevenueReceipt {
     (
       _table.amountToKingdom,
       _table.amountToReserve,
-      _table.gameId,
+      _table.battleId,
       _table.playerId,
       _table.savedKingdomId,
       _table.timestamp
@@ -397,12 +397,12 @@ library RevenueReceipt {
   function encodeStatic(
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    bytes32 gameId,
+    bytes32 battleId,
     bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(amountToKingdom, amountToReserve, gameId, playerId, savedKingdomId, timestamp);
+    return abi.encodePacked(amountToKingdom, amountToReserve, battleId, playerId, savedKingdomId, timestamp);
   }
 
   /**
@@ -433,7 +433,7 @@ library RevenueReceipt {
   function encode(
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    bytes32 gameId,
+    bytes32 battleId,
     bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp,
@@ -442,7 +442,7 @@ library RevenueReceipt {
     bytes memory _staticData = encodeStatic(
       amountToKingdom,
       amountToReserve,
-      gameId,
+      battleId,
       playerId,
       savedKingdomId,
       timestamp

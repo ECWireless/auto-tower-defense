@@ -2,12 +2,12 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { CurrentGame } from "../codegen/index.sol";
+import { CurrentBattle } from "../codegen/index.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { TowerHelpers } from "../Libraries/TowerHelpers.sol";
 
 // TOWER ID
-// bytes32 towerId = keccak256(abi.encodePacked(currentGameId, playerAddress, timestamp));
+// bytes32 towerId = keccak256(abi.encodePacked(currentBattleId, playerAddress, timestamp));
 
 contract TowerSystem is System {
   modifier onlyRegisteredPlayer() {
@@ -18,13 +18,13 @@ contract TowerSystem is System {
 
   function playerInstallTower(bool projectile, int16 x, int16 y) external onlyRegisteredPlayer returns (bytes32) {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
-    bytes32 gameId = CurrentGame.get(globalPlayerId);
+    bytes32 gameId = CurrentBattle.get(globalPlayerId);
     return TowerHelpers.installTower(globalPlayerId, gameId, projectile, x, y);
   }
 
   function playerMoveTower(bytes32 towerId, int16 x, int16 y) external onlyRegisteredPlayer returns (bytes32) {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
-    bytes32 gameId = CurrentGame.get(globalPlayerId);
+    bytes32 gameId = CurrentBattle.get(globalPlayerId);
     return TowerHelpers.moveTower(globalPlayerId, gameId, towerId, x, y);
   }
 
@@ -34,7 +34,7 @@ contract TowerSystem is System {
     string memory sourceCode
   ) external onlyRegisteredPlayer returns (address projectileLogicAddress) {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
-    bytes32 gameId = CurrentGame.get(globalPlayerId);
+    bytes32 gameId = CurrentBattle.get(globalPlayerId);
     return TowerHelpers.modifyTowerSystem(globalPlayerId, gameId, towerId, bytecode, sourceCode);
   }
 }

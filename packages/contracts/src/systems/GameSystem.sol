@@ -2,10 +2,10 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { CurrentGame, Game, GameData, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
+import { CurrentBattle, Battle, BattleData, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
-import { GameHelpers } from "../Libraries/GameHelpers.sol";
+import { BattleHelpers } from "../Libraries/GameHelpers.sol";
 import { AccountHelpers } from "../Libraries/AccountHelpers.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { ActionStorageHelpers } from "../Libraries/ActionStorageHelpers.sol";
@@ -16,11 +16,11 @@ import "forge-std/console.sol";
 contract GameSystem is System {
   modifier onlyRegisteredPlayer() {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
-    require(globalPlayerId != bytes32(0), "GameSystem: player not registered");
+    require(globalPlayerId != bytes32(0), "BattleSystem: player not registered");
     _;
   }
 
-  function createGame(string memory username, bool resetLevel) external returns (bytes32) {
+  function createBattle(string memory username, bool resetLevel) external returns (bytes32) {
     address player1Address = _msgSender();
     bytes32 globalPlayer1Id = EntityHelpers.addressToGlobalPlayerId(player1Address);
 
@@ -28,7 +28,7 @@ contract GameSystem is System {
       globalPlayer1Id = AccountHelpers.registerPlayer(player1Address, username);
     }
 
-    GameHelpers.validateCreateGame(globalPlayer1Id);
+    BattleHelpers.validateCreateBattle(globalPlayer1Id);
 
     bytes32[] memory defaultActionIds = new bytes32[](0);
     bytes32 savedKingdomId = keccak256(abi.encode(defaultActionIds));
@@ -37,57 +37,57 @@ contract GameSystem is System {
       // Stake 8 kWh of electricity
       BatteryHelpers.stakeElectricity(globalPlayer1Id);
     } else {
-      savedKingdomId = GameHelpers.nextLevel(globalPlayer1Id);
+      savedKingdomId = BattleHelpers.nextLevel(globalPlayer1Id);
     }
 
     SavedKingdomData memory savedKingdom = SavedKingdom.get(savedKingdomId);
-    return GameHelpers.initializeGame(globalPlayer1Id, savedKingdom.author, savedKingdomId);
+    return BattleHelpers.initializeBattle(globalPlayer1Id, savedKingdom.author, savedKingdomId);
   }
 
   function forfeitRun() external onlyRegisteredPlayer {
     bytes32 globalPlayer1Id = EntityHelpers.addressToGlobalPlayerId(_msgSender());
-    bytes32 gameId = CurrentGame.get(globalPlayer1Id);
-    require(gameId != bytes32(0), "GameSystem: no game found");
+    bytes32 battleId = CurrentBattle.get(globalPlayer1Id);
+    require(battleId != bytes32(0), "BattleSystem: no battle found");
 
-    GameData memory game = Game.get(gameId);
-    require(game.endTimestamp == 0, "GameSystem: game has ended");
-    require(globalPlayer1Id == game.player1Id, "GameSystem: not player1");
+    BattleData memory battle = Battle.get(battleId);
+    require(battle.endTimestamp == 0, "BattleSystem: battle has ended");
+    require(globalPlayer1Id == battle.player1Id, "BattleSystem: not player1");
 
-    ProjectileHelpers.endGame(gameId, game.player2Id);
+    ProjectileHelpers.endBattle(battleId, battle.player2Id);
   }
 
-  function nextTurn(bytes32 gameId) external onlyRegisteredPlayer {
-    GameData memory game = Game.get(gameId);
-    require(game.endTimestamp == 0, "GameSystem: game has ended");
+  function nextTurn(bytes32 battleId) external onlyRegisteredPlayer {
+    BattleData memory battle = Battle.get(battleId);
+    require(battle.endTimestamp == 0, "BattleSystem: battle has ended");
 
-    bytes32 globalPlayer1Id = game.player1Id;
-    bytes32 globalPlayer2Id = game.player2Id;
+    bytes32 globalPlayer1Id = battle.player1Id;
+    bytes32 globalPlayer2Id = battle.player2Id;
 
-    require(EntityHelpers.addressToGlobalPlayerId(_msgSender()) == globalPlayer1Id, "GameSystem: not player1");
+    require(EntityHelpers.addressToGlobalPlayerId(_msgSender()) == globalPlayer1Id, "BattleSystem: not player1");
 
-    if (game.turn == globalPlayer1Id) {
+    if (battle.turn == globalPlayer1Id) {
       // For all actions remaining, add that number of skipped actions
-      uint256 skippedActions = Game.getActionCount(gameId);
+      uint256 skippedActions = Battle.getActionCount(battleId);
       for (uint256 i = 0; i < skippedActions; i++) {
-        ActionStorageHelpers.storeSkipAction(gameId);
+        ActionStorageHelpers.storeSkipAction(battleId);
       }
 
-      bytes32 localPlayer1Id = EntityHelpers.globalToLocalPlayerId(globalPlayer1Id, gameId);
-      bytes32 localPlayer2Id = EntityHelpers.globalToLocalPlayerId(globalPlayer2Id, gameId);
+      bytes32 localPlayer1Id = EntityHelpers.globalToLocalPlayerId(globalPlayer1Id, battleId);
+      bytes32 localPlayer2Id = EntityHelpers.globalToLocalPlayerId(globalPlayer2Id, battleId);
 
       bytes32[] memory allTowers = ProjectileHelpers.getAllTowers(localPlayer1Id, localPlayer2Id);
       ProjectileHelpers.clearAllProjectiles(allTowers);
     } else {
-      Game.setRoundCount(gameId, game.roundCount + 1);
-      ProjectileHelpers.executeRoundResults(gameId);
+      Battle.setRoundCount(battleId, battle.roundCount + 1);
+      ProjectileHelpers.executeRoundResults(battleId);
     }
 
-    Game.setTurn(gameId, game.turn == globalPlayer1Id ? globalPlayer2Id : globalPlayer1Id);
-    Game.setActionCount(gameId, MAX_ACTIONS);
+    Battle.setTurn(battleId, battle.turn == globalPlayer1Id ? globalPlayer2Id : globalPlayer1Id);
+    Battle.setActionCount(battleId, MAX_ACTIONS);
 
-    if (Game.getTurn(gameId) == globalPlayer2Id) {
+    if (Battle.getTurn(battleId) == globalPlayer2Id) {
       for (uint256 i = 0; i < MAX_ACTIONS; i++) {
-        GameHelpers.executePlayer2Actions(gameId, globalPlayer1Id, globalPlayer2Id);
+        BattleHelpers.executePlayer2Actions(battleId, globalPlayer1Id, globalPlayer2Id);
       }
     }
   }

@@ -21,7 +21,7 @@ contract PatentTest is MudTest {
 
   function testRegisterPatent() public {
     vm.startPrank(alice);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 65, 35);
     IWorld(worldAddress).app__playerModifyTowerSystem(towerId, BYTECODE, "");
 
@@ -40,8 +40,8 @@ contract PatentTest is MudTest {
 
   function testRevertRegisterPatentEmptyBytes() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -54,8 +54,8 @@ contract PatentTest is MudTest {
 
   function testRevertRegisterPatentNoDuplicateBytecode() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
@@ -68,11 +68,11 @@ contract PatentTest is MudTest {
 
   function testIncrementRegisterPatentUseCount() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 65, 35);
     IWorld(worldAddress).app__playerModifyTowerSystem(towerId, STRAIGHT_LINE_BYTECODE, "");
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__playerModifyTowerSystem(towerId, STRAIGHT_LINE_BYTECODE, "");
 
     bytes32 patentId = keccak256(abi.encodePacked(STRAIGHT_LINE_BYTECODE));
@@ -82,8 +82,8 @@ contract PatentTest is MudTest {
 
   function testRevertRegisterPatentNoName() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
     string memory description = "Test description";
     string memory sourceCode = "Test source code";
     string memory emptyName;
@@ -94,8 +94,8 @@ contract PatentTest is MudTest {
 
   function testRevertRegisterPatentNoDescription() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
     string memory emptyDescription;
@@ -106,8 +106,8 @@ contract PatentTest is MudTest {
 
   function testRevertRegisterPatentNameTooLong() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
     string memory description = "Test description";
     string memory name = "Test name that is too long and should revert";
     string memory sourceCode = "Test source code";
@@ -118,8 +118,8 @@ contract PatentTest is MudTest {
 
   function testRevertRegisterPatentDescriptionTooLong() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string
       memory description = "This is a long test string meant to exceed the 256-byte limit in Solidity. It serves as a demonstration of handling storage and memory strings in smart contracts. The purpose of this string is to push beyond constraints, ensuring that Solidity developers recognize when their data exceeds inline storage limits.";
@@ -132,22 +132,22 @@ contract PatentTest is MudTest {
 
   function testRevertRegisterPatentNameTaken() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
     string memory sourceCode = "Test source code";
     IWorld(worldAddress).app__registerPatent(BYTECODE, description, name, sourceCode);
 
-    vm.expectRevert(bytes("PatentSystem: name is already taken"));
+    vm.expectRevert(bytes("PatentSystem: name is already taken by another patent"));
     IWorld(worldAddress).app__registerPatent(ANGLED_DOWN_BYTECODE, description, name, sourceCode);
   }
 
   function testAmendPatent() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -166,8 +166,8 @@ contract PatentTest is MudTest {
 
   function testRevertAmendPatentNotPatentee() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -176,7 +176,7 @@ contract PatentTest is MudTest {
     vm.stopPrank();
 
     vm.startPrank(bob);
-    IWorld(worldAddress).app__createGame("Bob", true);
+    IWorld(worldAddress).app__createBattle("Bob", true);
     string memory newDescription = "New description";
     string memory newName = "New name";
 
@@ -187,8 +187,8 @@ contract PatentTest is MudTest {
 
   function testRevertAmendPatentNameTaken() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -196,15 +196,15 @@ contract PatentTest is MudTest {
 
     IWorld(worldAddress).app__registerPatent(BYTECODE, description, name, sourceCode);
 
-    vm.expectRevert(bytes("PatentSystem: name is already taken"));
+    vm.expectRevert(bytes("PatentSystem: name is already taken by another patent"));
     IWorld(worldAddress).app__registerPatent(ANGLED_DOWN_BYTECODE, description, name, sourceCode);
     vm.stopPrank();
   }
 
   function testRevertAmendPatentSameDetails() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -221,8 +221,8 @@ contract PatentTest is MudTest {
 
   function testRevertAmendPatentNoName() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -239,8 +239,8 @@ contract PatentTest is MudTest {
 
   function testRevertAmendPatentNoDescription() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -257,8 +257,8 @@ contract PatentTest is MudTest {
 
   function testRevertAmendPatentNameTooLong() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -275,8 +275,8 @@ contract PatentTest is MudTest {
 
   function testRevertAmendPatentDescriptionTooLong() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -294,8 +294,8 @@ contract PatentTest is MudTest {
 
   function testRevertAmendPatentDoesNotExist() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -313,8 +313,8 @@ contract PatentTest is MudTest {
 
   function testDisclaimPatent() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -334,8 +334,8 @@ contract PatentTest is MudTest {
 
   function testRevertDisclaimPatentNotPatentee() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";
@@ -344,7 +344,7 @@ contract PatentTest is MudTest {
     vm.stopPrank();
 
     vm.startPrank(bob);
-    IWorld(worldAddress).app__createGame("Bob", true);
+    IWorld(worldAddress).app__createBattle("Bob", true);
     vm.expectRevert(bytes("PatentSystem: only the patentee can disclaim this patent"));
     IWorld(worldAddress).app__disclaimPatent(patentId);
     vm.stopPrank();
@@ -352,8 +352,8 @@ contract PatentTest is MudTest {
 
   function testRevertDisclaimPatentDoesNotExist() public {
     vm.startPrank(alice);
-    // Create a game to register the player
-    IWorld(worldAddress).app__createGame("Alice", true);
+    // Create a battle to register the player
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     string memory description = "Test description";
     string memory name = "Test name";

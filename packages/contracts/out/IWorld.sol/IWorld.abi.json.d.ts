@@ -62,7 +62,7 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__createGame",
+    "name": "app__createBattle",
     "inputs": [
       {
         "name": "username",
@@ -159,7 +159,7 @@ declare const abi: [
     "name": "app__nextTurn",
     "inputs": [
       {
-        "name": "gameId",
+        "name": "battleId",
         "type": "bytes32",
         "internalType": "bytes32"
       }

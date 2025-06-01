@@ -22,24 +22,24 @@ contract SolarFarmTest is MudTest {
     return usdc;
   }
 
-  function _endGame(address player, bytes32 gameId) internal {
+  function _endBattle(address player, bytes32 battleId) internal {
     vm.startPrank(player);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
 
-    // Need to go through 4 turns to end the game
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    // Need to go through 4 turns to end the battle
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
     vm.stopPrank();
   }
 
   function testBuyElectricity() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
-    // Create a game in order to get a battery
+    // Create a battle in order to get a battery
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Approve the Solar Farm System to spend 0.01 USDC
     usdc.approve(_solarFarmSystemAddress(), 10000); // 0.01 USDC
@@ -72,9 +72,9 @@ contract SolarFarmTest is MudTest {
   function testBuyElectricityFillReserveBalance() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
-    // Create a game in order to get a battery
+    // Create a battle in order to get a battery
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Approve the Solar Farm System to spend 0.10 USDC
     usdc.approve(_solarFarmSystemAddress(), 100000); // 0.10 USDC
@@ -120,9 +120,9 @@ contract SolarFarmTest is MudTest {
   function testRevertBuyElectricityZero() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
-    // Create a game in order to get a battery
+    // Create a battle in order to get a battery
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Approve the Solar Farm System to spend 0.01 USDC
     usdc.approve(_solarFarmSystemAddress(), 10000); // 0.01 USDC
@@ -136,9 +136,9 @@ contract SolarFarmTest is MudTest {
   function testRevertBuyElectricityTooLittle() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
-    // Create a game in order to get a battery
+    // Create a battle in order to get a battery
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Approve the Solar Farm System to spend 0.01 USDC
     usdc.approve(_solarFarmSystemAddress(), 10000); // 0.01 USDC
@@ -152,9 +152,9 @@ contract SolarFarmTest is MudTest {
   function testRevertBuyElectricityTooMuch() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
-    // Create a game in order to get a battery
+    // Create a battle in order to get a battery
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Approve the Solar Farm System to spend 0.01 USDC
     usdc.approve(_solarFarmSystemAddress(), 10000); // 0.01 USDC
@@ -167,12 +167,12 @@ contract SolarFarmTest is MudTest {
   function testSellElectricity() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
-    // Create a game in order to get a battery
+    // Create a battle in order to get a battery
     vm.prank(aliceAddress);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
 
-    // End game to put stake back in active balance
-    _endGame(aliceAddress, gameId);
+    // End battle to put stake back in active balance
+    _endBattle(aliceAddress, battleId);
 
     // Make sure active balance is full
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
@@ -223,9 +223,9 @@ contract SolarFarmTest is MudTest {
   function testRevertSellElectricityZero() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
-    // Create a game in order to get a battery
+    // Create a battle in order to get a battery
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Approve the Solar Farm System to spend 0.01 USDC
     usdc.approve(_solarFarmSystemAddress(), 10000); // 0.01 USDC
@@ -239,9 +239,9 @@ contract SolarFarmTest is MudTest {
   function testRevertSellElectricityTooLittle() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
-    // Create a game in order to get a battery
+    // Create a battle in order to get a battery
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Approve the Solar Farm System to spend 0.01 USDC
     usdc.approve(_solarFarmSystemAddress(), 10000); // 0.01 USDC
@@ -255,9 +255,9 @@ contract SolarFarmTest is MudTest {
   function testRevertSellElectricityTooMuch() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
-    // Create a game in order to get a battery
+    // Create a battle in order to get a battery
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Approve the Solar Farm System to spend 0.01 USDC
     usdc.approve(_solarFarmSystemAddress(), 10000); // 0.01 USDC
@@ -271,9 +271,9 @@ contract SolarFarmTest is MudTest {
   function testRevertSellElectricityTooMuchFiat() public {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
-    // Create a game in order to get a battery
+    // Create a battle in order to get a battery
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Approve the Solar Farm System to spend 0.01 USDC
     usdc.approve(_solarFarmSystemAddress(), 10000); // 0.01 USDC
@@ -284,9 +284,9 @@ contract SolarFarmTest is MudTest {
   }
 
   function testClaimCharge() public {
-    // Create a game in order to get a battery, and to stake 8kWh
+    // Create a battle in order to get a battery, and to stake 8kWh
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Warp forward 1 hour (3600000 ms)
     vm.warp(block.timestamp + 3600);
@@ -295,7 +295,7 @@ contract SolarFarmTest is MudTest {
     uint256 timeSinceLastRecharge = block.timestamp - lastRechargeTimestamp;
     assertEq(timeSinceLastRecharge, 3600);
 
-    // Before ending the game, the player should claim their recharge
+    // Before ending the battle, the player should claim their recharge
     IWorld(worldAddress).app__claimRecharge();
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayerId);
@@ -307,9 +307,9 @@ contract SolarFarmTest is MudTest {
   }
 
   function testClaimChargeMaxCharge() public {
-    // Create a game in order to get a battery, and to stake 8kWh
+    // Create a battle in order to get a battery, and to stake 8kWh
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Warp forward 24 hours (86400000 ms)
     vm.warp(block.timestamp + 86400);
@@ -318,7 +318,7 @@ contract SolarFarmTest is MudTest {
     uint256 timeSinceLastRecharge = block.timestamp - lastRechargeTimestamp;
     assertEq(timeSinceLastRecharge, 86400);
 
-    // Before ending the game, the player should claim their recharge
+    // Before ending the battle, the player should claim their recharge
     IWorld(worldAddress).app__claimRecharge();
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayerId);
@@ -338,12 +338,12 @@ contract SolarFarmTest is MudTest {
 
   // Test revert claiming recharge when the battery is full
   function testRevertClaimRechargeFull() public {
-    // Create a game in order to get a battery, and to stake 8kWh
+    // Create a battle in order to get a battery, and to stake 8kWh
     vm.prank(aliceAddress);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
 
-    // End game to return stake to active balance
-    _endGame(aliceAddress, gameId);
+    // End battle to return stake to active balance
+    _endBattle(aliceAddress, battleId);
 
     // Warp forward 24 hours (86400000 ms)
     vm.warp(block.timestamp + 86400);
@@ -355,9 +355,9 @@ contract SolarFarmTest is MudTest {
 
   // Test revert claiming recharge when the player has no electricity to claim
   function testRevertClaimRechargeNoElectricity() public {
-    // Create a game in order to get a battery, and to stake 8kWh
+    // Create a battle in order to get a battery, and to stake 8kWh
     vm.startPrank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     vm.expectRevert("SolarFarmSystem: no electricity to claim");
     IWorld(worldAddress).app__claimRecharge();
@@ -366,9 +366,9 @@ contract SolarFarmTest is MudTest {
 
   // Test revert when Solar Farm does not have enough electricity to offer
   function testRevertClaimRechargeNotEnoughElectricity() public {
-    // Create a game in order to get a battery, and to stake 8kWh
+    // Create a battle in order to get a battery, and to stake 8kWh
     vm.prank(aliceAddress);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
 
     // Warp forward 1 hour (3600000 ms)
     vm.warp(block.timestamp + 3600);

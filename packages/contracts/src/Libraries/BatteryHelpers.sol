@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Patent, Projectile, RevenueReceipt, RevenueReceiptData, SavedGame, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
+import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Patent, Projectile, RevenueReceipt, RevenueReceiptData, SavedBattle, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
@@ -13,7 +13,7 @@ import { EntityHelpers } from "./EntityHelpers.sol";
 library BatteryHelpers {
   /**
    * Gives fully charged active battery and empty reserve to any new player
-   * Called by validateCreateGame in GameHelpers when a new username is registered
+   * Called by validateCreateBattle in Battle when a new username is registered
    * @param globalPlayerId The global ID of the player
    */
   function grantBattery(bytes32 globalPlayerId) public {
@@ -32,7 +32,7 @@ library BatteryHelpers {
 
   /**
    * Stakes 8kWh of electricity when a new battle run is initiated
-   * Called by initializeGame in GameHelpers
+   * Called by initializeBattle in BattleHelpers
    * @param globalPlayerId The global ID of the player
    */
   function stakeElectricity(bytes32 globalPlayerId) public {
@@ -59,13 +59,13 @@ library BatteryHelpers {
 
   /**
    * Distributes the winning pot when a player wins a battle
-   * Called by endGame in ProjectileHelpers when player 1 wins a battle
-   * @param gameId The ID of the game
+   * Called by endBattle in ProjectileHelpers when player 1 wins a battle
+   * @param battleId The ID of the battle
    * @param globalPlayer1Id The global ID of the winning player (player 1)
    */
-  function winStake(bytes32 gameId, bytes32 globalPlayer1Id) public {
-    // Get SaveKingdomId from LoadedKingdomActions using gameId; then get electricitybalance from SavedKingdom
-    bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(gameId);
+  function winStake(bytes32 battleId, bytes32 globalPlayer1Id) public {
+    // Get SaveKingdomId from LoadedKingdomActions using battleId; then get electricitybalance from SavedKingdom
+    bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(battleId);
     SavedKingdomData memory savedKingdom = SavedKingdom.get(savedKingdomId);
     SavedKingdom.setLosses(savedKingdomId, savedKingdom.losses + 1);
 
@@ -90,8 +90,8 @@ library BatteryHelpers {
     uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayer1Id);
     uint256 activeBalanceEarnings = winningPot / 2;
 
-    // Get all the towers used in the game
-    bytes32[] memory allPatentees = _getAllKingdomTowerPatentees(gameId, true);
+    // Get all the towers used in the battle
+    bytes32[] memory allPatentees = _getAllKingdomTowerPatentees(battleId, true);
 
     // If there are no patentees, give the player the rest of the winningPot
     if (allPatentees.length == 0) {
@@ -111,12 +111,12 @@ library BatteryHelpers {
 
     _processPotentialStakeReturn(globalPlayer1Id);
     _distributeRoyalties(allPatentees, winningPot);
-    _storeExpenseReceipt(savedKingdomId, gameId, stakedEarnings, activeBalanceEarnings, allPatentees);
+    _storeExpenseReceipt(savedKingdomId, battleId, stakedEarnings, activeBalanceEarnings, allPatentees);
   }
 
   function _storeExpenseReceipt(
     bytes32 savedKingdomId,
-    bytes32 gameId,
+    bytes32 battleId,
     uint256 amountToKingdom,
     uint256 amountToBattery,
     bytes32[] memory patentees
@@ -124,7 +124,7 @@ library BatteryHelpers {
     ExpenseReceiptData memory expenseReceipt = ExpenseReceiptData({
       amountToBattery: amountToBattery,
       amountToKingdom: amountToKingdom,
-      gameId: gameId,
+      battleId: battleId,
       playerId: SavedKingdom.getAuthor(savedKingdomId),
       savedKingdomId: savedKingdomId,
       timestamp: block.timestamp,
@@ -135,12 +135,12 @@ library BatteryHelpers {
 
   /**
    * Distributes the winning pot when a player loses a battle
-   * Called by endGame in ProjectileHelpers when player 1 loses a battle
-   * @param gameId The ID of the game
+   * Called by endBattle in ProjectileHelpers when player 1 loses a battle
+   * @param battleId The ID of the battle
    * @param globalPlayer1Id The global ID of the losing player (player 1)
    */
-  function loseStake(bytes32 gameId, bytes32 globalPlayer1Id) public {
-    bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(gameId);
+  function loseStake(bytes32 battleId, bytes32 globalPlayer1Id) public {
+    bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(battleId);
     SavedKingdomData memory savedKingdom = SavedKingdom.get(savedKingdomId);
     SavedKingdom.setWins(savedKingdomId, savedKingdom.wins + 1);
 
@@ -176,8 +176,8 @@ library BatteryHelpers {
     // Put 50% of remaining winningPot in opponent's reserveBalance
     uint256 opponentReserveEarnings = winningPot / 2;
 
-    // Get all the towers used in the game
-    bytes32[] memory allPatentees = _getAllKingdomTowerPatentees(gameId, false);
+    // Get all the towers used in the battle
+    bytes32[] memory allPatentees = _getAllKingdomTowerPatentees(battleId, false);
 
     // If there are no patentees, give the player2Address the rest of the winningPot
     if (allPatentees.length == 0) {
@@ -189,7 +189,7 @@ library BatteryHelpers {
     winningPot -= opponentReserveEarnings;
 
     _distributeRoyalties(allPatentees, winningPot);
-    _storeRevenueReceipt(savedKingdomId, gameId, opponentSavedKingdomEarnings, opponentReserveEarnings, allPatentees);
+    _storeRevenueReceipt(savedKingdomId, battleId, opponentSavedKingdomEarnings, opponentReserveEarnings, allPatentees);
   }
 
   function _distributeRoyalties(bytes32[] memory allPatentees, uint256 winningPot) internal {
@@ -207,7 +207,7 @@ library BatteryHelpers {
 
   function _storeRevenueReceipt(
     bytes32 savedKingdomId,
-    bytes32 gameId,
+    bytes32 battleId,
     uint256 amountToKingdom,
     uint256 amountToReserve,
     bytes32[] memory patentees
@@ -215,7 +215,7 @@ library BatteryHelpers {
     RevenueReceiptData memory revenueReceipt = RevenueReceiptData({
       amountToKingdom: amountToKingdom,
       amountToReserve: amountToReserve,
-      gameId: gameId,
+      battleId: battleId,
       playerId: SavedKingdom.getAuthor(savedKingdomId),
       savedKingdomId: savedKingdomId,
       timestamp: block.timestamp,
@@ -226,24 +226,24 @@ library BatteryHelpers {
 
   /**
    * Get all the patentees of the tower patents on one side of the board
-   * @param gameId The ID of the game
+   * @param battleId The ID of the battle
    * @param player1Kingdom Boolean for scanning left or right side of the board
    */
-  function _getAllKingdomTowerPatentees(bytes32 gameId, bool player1Kingdom) internal view returns (bytes32[] memory) {
-    // If player1Kingdom is true, get all actions from SavedGame
+  function _getAllKingdomTowerPatentees(bytes32 battleId, bool player1Kingdom) internal view returns (bytes32[] memory) {
+    // If player1Kingdom is true, get all actions from SavedBattle
     // If player1Kingdom is false, get all actions from LoadedKingdomActions
-    bytes32[] memory savedGameActionIds = player1Kingdom
-      ? SavedGame.getActions(gameId)
-      : LoadedKingdomActions.getActions(gameId);
-    bytes32[] memory modifyActions = new bytes32[](savedGameActionIds.length);
+    bytes32[] memory savedBattleActionIds = player1Kingdom
+      ? SavedBattle.getActions(battleId)
+      : LoadedKingdomActions.getActions(battleId);
+    bytes32[] memory modifyActions = new bytes32[](savedBattleActionIds.length);
 
     // Get actionType from ActionData, then filter by actionType == Modify
     // Resize the modifyActions array to the actual number of Modify actions
     uint256 modifyCount = 0;
-    for (uint256 i = 0; i < savedGameActionIds.length; i++) {
-      ActionType actionType = Action.getActionType(savedGameActionIds[i]);
+    for (uint256 i = 0; i < savedBattleActionIds.length; i++) {
+      ActionType actionType = Action.getActionType(savedBattleActionIds[i]);
       if (actionType == ActionType.Modify) {
-        modifyActions[modifyCount] = savedGameActionIds[i];
+        modifyActions[modifyCount] = savedBattleActionIds[i];
         modifyCount++;
       }
     }
@@ -254,7 +254,7 @@ library BatteryHelpers {
     modifyActions = resizedModifyActions;
 
     // Use the actionId to get the bytes from Projectile
-    // Use Patent with keccak256(abi.encodePacked(bytecode)) to get all the patentees of the tower patents used in the game
+    // Use Patent with keccak256(abi.encodePacked(bytecode)) to get all the patentees of the tower patents used in the battle
     bytes32[] memory patentees = new bytes32[](modifyActions.length);
     for (uint256 i = 0; i < modifyActions.length; i++) {
       bytes32 actionId = modifyActions[i];
@@ -283,7 +283,7 @@ library BatteryHelpers {
   }
 
   /**
-   * Checks if the player is the top player in the game
+   * Checks if the player is the top player in the battle
    * If they are, return their stake to active and reserve balance
    * @param globalPlayer1Id The global ID of the player
    */

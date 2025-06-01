@@ -17,7 +17,7 @@ contract TowerTest is MudTest {
 
   function testInstallTower() public {
     vm.prank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
 
     vm.prank(alice);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
@@ -26,7 +26,7 @@ contract TowerTest is MudTest {
     assertEq(x, 35);
     assertEq(y, 35);
 
-    bytes32 entityKey = EntityHelpers.positionToEntityKey(gameId, x, y);
+    bytes32 entityKey = EntityHelpers.positionToEntityKey(battleId, x, y);
     bytes32 entity = EntityAtPosition.get(entityKey);
     assertEq(entity, towerId);
 
@@ -39,7 +39,7 @@ contract TowerTest is MudTest {
 
   function testInstallWallTower() public {
     vm.startPrank(alice);
-    IWorld(worldAddress).app__createGame("Alice", true);
+    IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(false, 35, 35);
 
     address projectileLogicAddress = Projectile.getLogicAddress(towerId);
@@ -49,10 +49,10 @@ contract TowerTest is MudTest {
 
   function testRevertInstallPositionIsOccupied() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
 
     vm.expectRevert(bytes("TowerSystem: position is occupied"));
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
@@ -61,10 +61,10 @@ contract TowerTest is MudTest {
 
   function testMoveTower() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
 
     IWorld(worldAddress).app__playerMoveTower(towerId, 45, 45);
 
@@ -72,20 +72,20 @@ contract TowerTest is MudTest {
     assertEq(x, 45);
     assertEq(y, 45);
 
-    bytes32 entityKey = EntityHelpers.positionToEntityKey(gameId, x, y);
+    bytes32 entityKey = EntityHelpers.positionToEntityKey(battleId, x, y);
     bytes32 entity = EntityAtPosition.get(entityKey);
     assertEq(entity, towerId);
   }
 
   function testRevertMoveNoTower() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
 
     (int16 mapHeight, ) = MapConfig.get();
-    bytes32 castleId = EntityAtPosition.get(EntityHelpers.positionToEntityKey(gameId, 5, mapHeight / 2));
+    bytes32 castleId = EntityAtPosition.get(EntityHelpers.positionToEntityKey(battleId, 5, mapHeight / 2));
 
     vm.expectRevert(bytes("TowerSystem: entity is not a tower"));
     IWorld(worldAddress).app__playerMoveTower(castleId, 45, 45);
@@ -94,46 +94,46 @@ contract TowerTest is MudTest {
 
   function testRevertMovePositionIsOccupied() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 35, 45);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
 
     IWorld(worldAddress).app__playerInstallTower(true, 45, 45);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
 
     vm.expectRevert(bytes("TowerSystem: position is occupied"));
     IWorld(worldAddress).app__playerMoveTower(towerId, 45, 45);
   }
 
-  function testRevertMoveNotPlayerGame() public {
+  function testRevertMoveNotPlayerBattle() public {
     vm.startPrank(alice);
-    bytes32 aliceGameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__nextTurn(aliceGameId);
-    IWorld(worldAddress).app__nextTurn(aliceGameId);
+    IWorld(worldAddress).app__nextTurn(aliceBattleId);
+    IWorld(worldAddress).app__nextTurn(aliceBattleId);
     vm.stopPrank();
 
     vm.startPrank(bob);
-    IWorld(worldAddress).app__createGame("Bob", true);
-    vm.expectRevert(bytes("TowerSystem: tower is not in player's ongoing game"));
+    IWorld(worldAddress).app__createBattle("Bob", true);
+    vm.expectRevert(bytes("TowerSystem: tower is not in player's ongoing battle"));
     IWorld(worldAddress).app__playerMoveTower(towerId, 45, 45);
   }
 
   function testModifyTowerSystem() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 65, 35);
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
 
     IWorld(worldAddress).app__playerModifyTowerSystem(towerId, BYTECODE, "");
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
     vm.stopPrank();
 
-    bytes32 positionEntity = EntityHelpers.positionToEntityKey(gameId, 135, 35);
+    bytes32 positionEntity = EntityHelpers.positionToEntityKey(battleId, 135, 35);
     bytes32 enemyTowerId = EntityAtPosition.get(positionEntity);
     uint8 enemyTowerHealth = Health.getCurrentHealth(enemyTowerId);
     assertEq(enemyTowerHealth, 1);
@@ -141,12 +141,12 @@ contract TowerTest is MudTest {
 
   function testRevertModifyNoTower() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
 
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
 
-    bytes32 positionEntity = EntityHelpers.positionToEntityKey(gameId, 5, 35);
+    bytes32 positionEntity = EntityHelpers.positionToEntityKey(battleId, 5, 35);
     bytes32 castleId = EntityAtPosition.get(positionEntity);
 
     vm.expectRevert(bytes("TowerSystem: entity is not a tower"));
@@ -154,31 +154,31 @@ contract TowerTest is MudTest {
     vm.stopPrank();
   }
 
-  function testRevertModifyGameEnded() public {
+  function testRevertModifyBattleEnded() public {
     vm.startPrank(alice);
-    bytes32 gameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
-    // Need to go through 2 turns to end the game
-    IWorld(worldAddress).app__nextTurn(gameId);
-    IWorld(worldAddress).app__nextTurn(gameId);
+    // Need to go through 2 turns to end the battle
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
 
-    vm.expectRevert(bytes("TowerSystem: game has ended"));
+    vm.expectRevert(bytes("TowerSystem: battle has ended"));
     IWorld(worldAddress).app__playerModifyTowerSystem(towerId, BYTECODE, "");
     vm.stopPrank();
   }
 
-  function testRevertModifyNotPlayerGame() public {
+  function testRevertModifyNotPlayerBattle() public {
     vm.startPrank(alice);
-    bytes32 aliceGameId = IWorld(worldAddress).app__createGame("Alice", true);
+    bytes32 aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 65, 65);
-    IWorld(worldAddress).app__nextTurn(aliceGameId);
-    IWorld(worldAddress).app__nextTurn(aliceGameId);
+    IWorld(worldAddress).app__nextTurn(aliceBattleId);
+    IWorld(worldAddress).app__nextTurn(aliceBattleId);
     vm.stopPrank();
 
     vm.startPrank(bob);
-    IWorld(worldAddress).app__createGame("Bob", true);
-    vm.expectRevert(bytes("TowerSystem: tower is not in player's ongoing game"));
+    IWorld(worldAddress).app__createBattle("Bob", true);
+    vm.expectRevert(bytes("TowerSystem: tower is not in player's ongoing battle"));
     IWorld(worldAddress).app__playerModifyTowerSystem(towerId, BYTECODE, "");
   }
 }

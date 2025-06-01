@@ -9,9 +9,9 @@ pragma solidity >=0.8.24;
  * @dev This interface is automatically generated from the corresponding system contract. Do not edit manually.
  */
 interface IGameSystem {
-  function app__createGame(string memory username, bool resetLevel) external returns (bytes32);
+  function app__createBattle(string memory username, bool resetLevel) external returns (bytes32);
 
   function app__forfeitRun() external;
 
-  function app__nextTurn(bytes32 gameId) external;
+  function app__nextTurn(bytes32 battleId) external;
 }
