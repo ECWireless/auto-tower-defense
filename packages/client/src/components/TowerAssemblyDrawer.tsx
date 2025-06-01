@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { zeroHash } from 'viem';
 
-import { PatentsList } from '@/components/SystemsList';
+import { PatentsList } from '@/components/PatentsList';
 import {
   Dialog,
   DialogContent,

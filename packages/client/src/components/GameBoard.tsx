@@ -12,7 +12,7 @@ import { useAccount } from 'wagmi';
 
 import { Draggable } from '@/components/Draggable';
 import { Droppable } from '@/components/Droppable';
-import { TowerAssemblyDrawer } from '@/components/SystemModificationDrawer';
+import { TowerAssemblyDrawer } from '@/components/TowerAssemblyDrawer';
 import {
   Tooltip,
   TooltipContent,
