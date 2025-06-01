@@ -12,7 +12,7 @@ import { useAccount } from 'wagmi';
 
 import { Draggable } from '@/components/Draggable';
 import { Droppable } from '@/components/Droppable';
-import { SystemModificationDrawer } from '@/components/SystemModificationDrawer';
+import { TowerAssemblyDrawer } from '@/components/SystemModificationDrawer';
 import {
   Tooltip,
   TooltipContent,
@@ -66,13 +66,13 @@ export const GameBoard: React.FC = () => {
   const { over: draggingOver, active: draggingActive } = useDndContext();
 
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
-  const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
+  const [isAssemblyDrawerOpen, setIsAssemblyDrawerOpen] = useState(false);
   const [tooltipSelection, setTooltipSelection] = useState<string | null>(null);
 
   const onViewTower = useCallback(
     (tower: Tower) => {
       setSelectedTower(tower);
-      setIsSystemDrawerOpen(true);
+      setIsAssemblyDrawerOpen(true);
     },
     [setSelectedTower],
   );
@@ -87,7 +87,7 @@ export const GameBoard: React.FC = () => {
   useEffect(() => {
     if (!canChangeTurn) return () => {};
     if (triggerAnimation) return () => {};
-    if (isSystemDrawerOpen) return () => {};
+    if (isAssemblyDrawerOpen) return () => {};
 
     const listener = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -99,7 +99,7 @@ export const GameBoard: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', listener);
     };
-  }, [canChangeTurn, isSystemDrawerOpen, onNextTurn, triggerAnimation]);
+  }, [canChangeTurn, isAssemblyDrawerOpen, onNextTurn, triggerAnimation]);
 
   if (!game) return null;
 
@@ -509,9 +509,9 @@ export const GameBoard: React.FC = () => {
       </div>
 
       {selectedTower && (
-        <SystemModificationDrawer
-          isSystemDrawerOpen={isSystemDrawerOpen}
-          setIsSystemDrawerOpen={setIsSystemDrawerOpen}
+        <TowerAssemblyDrawer
+          isAssemblyDrawerOpen={isAssemblyDrawerOpen}
+          setIsAssemblyDrawerOpen={setIsAssemblyDrawerOpen}
           tower={selectedTower}
         />
       )}

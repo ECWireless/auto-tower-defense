@@ -12,7 +12,10 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 library PatentHelpers {
   function validatePatent(bytes32 patentId, string memory description, string memory name) external {
     bytes32 nameHash = keccak256(abi.encodePacked(name));
-    require(PatentNameTaken.get(nameHash) == bytes32(0), "PatentSystem: name is already taken");
+    bytes32 namePatentId = PatentNameTaken.get(nameHash);
+    if (namePatentId != patentId) {
+      require(namePatentId == bytes32(0), "PatentSystem: name is already taken by another patent");
+    }
     require(bytes(name).length > 0, "PatentSystem: name is required");
     require(bytes(description).length > 0, "PatentSystem: description is required");
     require(

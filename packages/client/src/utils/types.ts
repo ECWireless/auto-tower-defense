@@ -31,12 +31,12 @@ export type Game = {
   winner: Entity;
 };
 
-export type SavedModification = {
+export type Patent = {
   id: Entity;
-  author: string;
   bytecode: string;
   description: string;
   name: string;
+  patentee: string;
   size: string;
   sourceCode: string;
   timestamp: bigint;

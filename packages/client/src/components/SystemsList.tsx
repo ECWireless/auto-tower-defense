@@ -7,25 +7,25 @@ import { Button } from '@/components/ui/button';
 import { useMUD } from '@/hooks/useMUD';
 import { cn } from '@/lib/utils';
 import { formatDateFromTimestamp, shortenAddress } from '@/utils/helpers';
-import { type SavedModification } from '@/utils/types';
+import { type Patent as PatentType } from '@/utils/types';
 
-type SystemsListProps = {
-  onSelectSavedModification: (modification: SavedModification) => void;
-  savedModifications: SavedModification[];
-  selectedModification: SavedModification;
+type PatentsListProps = {
+  onSelectPatent: (patent: PatentType) => void;
+  patents: PatentType[];
+  selectedPatent: PatentType;
 };
 
-export const SystemsList: React.FC<SystemsListProps> = ({
-  onSelectSavedModification,
-  savedModifications,
-  selectedModification,
+export const PatentsList: React.FC<PatentsListProps> = ({
+  onSelectPatent,
+  patents,
+  selectedPatent,
 }) => {
   const {
     components: { Username },
     network: { globalPlayerId },
   } = useMUD();
 
-  const [systemsTab, setSystemsTab] = useState<'your' | 'other'>('your');
+  const [patentsTab, setPatentsTab] = useState<'your' | 'other'>('your');
   const innerRef = useRef(null);
   const rowRefs = useRef([]) as React.MutableRefObject<HTMLDivElement[]>;
 
@@ -34,22 +34,20 @@ export const SystemsList: React.FC<SystemsListProps> = ({
     return getComponentValue(Username, globalPlayerId)?.value ?? '';
   }, [globalPlayerId, Username]);
 
-  const mySavedModifications = useMemo(() => {
-    return savedModifications.filter(
-      s => s.author === myUsername || s.author === 'Template',
+  const myPatents = useMemo(() => {
+    return patents.filter(
+      s => s.patentee === myUsername || s.patentee === 'Template',
     );
-  }, [myUsername, savedModifications]);
+  }, [myUsername, patents]);
 
-  const otherSavedModifications = useMemo(() => {
-    return savedModifications.filter(
-      s => s.author !== myUsername && s.author !== 'Template',
+  const otherPatents = useMemo(() => {
+    return patents.filter(
+      s => s.patentee !== myUsername && s.patentee !== 'Template',
     );
-  }, [myUsername, savedModifications]);
+  }, [myUsername, patents]);
 
   const scrollToRow = useCallback(() => {
-    const index = savedModifications.findIndex(
-      s => s.id === selectedModification.id,
-    );
+    const index = patents.findIndex(s => s.id === selectedPatent.id);
     const container = innerRef.current as unknown as HTMLDivElement;
     const row = rowRefs.current[index];
     if (container && row) {
@@ -63,20 +61,20 @@ export const SystemsList: React.FC<SystemsListProps> = ({
         behavior: 'smooth',
       });
     }
-  }, [savedModifications, selectedModification, rowRefs]);
+  }, [patents, rowRefs, selectedPatent]);
 
   useEffect(() => {
     scrollToRow();
   }, [scrollToRow]);
 
   useEffect(() => {
-    if (mySavedModifications.find(s => s.id === selectedModification.id)) {
-      setSystemsTab('your');
+    if (myPatents.find(s => s.id === selectedPatent.id)) {
+      setPatentsTab('your');
     }
-    if (otherSavedModifications.find(s => s.id === selectedModification.id)) {
-      setSystemsTab('other');
+    if (otherPatents.find(s => s.id === selectedPatent.id)) {
+      setPatentsTab('other');
     }
-  }, [selectedModification, mySavedModifications, otherSavedModifications]);
+  }, [myPatents, otherPatents, selectedPatent]);
 
   return (
     <div className="mb-6 sm:mr-2">
@@ -86,46 +84,40 @@ export const SystemsList: React.FC<SystemsListProps> = ({
             className={cn(
               'text-sm',
               'hover:bg-cyan-900/50 hover:text-cyan-300',
-              systemsTab === 'your'
+              patentsTab === 'your'
                 ? 'bg-cyan-950/30 border-cyan-500 text-cyan-400'
                 : 'border-gray-700 text-gray-400 hover:text-gray-300',
             )}
-            onClick={() => setSystemsTab('your')}
+            onClick={() => setPatentsTab('your')}
             size="sm"
             variant="outline"
           >
-            Your Systems
+            Your Patents
           </Button>
           <Button
             className={cn(
               'text-sm',
               'hover:bg-cyan-900/50 hover:text-cyan-300',
-              systemsTab === 'other'
+              patentsTab === 'other'
                 ? 'bg-cyan-950/30 border-cyan-500 text-cyan-400'
                 : 'border-gray-700 text-gray-400 hover:text-gray-300',
             )}
-            onClick={() => setSystemsTab('other')}
+            onClick={() => setPatentsTab('other')}
             size="sm"
             variant="outline"
           >
-            Other Systems
+            Other Patents
           </Button>
         </div>
         <div className="text-gray-400 text-xs">
           <span className="font-medium">
             #
-            {systemsTab === 'your'
-              ? mySavedModifications.findIndex(
-                  s => s.id === selectedModification.id,
-                ) + 1
-              : otherSavedModifications.findIndex(
-                  s => s.id === selectedModification.id,
-                ) + 1 || 0}
+            {patentsTab === 'your'
+              ? myPatents.findIndex(s => s.id === selectedPatent.id) + 1
+              : otherPatents.findIndex(s => s.id === selectedPatent.id) + 1 ||
+                0}
           </span>{' '}
-          of{' '}
-          {systemsTab === 'your'
-            ? mySavedModifications.length
-            : otherSavedModifications.length}{' '}
+          of {patentsTab === 'your' ? myPatents.length : otherPatents.length}{' '}
           selected
         </div>
       </div>
@@ -135,70 +127,69 @@ export const SystemsList: React.FC<SystemsListProps> = ({
         ref={innerRef}
       >
         <div className="p-1 space-y-1">
-          {(systemsTab === 'your'
-            ? mySavedModifications
-            : otherSavedModifications
-          ).map((system, i) => (
-            <div
-              key={system.id}
-              className={cn(
-                'border-l-2 cursor-pointer flex gap-2 items-start py-2 px-3 rounded transition-all',
-                selectedModification.id === system.id
-                  ? 'bg-cyan-950/30 border-l-cyan-500'
-                  : 'bg-gray-900/50 border-l-transparent hover:bg-gray-900/80 hover:border-l-gray-700',
-              )}
-              onClick={() => onSelectSavedModification(system)}
-              ref={el => (el ? (rowRefs.current[i] = el) : null)}
-            >
-              <div className="flex h-4 items-center mt-0.5">
-                <input
-                  type="radio"
-                  checked={selectedModification.id === system.id}
-                  onChange={() => onSelectSavedModification(system)}
-                  className="bg-gray-900 border-gray-700 focus:ring-cyan-600 h-3.5 text-cyan-400 w-3.5"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium max-w-[150px] text-sm text-white truncate">
-                    {system.name}
-                  </h3>
-                  <span className="flex-shrink-0 ml-2 text-gray-400 text-xs">
-                    {system.useCount} uses
-                  </span>
+          {(patentsTab === 'your' ? myPatents : otherPatents).map(
+            (patent, i) => (
+              <div
+                key={patent.id}
+                className={cn(
+                  'border-l-2 cursor-pointer flex gap-2 items-start py-2 px-3 rounded transition-all',
+                  selectedPatent.id === patent.id
+                    ? 'bg-cyan-950/30 border-l-cyan-500'
+                    : 'bg-gray-900/50 border-l-transparent hover:bg-gray-900/80 hover:border-l-gray-700',
+                )}
+                onClick={() => onSelectPatent(patent)}
+                ref={el => (el ? (rowRefs.current[i] = el) : null)}
+              >
+                <div className="flex h-4 items-center mt-0.5">
+                  <input
+                    type="radio"
+                    checked={selectedPatent.id === patent.id}
+                    onChange={() => onSelectPatent(patent)}
+                    className="bg-gray-900 border-gray-700 focus:ring-cyan-600 h-3.5 text-cyan-400 w-3.5"
+                  />
                 </div>
-                <div className="flex items-center justify-between mt-0.5">
-                  <div className="flex gap-1 items-center">
-                    <User className="flex-shrink-0 h-3 text-gray-400 w-3" />
-                    <span
-                      className={`max-w-[100px] text-xs ${system.author === 'Template' ? 'text-purple-400' : 'text-cyan-400'} truncate`}
-                    >
-                      {system.author}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium max-w-[150px] text-sm text-white truncate">
+                      {patent.name}
+                    </h3>
+                    <span className="flex-shrink-0 ml-2 text-gray-400 text-xs">
+                      {patent.useCount} uses
                     </span>
                   </div>
-                  <span className="font-mono text-white text-xs truncate">
-                    {shortenAddress(system.id)}
-                  </span>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <div className="flex gap-1 items-center">
+                      <User className="flex-shrink-0 h-3 text-gray-400 w-3" />
+                      <span
+                        className={`max-w-[100px] text-xs ${patent.patentee === 'Template' ? 'text-purple-400' : 'text-cyan-400'} truncate`}
+                      >
+                        {patent.patentee}
+                      </span>
+                    </div>
+                    <span className="font-mono text-white text-xs truncate">
+                      {shortenAddress(patent.id)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ),
+          )}
         </div>
       </div>
       <div className="mt-4">
         <h3 className="font-semibold text-lg text-white">
-          {selectedModification.name}
+          {selectedPatent.name}
         </h3>
-        {selectedModification.id !== zeroHash && (
+        {selectedPatent.id !== zeroHash && (
           <div className="text-gray-400 text-[10px]">
-            Created {formatDateFromTimestamp(selectedModification.timestamp)}
+            Created {formatDateFromTimestamp(selectedPatent.timestamp)}
           </div>
         )}
       </div>
       <div className="mt-4">
         <h3 className="font-semibold text-md text-white">Description</h3>
         <div className="mt-1 text-white text-xs">
-          {selectedModification.description}
+          {selectedPatent.description}
         </div>
       </div>
     </div>

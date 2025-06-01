@@ -39,7 +39,7 @@ contract AdminSystem is System {
     bytes memory patentBytecode = Patent.getBytecode(patentId);
     require(
       keccak256(abi.encodePacked(patentBytecode)) != patentId,
-      "AdminSystem: modification already exists"
+      "AdminSystem: patent already exists"
     );
 
     PatentHelpers.validatePatent(patentId, description, name);
