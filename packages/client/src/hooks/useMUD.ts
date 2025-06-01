@@ -120,14 +120,16 @@ export const useMUD = (): {
 
   const globalPlayerId = (useComponentValue(
     components.AddressToPlayerId,
-    encodeEntity(
-      {
-        address: 'address',
-      },
-      {
-        address: playerAddress as `0x${string}`,
-      },
-    ),
+    playerAddress
+      ? encodeEntity(
+          {
+            address: 'address',
+          },
+          {
+            address: playerAddress as `0x${string}`,
+          },
+        )
+      : undefined,
   )?.value ?? undefined) as Entity | undefined;
 
   const publicClient = useMemo(
