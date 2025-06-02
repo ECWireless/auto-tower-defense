@@ -1,4 +1,4 @@
-import { pyrope } from '@latticexyz/common/chains';
+import { pyrope, redstone } from '@latticexyz/common/chains';
 import { Chain, Hex } from 'viem';
 import { anvil, base, baseSepolia } from 'viem/chains';
 
@@ -19,6 +19,16 @@ export const chains: readonly [Chain, ...Chain[]] = [
   base,
   baseSepolia,
   pyrope,
+  {
+    ...redstone,
+    rpcUrls: {
+      ...redstone.rpcUrls,
+      bundler: {
+        http: redstone.rpcUrls.default.http,
+        webSocket: redstone.rpcUrls.default.webSocket,
+      },
+    },
+  },
   {
     ...anvil,
     contracts: {
