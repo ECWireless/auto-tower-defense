@@ -8,7 +8,6 @@ import {
   GiMineExplosion,
 } from 'react-icons/gi';
 import { zeroAddress } from 'viem';
-import { useAccount } from 'wagmi';
 
 import { Draggable } from '@/components/Draggable';
 import { Droppable } from '@/components/Droppable';
@@ -21,6 +20,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useMUD } from '@/hooks/useMUD';
 import { type Tower } from '@/utils/types';
 
 export const INSTALLABLE_TOWERS = [
@@ -45,7 +45,9 @@ const GRID_ROWS = 7;
 const GRID_COLS = 14;
 
 export const BattleBoard: React.FC = () => {
-  const { address: playerAddress } = useAccount();
+  const {
+    network: { globalPlayerId },
+  } = useMUD();
   const {
     activeTowerId,
     battle,
@@ -253,7 +255,7 @@ export const BattleBoard: React.FC = () => {
                           >
                             <div>
                               {tooltipSelection === towerOnTile.id &&
-                                towerOnTile.owner === playerAddress && (
+                                towerOnTile.owner === globalPlayerId && (
                                   <div
                                     className="absolute bg-gray-800 border border-cyan-500 hover:bg-gray-700 hover:cursor-pointer p-1.5 rounded-full shadow-lg top-1/2 transition-colors z-20 -left-[35px]"
                                     onClick={() => onViewTower(towerOnTile)}
@@ -265,7 +267,7 @@ export const BattleBoard: React.FC = () => {
                                   </div>
                                 )}
                               {tooltipSelection === towerOnTile.id &&
-                                towerOnTile.owner !== playerAddress && (
+                                towerOnTile.owner !== globalPlayerId && (
                                   <div
                                     className="absolute bg-gray-800 border border-pink-500 hover:bg-gray-700 hover:cursor-pointer p-1.5 rounded-full shadow-lg top-1/2 transition-colors z-20 -left-[35px]"
                                     onClick={() => {
