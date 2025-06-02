@@ -346,6 +346,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
   const onRegisterPatent = useCallback(async () => {
     try {
       setIsSaving(true);
+      playSfx('click3');
 
       const hasError = getHasError();
       if (hasError) return;
@@ -409,6 +410,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
     name,
     onRefreshPatentList,
     onSelectPatent,
+    playSfx,
     registerPatent,
     sizeLimit,
     sourceCode,
@@ -417,6 +419,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
   const onAmendPatent = useCallback(async () => {
     try {
       setIsSaving(true);
+      playSfx('click3');
 
       const hasError = getHasError();
       if (hasError) return;
@@ -470,6 +473,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
     name,
     onRefreshPatentList,
     onSelectPatent,
+    playSfx,
     selectedPatent,
     sourceCode,
   ]);
@@ -477,6 +481,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
   const onDisclaimPatent = useCallback(async () => {
     try {
       setIsDeleting(true);
+      playSfx('click3');
 
       if (!selectedPatent) {
         throw new Error('No patent selected');
@@ -504,7 +509,13 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
     } finally {
       setIsDeleting(false);
     }
-  }, [disclaimPatent, onRefreshPatentList, onSelectPatent, selectedPatent]);
+  }, [
+    disclaimPatent,
+    onRefreshPatentList,
+    onSelectPatent,
+    playSfx,
+    selectedPatent,
+  ]);
 
   useEffect(() => {
     setFormErrors([]);
