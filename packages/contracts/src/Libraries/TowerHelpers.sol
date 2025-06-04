@@ -27,7 +27,11 @@ library TowerHelpers {
     int16 y
   ) external returns (bytes32) {
     (x, y) = ProjectileHelpers.getActualCoordinates(x, y);
-    _validateInstallTower(battleId, globalPlayerId, x, y);
+    bool success = _validateInstallTower(battleId, globalPlayerId, x, y);
+    if (!success) {
+      // Fail without reverting
+      return bytes32(0);
+    }
 
     uint256 towerCounter = TowerCounter.get();
     bytes32 towerId = keccak256(abi.encodePacked(battleId, globalPlayerId, towerCounter));
@@ -48,7 +52,11 @@ library TowerHelpers {
     int16 x,
     int16 y
   ) external returns (bytes32) {
-    _validateMoveTower(battleId, globalPlayerId, towerId, x, y);
+    bool success = _validateMoveTower(battleId, globalPlayerId, towerId, x, y);
+    if (!success) {
+      // Fail without reverting
+      return bytes32(0);
+    }
 
     (int16 oldX, int16 oldY) = Position.get(towerId);
 
@@ -77,7 +85,11 @@ library TowerHelpers {
   ) external returns (address projectileLogicAddress) {
     BattleData memory currentBattle = Battle.get(battleId);
 
-    _validModifySystem(battleId, towerId, globalPlayerId);
+    bool success = _validModifySystem(battleId, towerId, globalPlayerId);
+    if (!success) {
+      // Fail without reverting
+      return address(0);
+    }
 
     address newSystem;
     assembly {
@@ -107,26 +119,52 @@ library TowerHelpers {
     return address(newSystem);
   }
 
-  function _validateInstallTower(bytes32 battleId, bytes32 globalPlayerId, int16 x, int16 y) public view {
-    require(battleId != 0, "TowerSystem: player has no ongoing battle");
+  function _validateInstallTower(bytes32 battleId, bytes32 globalPlayerId, int16 x, int16 y) public view returns (bool success) {
+    bool isPlayer2 = globalPlayerId == Battle.getPlayer2Id(battleId);
+    if (battleId == 0) {
+      require(isPlayer2, "TowerSystem: player has no ongoing battle");
+      return false;
+    }
 
     BattleData memory currentBattle = Battle.get(battleId);
-    require(currentBattle.endTimestamp == 0, "TowerSystem: battle has ended");
-    require(currentBattle.actionCount > 0, "TowerSystem: player has no actions remaining");
-    require(currentBattle.turn == globalPlayerId, "TowerSystem: not player's turn");
+    if (currentBattle.endTimestamp != 0) {
+      require(isPlayer2, "TowerSystem: battle has ended");
+      return false;
+    }
+    if (currentBattle.actionCount == 0) {
+      require(isPlayer2, "TowerSystem: player has no actions remaining");
+      return false;
+    }
+    if (currentBattle.turn != globalPlayerId) {
+      require(isPlayer2, "TowerSystem: not player's turn");
+      return false;
+    }
 
     (int16 height, int16 width) = MapConfig.get();
-    require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
-    require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
+    if (x < 0 || x >= width || y < 0 || y >= height) {
+      require(isPlayer2, "TowerSystem: out of map bounds");
+      return false;
+    }
 
     bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(battleId, x, y));
-    require(positionEntity == 0, "TowerSystem: position is occupied");
+    if (positionEntity != 0) {
+      require(isPlayer2, "TowerSystem: position is occupied");
+      return false;
+    }
 
     if (globalPlayerId == currentBattle.player2Id) {
-      require(x > width / 2, "TowerSystem: x position is in enemy territory");
+      if (x <= width / 2) {
+        require(isPlayer2, "TowerSystem: x position is in enemy territory");
+        return false;
+      }
     } else {
-      require(x < width / 2, "TowerSystem: x position is in player territory");
+      if (x >= width / 2) {
+        require(isPlayer2, "TowerSystem: x position is in player territory");
+        return false;
+      }
     }
+
+    return true;
   }
 
   function _validateMoveTower(
@@ -135,31 +173,69 @@ library TowerHelpers {
     bytes32 towerId,
     int16 x,
     int16 y
-  ) internal view {
+  ) internal view returns (bool success) {
+    bool isPlayer2 = globalPlayerId == Battle.getPlayer2Id(battleId);
+
     bytes32 towerBattleId = CurrentBattle.get(towerId);
-    require(battleId != 0, "TowerSystem: player has no ongoing battle");
-    require(battleId == towerBattleId, "TowerSystem: tower is not in player's ongoing battle");
+    if (battleId == 0) {
+      require(isPlayer2, "TowerSystem: player has no ongoing battle");
+      return false;
+    }
+    if (battleId != towerBattleId) {
+      require(isPlayer2, "TowerSystem: tower is not in player's ongoing battle");
+      return false;
+    }
 
     BattleData memory currentBattle = Battle.get(battleId);
-    require(currentBattle.endTimestamp == 0, "TowerSystem: battle has ended");
-    require(currentBattle.turn == globalPlayerId, "TowerSystem: not player's turn");
+    if (currentBattle.endTimestamp != 0) {
+      require(isPlayer2, "TowerSystem: battle has ended");
+      return false;
+    }
+    if (currentBattle.turn != globalPlayerId) {
+      require(isPlayer2, "TowerSystem: not player's turn");
+      return false;
+    }
 
-    require(currentBattle.actionCount > 0, "TowerSystem: player has no actions remaining");
-    require(Tower.get(towerId), "TowerSystem: entity is not a tower");
+    if (currentBattle.actionCount == 0) {
+      require(isPlayer2, "TowerSystem: player has no actions remaining");
+      return false;
+    }
+    if (!Tower.get(towerId)) {
+      require(isPlayer2, "TowerSystem: entity is not a tower");
+      return false;
+    }
 
     (int16 height, int16 width) = MapConfig.get();
-    require(x >= 0 && x < width, "TowerSystem: x is out of bounds");
-    require(y >= 0 && y < height, "TowerSystem: y is out of bounds");
-    require(Owner.get(towerId) == globalPlayerId, "TowerSystem: player does not own tower");
+    if (x < 0 || x >= width || y < 0 || y >= height) {
+      require(isPlayer2, "TowerSystem: out of map bounds");
+      return false;
+    }
+    if (Owner.get(towerId) != globalPlayerId) {
+      require(isPlayer2, "TowerSystem: player does not own tower");
+      return false;
+    }
+    if (Health.getCurrentHealth(towerId) <= 0) {
+      require(isPlayer2, "TowerSystem: tower is destroyed");
+      return false;
+    }
 
     bytes32 positionEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(battleId, x, y));
-    require(positionEntity == 0, "TowerSystem: position is occupied");
+    if (positionEntity != 0) {
+      require(isPlayer2, "TowerSystem: position is occupied");
+      return false;
+    }
 
     if (globalPlayerId == currentBattle.player2Id) {
-      require(x > width / 2, "TowerSystem: x is in enemy territory");
+      if (x <= width / 2) {
+        return false;
+      }
     } else {
-      require(x < width / 2, "TowerSystem: x is in player territory");
+      if (x >= width / 2) {
+        return false;
+      }
     }
+
+    return true;
   }
 
   function _initializeTower(
@@ -169,7 +245,7 @@ library TowerHelpers {
     int16 x,
     int16 y,
     bool projectile
-  ) public {
+  ) internal {
     Tower.set(towerId, true);
     CurrentBattle.set(towerId, battleId);
     Owner.set(towerId, globalPlayerId);
@@ -213,36 +289,74 @@ library TowerHelpers {
     Battle.setActionCount(battleId, Battle.getActionCount(battleId) - 1);
   }
 
-  function _validModifySystem(bytes32 battleId, bytes32 towerId, bytes32 globalPlayerId) public {
+  function _validModifySystem(bytes32 battleId, bytes32 towerId, bytes32 globalPlayerId) internal returns (bool success) {
+    bool isPlayer2 = globalPlayerId == Battle.getPlayer2Id(battleId);
+
     bytes32 towerBattleId = CurrentBattle.get(towerId);
     BattleData memory currentBattle = Battle.get(battleId);
 
-    require(battleId != 0, "TowerSystem: player has no ongoing battle");
-    require(battleId == towerBattleId, "TowerSystem: tower is not in player's ongoing battle");
-
-    if (globalPlayerId == currentBattle.player2Id) {
-      require(Owner.get(towerId) == currentBattle.player2Id, "TowerSystem: player does not own tower");
-      require(currentBattle.turn == currentBattle.player2Id, "TowerSystem: not player's turn");
-    } else {
-      require(Owner.get(towerId) == globalPlayerId, "TowerSystem: player does not own tower");
-      require(currentBattle.turn == globalPlayerId, "TowerSystem: not player's turn");
+    if (battleId == 0) {
+      require(isPlayer2, "TowerSystem: player has no ongoing battle");
+      return false;
+    }
+    if (battleId != towerBattleId) {
+      require(isPlayer2, "TowerSystem: tower is not in player's ongoing battle");
+      return false;
     }
 
-    require(currentBattle.endTimestamp == 0, "TowerSystem: battle has ended");
-    require(currentBattle.actionCount > 0, "TowerSystem: player has no actions remaining");
-    require(Tower.get(towerId), "TowerSystem: entity is not a tower");
-    require(Health.getCurrentHealth(towerId) > 0, "TowerSystem: tower is destroyed");
+    if (globalPlayerId == currentBattle.player2Id) {
+      if (Owner.get(towerId) != currentBattle.player2Id) {
+        require(isPlayer2, "TowerSystem: player does not own tower");
+        return false;
+      }
+      if (currentBattle.turn != currentBattle.player2Id) {
+        require(isPlayer2, "TowerSystem: not player's turn");
+        return false;
+      }
+    } else {
+      if (Owner.get(towerId) != globalPlayerId) {
+        require(isPlayer2, "TowerSystem: player does not own tower");
+        return false;
+      }
+      if (currentBattle.turn != globalPlayerId) {
+        require(isPlayer2, "TowerSystem: not player's turn");
+        return false;
+      }
+    }
+
+    if (currentBattle.endTimestamp != 0) {
+      require(isPlayer2, "TowerSystem: battle has ended");
+      return false;
+    }
+    if (currentBattle.actionCount == 0) {
+      require(isPlayer2, "TowerSystem: player has no actions remaining");
+      return false;
+    }
+    if (!Tower.get(towerId)) {
+      require(isPlayer2, "TowerSystem: entity is not a tower");
+      return false;
+    }
+    if (Health.getCurrentHealth(towerId) <= 0) {
+      require(isPlayer2, "TowerSystem: tower is destroyed");
+      return false;
+    }
 
     (int16 oldX, int16 oldY) = Position.get(towerId);
 
     bytes memory data = abi.encodeWithSignature("getNextProjectilePosition(int16,int16)", oldX, oldY);
     address projectileAddress = Projectile.getLogicAddress(towerId);
-    (bool success, bytes memory returndata) = projectileAddress.call(data);
-    require(success, "getNextProjectilePosition call failed");
+    (bool nextPositionSuccess, bytes memory returndata) = projectileAddress.call(data);
+    if (!nextPositionSuccess) {
+      require(isPlayer2, "TowerSystem: getNextProjectilePosition call failed");
+      return false;
+    }
     (oldX, oldY) = abi.decode(returndata, (int16, int16));
 
-    (success, returndata) = projectileAddress.call(data);
-    require(success, "getNextProjectilePosition call failed");
+    (nextPositionSuccess, returndata) = projectileAddress.call(data);
+    if (!nextPositionSuccess) {
+      require(isPlayer2, "TowerSystem: getNextProjectilePosition call failed");
+      return false;
+    }
     (int16 newX, int16 newY) = abi.decode(returndata, (int16, int16));
 
     uint16 distance = ProjectileHelpers.chebyshevDistance(
@@ -251,7 +365,12 @@ library TowerHelpers {
       uint256(int256(newX)),
       uint256(int256(newY))
     );
-    require(distance <= 1, "TowerSystem: projectile speed exceeds rules");
+    if (distance > 1) {
+      require(isPlayer2, "TowerSystem: projectile speed exceeds rules");
+      return false;
+    }
+
+    return true;
   }
 
   function _incrementPatentUseCount(bytes memory bytecode) public {
