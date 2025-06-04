@@ -181,7 +181,6 @@ export default defineWorld({
     SavedBattle: {
       // This is the table that accumulates actions throughout a battle; at the end of a run, it is copied to SavedKingdom
       id: "bytes32", // battleId of the battle being played
-      battleId: "bytes32",
       winner: "bytes32", // globalPlayerId
       actions: "bytes32[]",
     },

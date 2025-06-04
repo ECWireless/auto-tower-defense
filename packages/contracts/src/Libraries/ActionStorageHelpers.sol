@@ -12,30 +12,33 @@ import { DEFAULT_LOGIC_SIZE_LIMIT } from "../../constants.sol";
  */
 library ActionStorageHelpers {
   function storeSkipAction(bytes32 battleId) public {
-    ActionData[] memory actions = new ActionData[](1);
-    actions[0] = ActionData({ actionType: ActionType.Skip, newX: 0, newY: 0, oldX: 0, oldY: 0, projectile: false });
+    ActionData memory skipAction = ActionData({
+      actionType: ActionType.Skip,
+      newX: 0,
+      newY: 0,
+      oldX: 0,
+      oldY: 0,
+      projectile: false
+    });
 
     bytes32[] memory savedBattleActionIds = SavedBattle.getActions(battleId);
-    bytes32[] memory newSavedBattleActionIds = new bytes32[](savedBattleActionIds.length + actions.length);
+    bytes32[] memory newSavedBattleActionIds = new bytes32[](savedBattleActionIds.length + 1);
 
     for (uint256 i = 0; i < savedBattleActionIds.length; i++) {
       newSavedBattleActionIds[i] = savedBattleActionIds[i];
     }
 
-    for (uint256 i = 0; i < actions.length; i++) {
-      newSavedBattleActionIds[savedBattleActionIds.length + i] = keccak256(
-        abi.encodePacked(
-          actions[i].actionType,
-          actions[i].newX,
-          actions[i].newY,
-          actions[i].oldX,
-          actions[i].oldY,
-          actions[i].projectile
-        )
-      );
-      Action.set(newSavedBattleActionIds[savedBattleActionIds.length + i], actions[i]);
-    }
-
+    newSavedBattleActionIds[newSavedBattleActionIds.length - 1] = keccak256(
+      abi.encodePacked(
+        skipAction.actionType,
+        skipAction.newX,
+        skipAction.newY,
+        skipAction.oldX,
+        skipAction.oldY,
+        skipAction.projectile
+      )
+    );
+    Action.set(newSavedBattleActionIds[newSavedBattleActionIds.length - 1], skipAction);
     SavedBattle.setActions(battleId, newSavedBattleActionIds);
   }
 
@@ -77,11 +80,7 @@ library ActionStorageHelpers {
       Action.set(newSavedBattleActionIds[savedBattleActionIds.length + i], actions[i]);
     }
 
-    SavedBattleData memory savedBattle = SavedBattleData({
-      battleId: battleId,
-      winner: globalPlayerId,
-      actions: newSavedBattleActionIds
-    });
+    SavedBattleData memory savedBattle = SavedBattleData({ winner: globalPlayerId, actions: newSavedBattleActionIds });
 
     SavedBattle.set(battleId, savedBattle);
   }
@@ -170,7 +169,12 @@ library ActionStorageHelpers {
       );
       Action.set(newSavedBattleActionIds[savedBattleActionIds.length + i], actions[i]);
 
-      _setActionProjectile(newSavedBattleActionIds[savedBattleActionIds.length + i], systemAddress, bytecode, sourceCode);
+      _setActionProjectile(
+        newSavedBattleActionIds[savedBattleActionIds.length + i],
+        systemAddress,
+        bytecode,
+        sourceCode
+      );
     }
 
     SavedBattle.setActions(battleId, newSavedBattleActionIds);

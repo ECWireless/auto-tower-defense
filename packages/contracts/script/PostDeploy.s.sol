@@ -5,7 +5,6 @@ import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
 import { AddressBook, DefaultLogic, MapConfig, SavedKingdom, SavedKingdomData, SolarFarmDetails, SolarFarmDetailsData, Username, UsernameTaken } from "../src/codegen/index.sol";
-import { ActionType } from "../src/codegen/common.sol";
 import { _solarFarmSystemAddress } from "../src/utils.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";

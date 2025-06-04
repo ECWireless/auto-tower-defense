@@ -119,7 +119,12 @@ library TowerHelpers {
     return address(newSystem);
   }
 
-  function _validateInstallTower(bytes32 battleId, bytes32 globalPlayerId, int16 x, int16 y) public view returns (bool success) {
+  function _validateInstallTower(
+    bytes32 battleId,
+    bytes32 globalPlayerId,
+    int16 x,
+    int16 y
+  ) public view returns (bool success) {
     bool isPlayer2 = globalPlayerId == Battle.getPlayer2Id(battleId);
     if (battleId == 0) {
       require(isPlayer2, "TowerSystem: player has no ongoing battle");
@@ -255,8 +260,8 @@ library TowerHelpers {
     if (projectile) {
       Health.set(towerId, MAX_HEALTH_CANNON, MAX_HEALTH_CANNON);
 
-      address defaultProjectileLogicLeftAddress = DefaultLogic.get();
-      Projectile.setLogicAddress(towerId, defaultProjectileLogicLeftAddress);
+      address defaultProjectileLogicAddress = DefaultLogic.get();
+      Projectile.setLogicAddress(towerId, defaultProjectileLogicAddress);
       Projectile.setSourceCode(
         towerId,
         "contract DefaultProjectileLogic { function getNextProjectilePosition( int16 x, int16 y ) public pure returns (int16, int16) { return (x + 5, y); } }"
@@ -289,7 +294,11 @@ library TowerHelpers {
     Battle.setActionCount(battleId, Battle.getActionCount(battleId) - 1);
   }
 
-  function _validModifySystem(bytes32 battleId, bytes32 towerId, bytes32 globalPlayerId) internal returns (bool success) {
+  function _validModifySystem(
+    bytes32 battleId,
+    bytes32 towerId,
+    bytes32 globalPlayerId
+  ) internal returns (bool success) {
     bool isPlayer2 = globalPlayerId == Battle.getPlayer2Id(battleId);
 
     bytes32 towerBattleId = CurrentBattle.get(towerId);

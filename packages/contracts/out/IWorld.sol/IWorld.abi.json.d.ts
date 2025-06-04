@@ -363,6 +363,19 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__undoAction",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__updatUsdcAddress",
     "inputs": [
       {
