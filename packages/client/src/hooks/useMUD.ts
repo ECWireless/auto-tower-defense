@@ -112,6 +112,10 @@ export const useMUD = (): {
       success: boolean;
       txHash?: `0x${string}`;
     }>;
+    undoAction: () => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
   };
 } => {
   const { address: playerAddress } = useAccount();
@@ -632,6 +636,37 @@ export const useMUD = (): {
     }
   };
 
+  const undoAction = async () => {
+    try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [],
+        functionName: 'app__undoAction',
+      });
+
+      const tx = await worldContract.write.app__undoAction();
+      const txResult = await sync.data.waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to undo action.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const network = {
     globalPlayerId,
   };
@@ -651,6 +686,7 @@ export const useMUD = (): {
     registerPatent,
     sellElectricity,
     sellElectricityThroughRelay,
+    undoAction,
   };
   return { components, network, systemCalls };
 };

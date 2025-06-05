@@ -1,18 +1,18 @@
-import { HelpCircle, Loader2, Play } from 'lucide-react';
+import { HelpCircle, Loader2, Play, Undo2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { useBattle } from '@/contexts/BattleContext';
 
 type BattleControlButtonsProps = {
-  isChangingTurn: boolean;
-  onNextTurn: () => void;
   setIsHelpDialogOpen: (open: boolean) => void;
 };
 
 export const BattleControlButtons: React.FC<BattleControlButtonsProps> = ({
-  isChangingTurn,
-  onNextTurn,
   setIsHelpDialogOpen,
 }) => {
+  const { battle, isChangingTurn, isUndoing, onNextTurn, onUndoAction } =
+    useBattle();
+
   return (
     <>
       <Button
@@ -25,14 +25,27 @@ export const BattleControlButtons: React.FC<BattleControlButtonsProps> = ({
         Help
       </Button>
       <Button
-        className="border-cyan-500 hover:bg-cyan-950/50 hover:text-cyan-300 text-cyan-400"
-        disabled={isChangingTurn}
-        onClick={onNextTurn}
+        className="border-orange-500 hover:bg-orange-950/50 hover:text-orange-400 text-orange-400"
+        disabled={isUndoing || battle?.actionCount === 2}
+        onClick={onUndoAction}
         size="sm"
         variant="outline"
       >
+        {isUndoing ? (
+          <Loader2 className=" animate-spin h-6 w-6" />
+        ) : (
+          <Undo2 className="h-4 w-4 mr-1" />
+        )}
+        Undo
+      </Button>
+      <Button
+        className="bg-cyan-800 hover:bg-cyan-700 text-white"
+        disabled={isChangingTurn}
+        onClick={onNextTurn}
+        size="sm"
+      >
         {isChangingTurn ? (
-          <Loader2 className="h-6 animate-spin w-6" />
+          <Loader2 className=" animate-spin h-6 w-6" />
         ) : (
           <Play className="h-4 w-4 mr-1" />
         )}

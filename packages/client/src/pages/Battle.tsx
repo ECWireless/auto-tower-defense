@@ -62,13 +62,11 @@ export const InnerBattlePage = (): JSX.Element => {
     battle,
     enemyCastlePosition,
     handleDragStart,
-    isChangingTurn,
     isPlayer1,
     isRefreshing,
     myCastlePosition,
     onInstallTower,
     onMoveTower,
-    onNextTurn,
     towers,
   } = useBattle();
   const { playSfx } = useSettings();
@@ -379,11 +377,7 @@ export const InnerBattlePage = (): JSX.Element => {
 
             {/* Control Buttons - Desktop */}
             <div className="hidden justify-center mb-1 sm:flex space-x-2">
-              <BattleControlButtons
-                isChangingTurn={isChangingTurn}
-                onNextTurn={onNextTurn}
-                setIsHelpDialogOpen={setIsHelpDialogOpen}
-              />
+              <BattleControlButtons setIsHelpDialogOpen={setIsHelpDialogOpen} />
             </div>
 
             <BattleBoard />
@@ -393,11 +387,7 @@ export const InnerBattlePage = (): JSX.Element => {
 
             {/* Control Buttons - Mobile */}
             <div className="flex justify-center mt-4 sm:hidden space-x-2">
-              <BattleControlButtons
-                isChangingTurn={isChangingTurn}
-                onNextTurn={onNextTurn}
-                setIsHelpDialogOpen={setIsHelpDialogOpen}
-              />
+              <BattleControlButtons setIsHelpDialogOpen={setIsHelpDialogOpen} />
             </div>
           </div>
         </div>
