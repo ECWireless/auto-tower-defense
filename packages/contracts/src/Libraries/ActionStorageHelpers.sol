@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, ActionData, Position, Projectile, SavedBattle, SavedBattleData } from "../codegen/index.sol";
+import { Action, ActionData, DefaultLogic, Position, Projectile, SavedBattle, SavedBattleData } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT } from "../../constants.sol";
@@ -12,30 +12,35 @@ import { DEFAULT_LOGIC_SIZE_LIMIT } from "../../constants.sol";
  */
 library ActionStorageHelpers {
   function storeSkipAction(bytes32 battleId) public {
-    ActionData[] memory actions = new ActionData[](1);
-    actions[0] = ActionData({ actionType: ActionType.Skip, newX: 0, newY: 0, oldX: 0, oldY: 0, projectile: false });
+    ActionData memory skipAction = ActionData({
+      actionType: ActionType.Skip,
+      componentAddress: address(0),
+      newX: 0,
+      newY: 0,
+      oldX: 0,
+      oldY: 0,
+      projectile: false
+    });
 
     bytes32[] memory savedBattleActionIds = SavedBattle.getActions(battleId);
-    bytes32[] memory newSavedBattleActionIds = new bytes32[](savedBattleActionIds.length + actions.length);
+    bytes32[] memory newSavedBattleActionIds = new bytes32[](savedBattleActionIds.length + 1);
 
     for (uint256 i = 0; i < savedBattleActionIds.length; i++) {
       newSavedBattleActionIds[i] = savedBattleActionIds[i];
     }
 
-    for (uint256 i = 0; i < actions.length; i++) {
-      newSavedBattleActionIds[savedBattleActionIds.length + i] = keccak256(
-        abi.encodePacked(
-          actions[i].actionType,
-          actions[i].newX,
-          actions[i].newY,
-          actions[i].oldX,
-          actions[i].oldY,
-          actions[i].projectile
-        )
-      );
-      Action.set(newSavedBattleActionIds[savedBattleActionIds.length + i], actions[i]);
-    }
-
+    newSavedBattleActionIds[newSavedBattleActionIds.length - 1] = keccak256(
+      abi.encodePacked(
+        skipAction.actionType,
+        skipAction.componentAddress,
+        skipAction.newX,
+        skipAction.newY,
+        skipAction.oldX,
+        skipAction.oldY,
+        skipAction.projectile
+      )
+    );
+    Action.set(newSavedBattleActionIds[newSavedBattleActionIds.length - 1], skipAction);
     SavedBattle.setActions(battleId, newSavedBattleActionIds);
   }
 
@@ -47,8 +52,11 @@ library ActionStorageHelpers {
     bool hasProjectile
   ) public {
     ActionData[] memory actions = new ActionData[](1);
+    address defaultComponentAddress = DefaultLogic.get();
+
     actions[0] = ActionData({
       actionType: ActionType.Install,
+      componentAddress: hasProjectile ? defaultComponentAddress : address(0),
       newX: newX,
       newY: newY,
       oldX: 0,
@@ -67,6 +75,7 @@ library ActionStorageHelpers {
       newSavedBattleActionIds[savedBattleActionIds.length + i] = keccak256(
         abi.encodePacked(
           actions[i].actionType,
+          actions[i].componentAddress,
           actions[i].newX,
           actions[i].newY,
           actions[i].oldX,
@@ -77,11 +86,7 @@ library ActionStorageHelpers {
       Action.set(newSavedBattleActionIds[savedBattleActionIds.length + i], actions[i]);
     }
 
-    SavedBattleData memory savedBattle = SavedBattleData({
-      battleId: battleId,
-      winner: globalPlayerId,
-      actions: newSavedBattleActionIds
-    });
+    SavedBattleData memory savedBattle = SavedBattleData({ winner: globalPlayerId, actions: newSavedBattleActionIds });
 
     SavedBattle.set(battleId, savedBattle);
   }
@@ -94,11 +99,13 @@ library ActionStorageHelpers {
     int16 newX,
     int16 newY
   ) public {
-    bool hasProjectile = Projectile.getLogicAddress(towerId) != address(0);
+    address componentAddress = Projectile.getLogicAddress(towerId);
+    bool hasProjectile = componentAddress != address(0);
 
     ActionData[] memory actions = new ActionData[](1);
     actions[0] = ActionData({
       actionType: ActionType.Move,
+      componentAddress: componentAddress,
       newX: newX,
       newY: newY,
       oldX: oldX,
@@ -117,6 +124,7 @@ library ActionStorageHelpers {
       newSavedBattleActionIds[savedBattleActionIds.length + i] = keccak256(
         abi.encodePacked(
           actions[i].actionType,
+          actions[i].componentAddress,
           actions[i].newX,
           actions[i].newY,
           actions[i].oldX,
@@ -134,7 +142,7 @@ library ActionStorageHelpers {
     bytes32 battleId,
     bytes32 towerId,
     bytes memory bytecode,
-    address systemAddress,
+    address componentAddress,
     string memory sourceCode
   ) public {
     (int16 oldX, int16 oldY) = Position.get(towerId);
@@ -143,6 +151,7 @@ library ActionStorageHelpers {
     ActionData[] memory actions = new ActionData[](1);
     actions[0] = ActionData({
       actionType: ActionType.Modify,
+      componentAddress: componentAddress,
       newX: oldX,
       newY: oldY,
       oldX: oldX,
@@ -161,6 +170,7 @@ library ActionStorageHelpers {
       newSavedBattleActionIds[savedBattleActionIds.length + i] = keccak256(
         abi.encodePacked(
           actions[i].actionType,
+          actions[i].componentAddress,
           actions[i].newX,
           actions[i].newY,
           actions[i].oldX,
@@ -170,7 +180,12 @@ library ActionStorageHelpers {
       );
       Action.set(newSavedBattleActionIds[savedBattleActionIds.length + i], actions[i]);
 
-      _setActionProjectile(newSavedBattleActionIds[savedBattleActionIds.length + i], systemAddress, bytecode, sourceCode);
+      _setActionProjectile(
+        newSavedBattleActionIds[savedBattleActionIds.length + i],
+        componentAddress,
+        bytecode,
+        sourceCode
+      );
     }
 
     SavedBattle.setActions(battleId, newSavedBattleActionIds);
@@ -178,10 +193,10 @@ library ActionStorageHelpers {
 
   function _setActionProjectile(
     bytes32 actionId,
-    address systemAddress,
+    address componentAddress,
     bytes memory bytecode,
     string memory sourceCode
   ) internal {
-    Projectile.set(actionId, systemAddress, DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
+    Projectile.set(actionId, componentAddress, DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
   }
 }

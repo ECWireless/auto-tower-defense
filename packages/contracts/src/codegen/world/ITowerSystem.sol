@@ -18,4 +18,6 @@ interface ITowerSystem {
     bytes memory bytecode,
     string memory sourceCode
   ) external returns (address projectileLogicAddress);
+
+  function app__undoAction() external returns (bytes32);
 }

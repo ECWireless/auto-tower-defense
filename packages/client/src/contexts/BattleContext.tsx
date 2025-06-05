@@ -40,10 +40,12 @@ type BattleContextType = {
   isNoActionsDialogOpen: boolean;
   isPlayer1: boolean;
   isRefreshing: boolean;
+  isUndoing: boolean;
   myCastlePosition: Castle;
   onInstallTower: (row: number, col: number) => void;
   onMoveTower: (row: number, col: number) => void;
   onNextTurn: () => Promise<void>;
+  onUndoAction: () => Promise<void>;
   refreshBattle: () => void;
   setIsCastleHitDialogOpen: (isOpen: boolean) => void;
   setIsNoActionsDialogOpen: (isOpen: boolean) => void;
@@ -74,6 +76,7 @@ const BattleContext = createContext<BattleContextType>({
   isNoActionsDialogOpen: false,
   isPlayer1: false,
   isRefreshing: false,
+  isUndoing: false,
   myCastlePosition: {
     id: zeroHash as Entity,
     currentHealth: 0,
@@ -84,6 +87,7 @@ const BattleContext = createContext<BattleContextType>({
   onInstallTower: () => {},
   onMoveTower: () => {},
   onNextTurn: async () => {},
+  onUndoAction: async () => {},
   refreshBattle: async () => {},
   setIsCastleHitDialogOpen: () => {},
   setIsNoActionsDialogOpen: () => {},
@@ -118,7 +122,7 @@ export const BattleProvider = ({
       Username,
     },
     network: { globalPlayerId },
-    systemCalls: { installTower, moveTower, nextTurn },
+    systemCalls: { installTower, moveTower, nextTurn, undoAction },
   } = useMUD();
   const { playSfx } = useSettings();
 
@@ -140,6 +144,7 @@ export const BattleProvider = ({
   const [isMyCastleHit, setIsMyCastleHit] = useState(false);
 
   const [towers, setTowers] = useState<Tower[]>([]);
+  const [isUndoing, setIsUndoing] = useState(false);
   const [isChangingTurn, setIsChangingTurn] = useState(false);
 
   const [triggerAnimation, setTriggerAnimation] = useState(false);
@@ -378,6 +383,31 @@ export const BattleProvider = ({
     [playSfx],
   );
 
+  const onUndoAction = useCallback(async () => {
+    try {
+      setIsUndoing(true);
+      playSfx('click3');
+
+      const { error, success } = await undoAction();
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+
+      toast.success('Action Undone!');
+      fetchBattle();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Undoing Action', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsUndoing(false);
+    }
+  }, [fetchBattle, playSfx, undoAction]);
+
   const onNextRound = useCallback(async () => {
     try {
       const originalPlayer1Castle = myCastlePosition;
@@ -579,10 +609,12 @@ export const BattleProvider = ({
         isNoActionsDialogOpen,
         isPlayer1,
         isRefreshing: isLoadingBattle,
+        isUndoing,
         myCastlePosition,
         onInstallTower,
         onMoveTower,
         onNextTurn,
+        onUndoAction,
         refreshBattle: fetchBattle,
         setIsCastleHitDialogOpen,
         setIsNoActionsDialogOpen,

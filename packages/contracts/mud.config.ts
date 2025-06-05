@@ -17,6 +17,7 @@ export default defineWorld({
     Action: {
       id: "bytes32",
       actionType: "ActionType",
+      componentAddress: "address", // This is only if the actionType is a Modify
       newX: "int16",
       newY: "int16",
       oldX: "int16",
@@ -181,7 +182,6 @@ export default defineWorld({
     SavedBattle: {
       // This is the table that accumulates actions throughout a battle; at the end of a run, it is copied to SavedKingdom
       id: "bytes32", // battleId of the battle being played
-      battleId: "bytes32",
       winner: "bytes32", // globalPlayerId
       actions: "bytes32[]",
     },
