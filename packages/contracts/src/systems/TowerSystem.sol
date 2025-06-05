@@ -46,7 +46,6 @@ contract TowerSystem is System {
     BattleData memory battleData = Battle.get(battleId);
 
     require(battleData.endTimestamp == 0, "TowerSystem: battle not active");
-    require(battleData.player1Id == globalPlayerId, "TowerSystem: not player1");
     require(battleData.turn == globalPlayerId, "TowerSystem: not player's turn");
     require(battleData.actionCount < 2, "TowerSystem: no actions used this turn");
 
@@ -64,10 +63,9 @@ contract TowerSystem is System {
       bytes32 localPlayerId = EntityHelpers.globalToLocalPlayerId(globalPlayerId, battleId);
       bytes32[] memory playerTowers = OwnerTowers.get(localPlayerId);
       bytes32[] memory updatedTowers = new bytes32[](playerTowers.length - 1);
-      for (uint256 i = 0; i < playerTowers.length; i++) {
+      for (uint256 i = 0; i < updatedTowers.length; i++) {
         updatedTowers[i] = playerTowers[i];
       }
-      updatedTowers[playerTowers.length] = affectedTowerId;
       OwnerTowers.set(localPlayerId, updatedTowers);
     }
 

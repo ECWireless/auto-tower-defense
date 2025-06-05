@@ -17,6 +17,7 @@ export default defineWorld({
     Action: {
       id: "bytes32",
       actionType: "ActionType",
+      componentAddress: "address", // This is only if the actionType is a Modify
       newX: "int16",
       newY: "int16",
       oldX: "int16",
