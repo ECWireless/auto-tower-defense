@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Patent, Projectile, RevenueReceipt, RevenueReceiptData, SavedBattle, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
+import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Patent, Projectile, RevenueReceipt, RevenueReceiptData, SavedBattle, SavedKingdom, SavedKingdomData, TopLevel, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
@@ -229,7 +229,10 @@ library BatteryHelpers {
    * @param battleId The ID of the battle
    * @param player1Kingdom Boolean for scanning left or right side of the board
    */
-  function _getAllKingdomTowerPatentees(bytes32 battleId, bool player1Kingdom) internal view returns (bytes32[] memory) {
+  function _getAllKingdomTowerPatentees(
+    bytes32 battleId,
+    bool player1Kingdom
+  ) internal view returns (bytes32[] memory) {
     // If player1Kingdom is true, get all actions from SavedBattle
     // If player1Kingdom is false, get all actions from LoadedKingdomActions
     bytes32[] memory savedBattleActionIds = player1Kingdom
@@ -288,10 +291,7 @@ library BatteryHelpers {
    * @param globalPlayer1Id The global ID of the player
    */
   function _processPotentialStakeReturn(bytes32 globalPlayer1Id) internal {
-    uint256 winStreak = WinStreak.get(globalPlayer1Id);
-    bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(winStreak);
-
-    if (kingdomsByLevel.length == 0 || !_arePlayableKingdoms(globalPlayer1Id, kingdomsByLevel)) {
+    if (!_arePlayableKingdoms(globalPlayer1Id)) {
       uint256 stakedBalance = BatteryDetails.getStakedBalance(globalPlayer1Id);
       uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayer1Id);
       uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayer1Id);
@@ -308,14 +308,32 @@ library BatteryHelpers {
     }
   }
 
-   /**
-   * Checks if any kingdoms in the next level are playable
+  /**
+   * Checks if any kingdoms are playable between the current level and the top level
    * Only kingdoms that are not authored by the player can be played
    * @param globalPlayerId The global ID of the player
-   * @param kingdomsByLevel The global ID of the player
    * @return bool True if there are playable kingdoms, false otherwise
    */
-  function _arePlayableKingdoms(bytes32 globalPlayerId, bytes32[] memory kingdomsByLevel) internal view returns (bool) {
+  function _arePlayableKingdoms(bytes32 globalPlayerId) internal view returns (bool) {
+    uint256 startingLevel = WinStreak.get(globalPlayerId);
+    uint256 topLevel = TopLevel.get();
+    for (uint256 i = startingLevel; i <= topLevel; i++) {
+      if (_arePlayableKingdomsInLevel(globalPlayerId, i)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Checks if any kingdoms in a given level are playable
+   * Only kingdoms that are not authored by the player can be played
+   * @param globalPlayerId The global ID of the player
+   * @param level level to check for playable kingdoms
+   * @return bool True if there are playable kingdoms, false otherwise
+   */
+  function _arePlayableKingdomsInLevel(bytes32 globalPlayerId, uint256 level) internal view returns (bool) {
+    bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(level);
     for (uint256 i = 0; i < kingdomsByLevel.length; i++) {
       bytes32 kingdomId = kingdomsByLevel[i];
       if (SavedKingdom.getAuthor(kingdomId) != globalPlayerId) {
