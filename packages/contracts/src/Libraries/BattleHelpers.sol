@@ -168,7 +168,13 @@ library BattleHelpers {
         return;
       }
 
-      TowerHelpers.moveTower(globalPlayer2Id, CurrentBattle.get(globalPlayer1Id), towerEntity, action.newX, action.newY);
+      TowerHelpers.moveTower(
+        globalPlayer2Id,
+        CurrentBattle.get(globalPlayer1Id),
+        towerEntity,
+        action.newX,
+        action.newY
+      );
     } else if (action.actionType == ActionType.Modify) {
       ProjectileData memory projectileData = Projectile.get(actionIds[actionIdIndex]);
       bytes32 towerEntity = EntityAtPosition.get(EntityHelpers.positionToEntityKey(battleId, action.oldX, action.oldY));
