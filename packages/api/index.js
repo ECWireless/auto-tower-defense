@@ -25,12 +25,12 @@ const SUPPORTED_CHAINS = {
 
 const ESCROW_CONTRACTS = {
   [base.id]: "0x977437F82fb629FBF3028d485144Ad5666228133",
-  [baseSepolia.id]: "",
+  [baseSepolia.id]: "0x1ee0C3C8A365fC31eF1eAfAf83bA628940a9498a",
 };
 
 const SELL_EMITTER_CONTRACTS = {
   [pyrope.id]: "0xe0f09caf7b81d6b5ed75e19d63b84ddf0a81197a",
-  [redstone.id]: "",
+  [redstone.id]: "0x5c3531736127108837b0e5e3c3874A088a18Ab45",
 };
 
 const app = express();
