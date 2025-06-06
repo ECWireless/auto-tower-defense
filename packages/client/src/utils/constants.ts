@@ -15,7 +15,7 @@ export const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 export const url = new URL(window.location.href);
 export type Entity = Hex;
 
-export const chains: readonly [Chain, ...Chain[]] = [
+const ALL_CHAINS: readonly [Chain, ...Chain[]] = [
   base,
   baseSepolia,
   pyrope,
@@ -46,6 +46,21 @@ export const chains: readonly [Chain, ...Chain[]] = [
     },
   },
 ] as const satisfies Chain[];
+
+export const SUPPORTED_CHAINS = ALL_CHAINS.filter(chain => {
+  // If CHAIN_ID is Pyrope, then only support testnets
+  if (CHAIN_ID === pyrope.id) {
+    return chain.testnet;
+  }
+
+  // If CHAIN_ID is redstone, then only support production chains
+  if (CHAIN_ID === redstone.id) {
+    return !chain.testnet;
+  }
+
+  // Otherwise, return empty array
+  return true;
+}) as [Chain, ...Chain[]];
 
 export const USDC_ADDRESSES: { [key: number]: string } = {
   [anvil.id]: '0xc6709F349762B546d83760f28221CEd36d0a19D2',

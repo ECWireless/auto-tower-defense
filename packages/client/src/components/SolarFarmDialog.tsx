@@ -42,11 +42,11 @@ import {
   API_ENDPOINT,
   BUY_ESCROW_TX_KEY,
   BUY_RECEIVER_ABI,
-  chains,
   ESCROW_ABI,
   ESCROW_ADDRESSES,
   SELL_EMITTER_ABI,
   SELL_EMITTER_TX_KEY,
+  SUPPORTED_CHAINS,
   USDC_ADDRESSES,
 } from '@/utils/constants';
 import {
@@ -1007,8 +1007,9 @@ export const SolarFarmDialog: React.FC = () => {
                 >
                   <CircleAlert className="h-6 w-6" />
                   Switch to{' '}
-                  {chains.find(c => c.id === existingRelayChainId)
-                    ? chains.find(c => c.id === existingRelayChainId)?.name
+                  {SUPPORTED_CHAINS.find(c => c.id === existingRelayChainId)
+                    ? SUPPORTED_CHAINS.find(c => c.id === existingRelayChainId)
+                        ?.name
                     : base.name}
                 </Button>
               ) : (
