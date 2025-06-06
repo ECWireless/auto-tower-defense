@@ -15,7 +15,7 @@ export const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 export const url = new URL(window.location.href);
 export type Entity = Hex;
 
-export const chains: readonly [Chain, ...Chain[]] = [
+const ALL_CHAINS: readonly [Chain, ...Chain[]] = [
   base,
   baseSepolia,
   pyrope,
@@ -47,16 +47,31 @@ export const chains: readonly [Chain, ...Chain[]] = [
   },
 ] as const satisfies Chain[];
 
+export const SUPPORTED_CHAINS = ALL_CHAINS.filter(chain => {
+  // If CHAIN_ID is Pyrope, then only support testnets
+  if (CHAIN_ID === pyrope.id) {
+    return chain.testnet;
+  }
+
+  // If CHAIN_ID is redstone, then only support production chains
+  if (CHAIN_ID === redstone.id) {
+    return !chain.testnet;
+  }
+
+  // Otherwise, return empty array
+  return true;
+}) as [Chain, ...Chain[]];
+
 export const USDC_ADDRESSES: { [key: number]: string } = {
   [anvil.id]: '0xc6709F349762B546d83760f28221CEd36d0a19D2',
   [base.id]: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-  [baseSepolia.id]: '0xFf5E70a3233992015b1874d5e3D0F229B93b3535',
+  [baseSepolia.id]: '0xCE420e1793A91efaB6E2cf8aa6b8314b46bde58F',
   [pyrope.id]: '0xAC49338E773d463b9fcd88D44456E0130a7ce35b',
 };
 
 export const ESCROW_ADDRESSES: { [key: number]: string } = {
   [base.id]: '0x977437F82fb629FBF3028d485144Ad5666228133',
-  [baseSepolia.id]: '0xe298F45102758119DeE35586fB9985FeE0E2Db38',
+  [baseSepolia.id]: '0x1ee0C3C8A365fC31eF1eAfAf83bA628940a9498a',
 };
 
 export const BUY_ESCROW_TX_KEY = 'buy-escrow-tx';

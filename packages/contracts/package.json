@@ -4,6 +4,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
+    "deploy-usdc": "forge script script/DeployUsdc.s.sol:DeployUsdc --fork-url http://localhost:8545 --broadcast",
     "deploy-relay-escrow": "forge script script/DeployRelayEscrow.s.sol:DeployRelayEscrow --fork-url http://localhost:8545 --broadcast",
     "deploy-relay-receiver-and-emitter": "forge script script/DeployRelayReceiverAndEmitter.s.sol:DeployRelayReceiverAndEmitter --fork-url http://localhost:8545 --broadcast",
     "add-usdc-address": "forge script script/AddUsdcTokenAddress.s.sol:AddUsdcTokenAddress --fork-url http://localhost:8545 --broadcast",

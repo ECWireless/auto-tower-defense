@@ -2,7 +2,7 @@ import { garnet, pyrope } from '@latticexyz/common/chains';
 import { Chain } from 'viem';
 import { anvil, base, baseSepolia, redstone } from 'viem/chains';
 
-import { CHAIN_ID, chains, WORLD_ADDRESS } from './constants';
+import { CHAIN_ID, SUPPORTED_CHAINS, WORLD_ADDRESS } from './constants';
 
 export const shortenAddress = (address: string, length = 4): string =>
   `${address.slice(0, length + 2)}...${address.slice(-length)}`;
@@ -79,7 +79,7 @@ export const getWorldAddress = (): `0x${string}` => {
 };
 
 export const getGameChain = (): Chain => {
-  const chain = chains.find(c => c.id === CHAIN_ID);
+  const chain = SUPPORTED_CHAINS.find(c => c.id === CHAIN_ID);
   if (!chain) {
     throw new Error(`No chain configured for chain ID ${CHAIN_ID}.`);
   }
@@ -87,7 +87,7 @@ export const getGameChain = (): Chain => {
 };
 
 export const getChain = (chainId: number | undefined): Chain | undefined => {
-  const chain = chains.find(c => c.id === chainId);
+  const chain = SUPPORTED_CHAINS.find(c => c.id === chainId);
   if (!chain) {
     // eslint-disable-next-line no-console
     console.warn(`Chain with id ${chainId} cannot be used for this game.`);

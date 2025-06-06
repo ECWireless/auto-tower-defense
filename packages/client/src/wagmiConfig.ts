@@ -3,7 +3,7 @@ import { createWagmiConfig } from '@latticexyz/entrykit/internal';
 import { http, webSocket } from 'viem';
 import { anvil, base, baseSepolia } from 'viem/chains';
 
-import { CHAIN_ID, chains } from '@/utils/constants';
+import { CHAIN_ID, SUPPORTED_CHAINS } from '@/utils/constants';
 
 export const transports = {
   [anvil.id]: webSocket(),
@@ -16,7 +16,7 @@ export const transports = {
 export const wagmiConfig = createWagmiConfig({
   appName: document.title,
   chainId: CHAIN_ID,
-  chains,
+  chains: SUPPORTED_CHAINS,
   pollingInterval: {
     [anvil.id]: 2000,
     [base.id]: 2000,
