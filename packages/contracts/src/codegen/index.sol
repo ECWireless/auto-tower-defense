@@ -32,6 +32,7 @@ import { ProjectileTrajectory } from "./tables/ProjectileTrajectory.sol";
 import { RevenueReceipt, RevenueReceiptData } from "./tables/RevenueReceipt.sol";
 import { SavedBattle, SavedBattleData } from "./tables/SavedBattle.sol";
 import { SavedKingdom, SavedKingdomData } from "./tables/SavedKingdom.sol";
+import { TutorialProgress, TutorialProgressData } from "./tables/TutorialProgress.sol";
 import { Patent, PatentData } from "./tables/Patent.sol";
 import { PatentNameTaken } from "./tables/PatentNameTaken.sol";
 import { SolarFarmDetails, SolarFarmDetailsData } from "./tables/SolarFarmDetails.sol";

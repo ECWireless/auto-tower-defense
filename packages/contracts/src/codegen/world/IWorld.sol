@@ -10,6 +10,7 @@ import { IBattleSystem } from "./IBattleSystem.sol";
 import { IPatentSystem } from "./IPatentSystem.sol";
 import { ISolarFarmSystem } from "./ISolarFarmSystem.sol";
 import { ITowerSystem } from "./ITowerSystem.sol";
+import { ITutorialSystem } from "./ITutorialSystem.sol";
 
 /**
  * @title IWorld
@@ -25,5 +26,6 @@ interface IWorld is
   IBattleSystem,
   IPatentSystem,
   ISolarFarmSystem,
-  ITowerSystem
+  ITowerSystem,
+  ITutorialSystem
 {}

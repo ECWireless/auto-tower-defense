@@ -195,6 +195,18 @@ export default defineWorld({
       wins: "uint256",
       actions: "bytes32[]",
     },
+    TutorialProgress: {
+      key: ["id"],
+      schema: {
+        id: "bytes32", // globalPlayerId
+        step1Completed: "bool", // Welcome
+        step2Completed: "bool", // Energy System
+        step3Completed: "bool", // Install and move
+        step4Completed: "bool", // Modify
+        step5Completed: "bool", // Complete
+      },
+      type: "offchainTable",
+    },
     Patent: {
       id: "bytes32", // keccak256(abi.encodePacked(bytecode))
       patentee: "bytes32", // globalPlayerId
