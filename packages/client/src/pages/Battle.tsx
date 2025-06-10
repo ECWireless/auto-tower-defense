@@ -31,6 +31,7 @@ import { NoBattleScreen } from '@/components/NoBattleScreen';
 import { PlayAgainDialog } from '@/components/PlayAgainDialog';
 import { TowerSelection } from '@/components/TowerSelection';
 import { Button } from '@/components/ui/button';
+import { WelcomeDialog } from '@/components/WelcomeDialog';
 import { BattleProvider, useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
@@ -392,10 +393,7 @@ export const InnerBattlePage = (): JSX.Element => {
           </div>
         </div>
 
-        <ForfeitDialog
-          isForfeitDialogOpen={isForfeitDialogOpen}
-          setIsForfeitDialogOpen={setShowForfeitDialog}
-        />
+        <WelcomeDialog />
         <HowToPlayDialog
           isHelpDialogOpen={isHelpDialogOpen}
           setIsHelpDialogOpen={setIsHelpDialogOpen}
@@ -404,12 +402,16 @@ export const InnerBattlePage = (): JSX.Element => {
           isBatteryInfoDialogOpen={isBatteryInfoDialogOpen}
           onChangeBatteryInfoDialog={onChangeBatteryInfoDialog}
         />
+        <NoActionsDialog />
+        <CastleHitDialog />
+        <ForfeitDialog
+          isForfeitDialogOpen={isForfeitDialogOpen}
+          setIsForfeitDialogOpen={setShowForfeitDialog}
+        />
         <PlayAgainDialog
           isBattleOverDialogOpen={isBattleOverDialogOpen}
           setIsBattleOverDialogOpen={setIsBattleOverDialogOpen}
         />
-        <NoActionsDialog />
-        <CastleHitDialog />
       </div>
     </DndContext>
   );

@@ -47,6 +47,10 @@ export const useMUD = (): {
       error: string | undefined;
       success: boolean;
     }>;
+    completeTutorialStep1: () => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
     createBattle: (
       username: string,
       resetLevel: boolean,
@@ -239,6 +243,34 @@ export const useMUD = (): {
 
       return {
         error: success ? undefined : 'Failed to claim recharge.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
+  const completeTutorialStep1 = async () => {
+    try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [],
+        functionName: 'app__completeTutorialStep1',
+      });
+      const tx = await worldContract.write.app__completeTutorialStep1();
+      const txResult = await sync.data.waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+      return {
+        error: success ? undefined : 'Failed to complete tutorial step 1.',
         success,
       };
     } catch (error) {
@@ -675,6 +707,7 @@ export const useMUD = (): {
     amendPatent,
     buyElectricity,
     claimRecharge,
+    completeTutorialStep1,
     createBattle,
     disclaimPatent,
     forfeitRun,
