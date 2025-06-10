@@ -1,4 +1,6 @@
-import { Battery, Zap } from 'lucide-react';
+import { Battery, Loader2, Zap } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -9,18 +11,51 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
+import { useMUD } from '@/hooks/useMUD';
 
 type BatteryInfoDialogProps = {
   isBatteryInfoDialogOpen: boolean;
   onChangeBatteryInfoDialog: (show: boolean) => void;
+  showSolarFarmDialogPrompt: boolean;
 };
 
 export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
   isBatteryInfoDialogOpen,
   onChangeBatteryInfoDialog,
+  showSolarFarmDialogPrompt,
 }) => {
+  const {
+    systemCalls: { completeTutorialStep },
+  } = useMUD();
   const { setIsSolarFarmDialogOpen } = useSolarFarm();
+  const { playSfx } = useSettings();
+
+  const [isCompleting, setIsCompleting] = useState(false);
+
+  const onCompleteBatteryTutorial = useCallback(async () => {
+    try {
+      setIsCompleting(true);
+      playSfx('click2');
+
+      const { error, success } = await completeTutorialStep(2);
+
+      if (error && !success) {
+        throw new Error(error);
+      }
+      onChangeBatteryInfoDialog(false);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Smart contract error: ${(error as Error).message}`);
+
+      toast.error('Error Completing Battery Tutorial', {
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsCompleting(false);
+    }
+  }, [completeTutorialStep, onChangeBatteryInfoDialog, playSfx]);
 
   return (
     <Dialog
@@ -115,9 +150,15 @@ export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
 
         <DialogFooter>
           <Button
-            onClick={() => onChangeBatteryInfoDialog(false)}
             className="bg-cyan-800 hover:bg-cyan-700 text-white w-full"
+            disabled={isCompleting}
+            onClick={() =>
+              showSolarFarmDialogPrompt
+                ? onCompleteBatteryTutorial()
+                : onChangeBatteryInfoDialog(false)
+            }
           >
+            {isCompleting && <Loader2 className="animate-spin h-6 w-6" />}
             Got it
           </Button>
         </DialogFooter>

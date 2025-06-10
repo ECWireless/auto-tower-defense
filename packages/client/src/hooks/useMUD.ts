@@ -47,7 +47,7 @@ export const useMUD = (): {
       error: string | undefined;
       success: boolean;
     }>;
-    completeTutorialStep1: () => Promise<{
+    completeTutorialStep: (step: number) => Promise<{
       error: string | undefined;
       success: boolean;
     }>;
@@ -253,24 +253,41 @@ export const useMUD = (): {
     }
   };
 
-  const completeTutorialStep1 = async () => {
+  const completeTutorialStep = async (step: number) => {
     try {
+      type StepFunctionName =
+        | 'app__completeTutorialStep1'
+        | 'app__completeTutorialStep2'
+        | 'app__completeTutorialStep3'
+        | 'app__completeTutorialStep4'
+        | 'app__completeTutorialStep5';
+
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
       }
+      const stepFunctions: Record<number, string> = {
+        1: 'app__completeTutorialStep1',
+        2: 'app__completeTutorialStep2',
+        3: 'app__completeTutorialStep3',
+        4: 'app__completeTutorialStep4',
+        5: 'app__completeTutorialStep5',
+      };
       await publicClient.simulateContract({
         abi: worldContract.abi,
         account: playerAddress,
         address: worldContract.address,
         args: [],
-        functionName: 'app__completeTutorialStep1',
+        functionName: stepFunctions[step] as StepFunctionName,
       });
-      const tx = await worldContract.write.app__completeTutorialStep1();
+      const tx =
+        await worldContract.write[stepFunctions[step] as StepFunctionName]();
       const txResult = await sync.data.waitForTransaction(tx);
       const { status } = txResult;
       const success = status === 'success';
       return {
-        error: success ? undefined : 'Failed to complete tutorial step 1.',
+        error: success
+          ? undefined
+          : `Failed to complete tutorial step ${step}.`,
         success,
       };
     } catch (error) {
@@ -707,7 +724,7 @@ export const useMUD = (): {
     amendPatent,
     buyElectricity,
     claimRecharge,
-    completeTutorialStep1,
+    completeTutorialStep,
     createBattle,
     disclaimPatent,
     forfeitRun,

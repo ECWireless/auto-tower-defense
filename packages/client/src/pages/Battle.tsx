@@ -23,6 +23,7 @@ import { BattleBoard, INSTALLABLE_TOWERS } from '@/components/BattleBoard';
 import { BattleControlButtons } from '@/components/BattleControlButtons';
 import { BattleStatusBar } from '@/components/BattleStatusBar';
 import { CastleHitDialog } from '@/components/CastleHitDialog';
+import { ClickIndicator } from '@/components/ClickIndicator';
 import { ForfeitDialog } from '@/components/ForfeitDialog';
 import { HowToPlayDialog } from '@/components/HowToPlayDialog';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -54,7 +55,7 @@ export const InnerBattlePage = (): JSX.Element => {
   const { isConnected, isReconnecting } = useAccount();
   const { data: sessionClient } = useSessionClient();
   const {
-    components: { BatteryDetails, SolarFarmDetails },
+    components: { BatteryDetails, SolarFarmDetails, TutorialProgress },
     network: { globalPlayerId },
     systemCalls: { claimRecharge },
   } = useMUD();
@@ -77,6 +78,12 @@ export const InnerBattlePage = (): JSX.Element => {
     },
   });
   const sensors = useSensors(pointerSensor);
+  const tutorialProgress = useComponentValue(TutorialProgress, globalPlayerId);
+
+  const showSolarFarmDialogPrompt = useMemo(() => {
+    if (!tutorialProgress) return false;
+    return tutorialProgress.step1Completed && !tutorialProgress.step2Completed;
+  }, [tutorialProgress]);
 
   // Add battle ID to tab title
   useEffect(() => {
@@ -296,6 +303,7 @@ export const InnerBattlePage = (): JSX.Element => {
                   <span className="ml-1 text-gray-400 text-xs">Reserve</span>
                 </div>
               </div>
+              {showSolarFarmDialogPrompt && <ClickIndicator />}
             </div>
             {/* Claim Recharge Button */}
             {claimableRecharge > BigInt(1_000) &&
@@ -322,7 +330,7 @@ export const InnerBattlePage = (): JSX.Element => {
             {batteryDetails && (
               <div className="flex flex-col items-center mb-2 sm:hidden">
                 <div
-                  className="bg-gray-900/80 border border-gray-800 cursor-pointer flex gap-2 hover:bg-gray-800/80 items-center px-3 py-1.5 rounded-full transition-colors"
+                  className="bg-gray-900/80 border border-gray-800 cursor-pointer flex gap-2 hover:bg-gray-800/80 items-center px-3 py-1.5 relative rounded-full transition-colors"
                   onClick={() => setIsBatteryInfoDialogOpen(true)}
                 >
                   {/* Battery Charge */}
@@ -351,6 +359,7 @@ export const InnerBattlePage = (): JSX.Element => {
                       <span className="text-gray-400 text-xs">Reserve</span>
                     </div>
                   </div>
+                  {showSolarFarmDialogPrompt && <ClickIndicator />}
                 </div>
                 {/* Claim Recharge Button */}
                 {claimableRecharge > BigInt(1_000) &&
@@ -401,6 +410,7 @@ export const InnerBattlePage = (): JSX.Element => {
         <BatteryInfoDialog
           isBatteryInfoDialogOpen={isBatteryInfoDialogOpen}
           onChangeBatteryInfoDialog={onChangeBatteryInfoDialog}
+          showSolarFarmDialogPrompt={showSolarFarmDialogPrompt}
         />
         <NoActionsDialog />
         <CastleHitDialog />

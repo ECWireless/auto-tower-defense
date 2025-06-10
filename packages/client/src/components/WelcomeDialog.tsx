@@ -18,7 +18,7 @@ export const WelcomeDialog: React.FC = () => {
   const {
     components: { TutorialProgress },
     network: { globalPlayerId },
-    systemCalls: { completeTutorialStep1 },
+    systemCalls: { completeTutorialStep },
   } = useMUD();
   const { playSfx } = useSettings();
 
@@ -32,12 +32,12 @@ export const WelcomeDialog: React.FC = () => {
     return !tutorialProgress.step1Completed;
   }, [tutorialProgress]);
 
-  const onCompleteWelcome = useCallback(async () => {
+  const onCompleteWelcomeTutorial = useCallback(async () => {
     try {
       setIsCompleting(true);
       playSfx('click2');
 
-      const { error, success } = await completeTutorialStep1();
+      const { error, success } = await completeTutorialStep(1);
 
       if (error && !success) {
         throw new Error(error);
@@ -46,13 +46,13 @@ export const WelcomeDialog: React.FC = () => {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
 
-      toast.error('Error Completing Welcome', {
+      toast.error('Error Completing Welcome Tutorial', {
         description: (error as Error).message,
       });
     } finally {
       setIsCompleting(false);
     }
-  }, [completeTutorialStep1, playSfx]);
+  }, [completeTutorialStep, playSfx]);
 
   return (
     <Dialog open={isWelcomeDialogOpen}>
@@ -75,10 +75,9 @@ export const WelcomeDialog: React.FC = () => {
               The ultimate goal of Auto Tower Defense to to accumulate
               <span className="font-semibold text-yellow-400">
                 {' '}
-                electricity{' '}
+                electricity
               </span>
-              , which fills your battery, and can be used to power a new battle
-              run or be sold sold for
+              , which can be used to power a battle run or be sold sold for
               <span className="font-semibold text-blue-400"> USDC</span>.
             </p>
             <p className="mt-4">There are 3 ways to gain electricity:</p>
@@ -147,8 +146,8 @@ export const WelcomeDialog: React.FC = () => {
           <Button
             className="bg-cyan-800 hover:bg-cyan-700 text-white w-full"
             disabled={isCompleting}
-            onClick={
-              isSecondPage ? onCompleteWelcome : () => setIsSecondPage(true)
+            onClick={() =>
+              isSecondPage ? onCompleteWelcomeTutorial() : setIsSecondPage(true)
             }
           >
             {isCompleting && <Loader2 className="animate-spin h-6 w-6" />}

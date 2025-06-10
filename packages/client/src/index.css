@@ -302,3 +302,31 @@
 .data-stream-pink {
   color: rgba(236, 72, 153, 0.8);
 }
+
+/* These animation are for the ClickIndicator  */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+}
+
+@keyframes pulse-dot {
+  0% {
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0.8);
+  }
+}
