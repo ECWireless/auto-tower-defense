@@ -97,6 +97,13 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__completeTutorialStep6",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__createBattle",
     "inputs": [
       {

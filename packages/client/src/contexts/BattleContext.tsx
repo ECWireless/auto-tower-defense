@@ -1,4 +1,4 @@
-import { useEntityQuery } from '@latticexyz/react';
+import { useComponentValue, useEntityQuery } from '@latticexyz/react';
 import {
   Entity,
   getComponentValue,
@@ -119,12 +119,20 @@ export const BattleProvider = ({
       Projectile,
       ProjectileTrajectory,
       Tower,
+      TutorialProgress,
       Username,
     },
     network: { globalPlayerId },
-    systemCalls: { installTower, moveTower, nextTurn, undoAction },
+    systemCalls: {
+      completeTutorialStep,
+      installTower,
+      moveTower,
+      nextTurn,
+      undoAction,
+    },
   } = useMUD();
   const { playSfx } = useSettings();
+  const tutorialProgress = useComponentValue(TutorialProgress, globalPlayerId);
 
   const [battle, setBattle] = useState<Battle | null>(null);
   const [isLoadingBattle, setIsLoadingBattle] = useState(true);
@@ -283,6 +291,11 @@ export const BattleProvider = ({
 
         const hasProjectile = activePiece === 'offense';
 
+        // This is purely for the sake of the tutorial
+        if (col === 4 && row === 3 && activeTowerId === 'tower1') {
+          await completeTutorialStep(3);
+        }
+
         const { error, success } = await installTower(
           hasProjectile,
           col * 10,
@@ -313,7 +326,15 @@ export const BattleProvider = ({
         setActiveTowerId(null);
       }
     },
-    [activePiece, activeTowerId, battle, fetchBattle, installTower, playSfx],
+    [
+      activePiece,
+      activeTowerId,
+      battle,
+      completeTutorialStep,
+      fetchBattle,
+      installTower,
+      playSfx,
+    ],
   );
 
   const onMoveTower = useCallback(
@@ -493,6 +514,11 @@ export const BattleProvider = ({
         throw new Error('Battle not found.');
       }
 
+      // This is purely for the sake of the tutorial
+      if (tutorialProgress && !tutorialProgress.step4Completed) {
+        await completeTutorialStep(4);
+      }
+
       if (battle.turn === battle.player2Id) {
         await onNextRound();
         return;
@@ -516,7 +542,15 @@ export const BattleProvider = ({
     } finally {
       setIsChangingTurn(false);
     }
-  }, [battle, fetchBattle, nextTurn, onNextRound, playSfx]);
+  }, [
+    battle,
+    completeTutorialStep,
+    fetchBattle,
+    nextTurn,
+    onNextRound,
+    playSfx,
+    tutorialProgress,
+  ]);
 
   useEffect(() => {
     if (!battle) return () => {};

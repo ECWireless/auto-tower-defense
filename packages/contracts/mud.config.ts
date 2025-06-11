@@ -202,8 +202,9 @@ export default defineWorld({
         step1Completed: "bool", // Welcome
         step2Completed: "bool", // Energy System
         step3Completed: "bool", // Install and move
-        step4Completed: "bool", // Modify
-        step5Completed: "bool", // Complete
+        step4Completed: "bool", // Next turn
+        step5Completed: "bool", // Modify
+        step6Completed: "bool", // Complete
       },
       type: "offchainTable",
     },

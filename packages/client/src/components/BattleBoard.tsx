@@ -9,6 +9,7 @@ import {
 } from 'react-icons/gi';
 import { zeroAddress } from 'viem';
 
+import { ClickIndicator } from '@/components/ClickIndicator';
 import { Draggable } from '@/components/Draggable';
 import { Droppable } from '@/components/Droppable';
 import { TowerAssemblyDrawer } from '@/components/TowerAssemblyDrawer';
@@ -388,6 +389,9 @@ export const BattleBoard: React.FC = () => {
                         </Tooltip>
                       </TooltipProvider>
                     )}
+                    {rowIndex === 3 &&
+                      colIndex === 4 &&
+                      activeTowerId === 'tower1' && <ClickIndicator />}
                   </div>
                 </Droppable>
               );

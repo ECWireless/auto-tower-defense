@@ -260,7 +260,8 @@ export const useMUD = (): {
         | 'app__completeTutorialStep2'
         | 'app__completeTutorialStep3'
         | 'app__completeTutorialStep4'
-        | 'app__completeTutorialStep5';
+        | 'app__completeTutorialStep5'
+        | 'app__completeTutorialStep6';
 
       if (!(worldContract && sync.data)) {
         throw new Error('World contract or sync data not found');
@@ -271,6 +272,7 @@ export const useMUD = (): {
         3: 'app__completeTutorialStep3',
         4: 'app__completeTutorialStep4',
         5: 'app__completeTutorialStep5',
+        6: 'app__completeTutorialStep6',
       };
       await publicClient.simulateContract({
         abi: worldContract.abi,

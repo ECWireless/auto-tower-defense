@@ -22,6 +22,7 @@ struct TutorialProgressData {
   bool step3Completed;
   bool step4Completed;
   bool step5Completed;
+  bool step6Completed;
 }
 
 library TutorialProgress {
@@ -29,12 +30,12 @@ library TutorialProgress {
   ResourceId constant _tableId = ResourceId.wrap(0x6f7461707000000000000000000000005475746f7269616c50726f6772657373);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0005050001010101010000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0006060001010101010100000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (bool, bool, bool, bool, bool)
-  Schema constant _valueSchema = Schema.wrap(0x0005050060606060600000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (bool, bool, bool, bool, bool, bool)
+  Schema constant _valueSchema = Schema.wrap(0x0006060060606060606000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -50,12 +51,13 @@ library TutorialProgress {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](5);
+    fieldNames = new string[](6);
     fieldNames[0] = "step1Completed";
     fieldNames[1] = "step2Completed";
     fieldNames[2] = "step3Completed";
     fieldNames[3] = "step4Completed";
     fieldNames[4] = "step5Completed";
+    fieldNames[5] = "step6Completed";
   }
 
   /**
@@ -173,6 +175,26 @@ library TutorialProgress {
   }
 
   /**
+   * @notice Set step6Completed.
+   */
+  function setStep6Completed(bytes32 id, bool step6Completed) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 5, abi.encodePacked((step6Completed)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set step6Completed.
+   */
+  function _setStep6Completed(bytes32 id, bool step6Completed) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 5, abi.encodePacked((step6Completed)), _fieldLayout);
+  }
+
+  /**
    * @notice Set the full data using individual values.
    */
   function set(
@@ -181,14 +203,16 @@ library TutorialProgress {
     bool step2Completed,
     bool step3Completed,
     bool step4Completed,
-    bool step5Completed
+    bool step5Completed,
+    bool step6Completed
   ) internal {
     bytes memory _staticData = encodeStatic(
       step1Completed,
       step2Completed,
       step3Completed,
       step4Completed,
-      step5Completed
+      step5Completed,
+      step6Completed
     );
 
     EncodedLengths _encodedLengths;
@@ -209,14 +233,16 @@ library TutorialProgress {
     bool step2Completed,
     bool step3Completed,
     bool step4Completed,
-    bool step5Completed
+    bool step5Completed,
+    bool step6Completed
   ) internal {
     bytes memory _staticData = encodeStatic(
       step1Completed,
       step2Completed,
       step3Completed,
       step4Completed,
-      step5Completed
+      step5Completed,
+      step6Completed
     );
 
     EncodedLengths _encodedLengths;
@@ -237,7 +263,8 @@ library TutorialProgress {
       _table.step2Completed,
       _table.step3Completed,
       _table.step4Completed,
-      _table.step5Completed
+      _table.step5Completed,
+      _table.step6Completed
     );
 
     EncodedLengths _encodedLengths;
@@ -258,7 +285,8 @@ library TutorialProgress {
       _table.step2Completed,
       _table.step3Completed,
       _table.step4Completed,
-      _table.step5Completed
+      _table.step5Completed,
+      _table.step6Completed
     );
 
     EncodedLengths _encodedLengths;
@@ -278,7 +306,14 @@ library TutorialProgress {
   )
     internal
     pure
-    returns (bool step1Completed, bool step2Completed, bool step3Completed, bool step4Completed, bool step5Completed)
+    returns (
+      bool step1Completed,
+      bool step2Completed,
+      bool step3Completed,
+      bool step4Completed,
+      bool step5Completed,
+      bool step6Completed
+    )
   {
     step1Completed = (_toBool(uint8(Bytes.getBytes1(_blob, 0))));
 
@@ -289,6 +324,8 @@ library TutorialProgress {
     step4Completed = (_toBool(uint8(Bytes.getBytes1(_blob, 3))));
 
     step5Completed = (_toBool(uint8(Bytes.getBytes1(_blob, 4))));
+
+    step6Completed = (_toBool(uint8(Bytes.getBytes1(_blob, 5))));
   }
 
   /**
@@ -307,7 +344,8 @@ library TutorialProgress {
       _table.step2Completed,
       _table.step3Completed,
       _table.step4Completed,
-      _table.step5Completed
+      _table.step5Completed,
+      _table.step6Completed
     ) = decodeStatic(_staticData);
   }
 
@@ -340,9 +378,11 @@ library TutorialProgress {
     bool step2Completed,
     bool step3Completed,
     bool step4Completed,
-    bool step5Completed
+    bool step5Completed,
+    bool step6Completed
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(step1Completed, step2Completed, step3Completed, step4Completed, step5Completed);
+    return
+      abi.encodePacked(step1Completed, step2Completed, step3Completed, step4Completed, step5Completed, step6Completed);
   }
 
   /**
@@ -356,14 +396,16 @@ library TutorialProgress {
     bool step2Completed,
     bool step3Completed,
     bool step4Completed,
-    bool step5Completed
+    bool step5Completed,
+    bool step6Completed
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
     bytes memory _staticData = encodeStatic(
       step1Completed,
       step2Completed,
       step3Completed,
       step4Completed,
-      step5Completed
+      step5Completed,
+      step6Completed
     );
 
     EncodedLengths _encodedLengths;

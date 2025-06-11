@@ -1,7 +1,11 @@
+import { useComponentValue } from '@latticexyz/react';
 import { HelpCircle, Loader2, Play, Undo2 } from 'lucide-react';
+import { useMemo } from 'react';
 
+import { ClickIndicator } from '@/components/ClickIndicator';
 import { Button } from '@/components/ui/button';
 import { useBattle } from '@/contexts/BattleContext';
+import { useMUD } from '@/hooks/useMUD';
 
 type BattleControlButtonsProps = {
   setIsHelpDialogOpen: (open: boolean) => void;
@@ -10,8 +14,24 @@ type BattleControlButtonsProps = {
 export const BattleControlButtons: React.FC<BattleControlButtonsProps> = ({
   setIsHelpDialogOpen,
 }) => {
+  const {
+    components: { TutorialProgress },
+    network: { globalPlayerId },
+  } = useMUD();
   const { battle, isChangingTurn, isUndoing, onNextTurn, onUndoAction } =
     useBattle();
+
+  const tutorialProgress = useComponentValue(TutorialProgress, globalPlayerId);
+
+  const showNextTurnPrompt = useMemo(() => {
+    if (!tutorialProgress) return false;
+    return (
+      tutorialProgress.step1Completed &&
+      tutorialProgress.step2Completed &&
+      tutorialProgress.step3Completed &&
+      !tutorialProgress.step4Completed
+    );
+  }, [tutorialProgress]);
 
   return (
     <>
@@ -38,19 +58,22 @@ export const BattleControlButtons: React.FC<BattleControlButtonsProps> = ({
         )}
         Undo
       </Button>
-      <Button
-        className="bg-cyan-800 hover:bg-cyan-700 text-white"
-        disabled={isChangingTurn}
-        onClick={onNextTurn}
-        size="sm"
-      >
-        {isChangingTurn ? (
-          <Loader2 className=" animate-spin h-6 w-6" />
-        ) : (
-          <Play className="h-4 w-4 mr-1" />
-        )}
-        Next Turn
-      </Button>
+      <div className="relative">
+        <Button
+          className="bg-cyan-800 hover:bg-cyan-700 text-white"
+          disabled={isChangingTurn}
+          onClick={onNextTurn}
+          size="sm"
+        >
+          {isChangingTurn ? (
+            <Loader2 className=" animate-spin h-6 w-6" />
+          ) : (
+            <Play className="h-4 w-4 mr-1" />
+          )}
+          Next Turn
+        </Button>
+        {showNextTurnPrompt && <ClickIndicator />}
+      </div>
     </>
   );
 };
