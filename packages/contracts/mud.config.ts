@@ -238,6 +238,7 @@ export default defineWorld({
       },
       key: [],
     },
+    // This is the top level reached by any player
     TopLevel: {
       schema: {
         level: "uint256",

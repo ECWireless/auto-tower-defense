@@ -77,7 +77,11 @@ export const WelcomeDialog: React.FC = () => {
                 {' '}
                 electricity
               </span>
-              , which can be used to power a battle run or be sold sold for
+              , which can be used to power a{' '}
+              <span className="font-semibold text-green-400">
+                battle run
+              </span>{' '}
+              or be sold for
               <span className="font-semibold text-blue-400"> USDC</span>.
             </p>
             <p className="mt-4">There are 3 ways to gain electricity:</p>

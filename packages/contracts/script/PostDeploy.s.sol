@@ -4,7 +4,8 @@ pragma solidity >=0.8.24;
 import { Script } from "forge-std/Script.sol";
 import { console } from "forge-std/console.sol";
 import { StoreSwitch } from "@latticexyz/store/src/StoreSwitch.sol";
-import { AddressBook, DefaultLogic, MapConfig, SavedKingdom, SavedKingdomData, SolarFarmDetails, SolarFarmDetailsData, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { Action, ActionData, AddressBook, DefaultLogic, KingdomsByLevel, MapConfig, SavedKingdom, SavedKingdomData, SolarFarmDetails, SolarFarmDetailsData, TopLevel, Username, UsernameTaken } from "../src/codegen/index.sol";
+import { ActionType } from "../src/codegen/common.sol";
 import { _solarFarmSystemAddress } from "../src/utils.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";
@@ -57,18 +58,7 @@ contract PostDeploy is Script {
     address defaultProjectileLogicLeftAddress = address(new DefaultProjectileLogic());
     DefaultLogic.set(defaultProjectileLogicLeftAddress);
 
-    bytes32[] memory defaultActionIds = new bytes32[](0);
-    bytes32 savedKingdomId = keccak256(abi.encode(defaultActionIds));
-
-    SavedKingdomData memory savedKingdom = SavedKingdomData({
-      author: ROB_ID,
-      createdAtTimestamp: block.timestamp,
-      electricityBalance: 0,
-      losses: 0,
-      wins: 0,
-      actions: defaultActionIds
-    });
-    SavedKingdom.set(savedKingdomId, savedKingdom);
+    _setTutorialLevels();
 
     // Set template tower patents
     bytes
@@ -107,5 +97,66 @@ contract PostDeploy is Script {
     console.logAddress(deployed);
 
     return deployed;
+  }
+
+  function _setTutorialLevels() internal {
+    // Create level 0 kingdom for ROB
+    bytes32[] memory level0ActionIds = new bytes32[](0);
+    bytes32 savedLevel0KingdomId = keccak256(abi.encode(level0ActionIds));
+
+    SavedKingdomData memory savedLevel0Kingdom = SavedKingdomData({
+      author: ROB_ID,
+      createdAtTimestamp: block.timestamp,
+      electricityBalance: 0,
+      losses: 0,
+      wins: 0,
+      actions: level0ActionIds
+    });
+    SavedKingdom.set(savedLevel0KingdomId, savedLevel0Kingdom);
+    bytes32[] memory savedLevel0KingdomIds = new bytes32[](1);
+    savedLevel0KingdomIds[0] = savedLevel0KingdomId;
+    KingdomsByLevel.set(0, savedLevel0KingdomIds);
+
+    // Create level 1 kingdom for ROB
+    bytes32[] memory level1ActionIds = new bytes32[](6);
+    for (uint256 i = 0; i < level1ActionIds.length; i++) {
+      ActionData memory wallInstall = ActionData({
+        actionType: ActionType.Install,
+        componentAddress: address(0),
+        newX: 15  + int16(uint16(i) * 10), // Increment x by 10 for each action
+        newY: 35,
+        oldX: 0,
+        oldY: 0,
+        projectile: false
+      });
+      bytes32 actionId = keccak256(
+        abi.encodePacked(
+          wallInstall.actionType,
+          wallInstall.componentAddress,
+          wallInstall.newX,
+          wallInstall.newY,
+          wallInstall.oldX,
+          wallInstall.oldY,
+          wallInstall.projectile
+        )
+      );
+      level1ActionIds[i] = actionId;
+      Action.set(actionId, wallInstall);
+    }
+    bytes32 savedLevel1KingdomId = keccak256(abi.encode(level1ActionIds));
+    SavedKingdomData memory savedLevel1Kingdom = SavedKingdomData({
+      author: ROB_ID,
+      createdAtTimestamp: block.timestamp,
+      electricityBalance: 0,
+      losses: 0,
+      wins: 0,
+      actions: level1ActionIds
+    });
+    SavedKingdom.set(savedLevel1KingdomId, savedLevel1Kingdom);
+    bytes32[] memory savedLevel1KingdomIds = new bytes32[](1);
+    savedLevel1KingdomIds[0] = savedLevel1KingdomId;
+    KingdomsByLevel.set(1, savedLevel1KingdomIds);
+
+    TopLevel.set(1);
   }
 }

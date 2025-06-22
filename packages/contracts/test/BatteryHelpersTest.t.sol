@@ -18,26 +18,52 @@ contract BatteryHelpersTest is MudTest {
   bytes constant AUTHORED_BYTECODE =
     hex"6080604052348015600e575f5ffd5b506101ef8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063cae93eb91461002d575b5f5ffd5b610047600480360381019061004291906100bf565b61005e565b60405161005592919061010c565b60405180910390f35b5f5f60058461006d9190610160565b60018461007a9190610160565b915091509250929050565b5f5ffd5b5f8160010b9050919050565b61009e81610089565b81146100a8575f5ffd5b50565b5f813590506100b981610095565b92915050565b5f5f604083850312156100d5576100d4610085565b5b5f6100e2858286016100ab565b92505060206100f3858286016100ab565b9150509250929050565b61010681610089565b82525050565b5f60408201905061011f5f8301856100fd565b61012c60208301846100fd565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61016a82610089565b915061017583610089565b925082820190507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008112617fff821317156101b3576101b2610133565b5b9291505056fea26469706673582212200f36ce47d179e4a4274b65916ffd491b33285775935ab7ab90dc53e854837fdb64736f6c634300081c0033";
 
-  function _winBattle(address player, bytes32 battleId) internal {
+  function _beatTutorial(address player, string memory username) internal {  
     vm.startPrank(player);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle(username, true);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
+    IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
 
-    // Need to go through 4 turns to end the battle
+    // Need to go through 2 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
+
+    vm.warp(block.timestamp + 1 hours);
+    
+    battleId = IWorld(worldAddress).app__createBattle(username, false);
+    bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 55, 15);
+    IWorld(worldAddress).app__playerModifyTowerSystem(
+      towerId,
+      AUTHORED_BYTECODE,
+      ""
+    );
+
+    // Need to go through 2 turns to end the battle
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+
+    vm.stopPrank();
+    vm.warp(block.timestamp + 1 hours);
+  }
+
+  function _winBattle(address player, string memory username, bool reset) internal {
+    vm.startPrank(player);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle(username, reset);
+    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
+    IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
+
+    // Need to go through 2 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     vm.stopPrank();
     vm.warp(block.timestamp + 1 hours);
   }
 
-  function _loseRun(address player, string memory username) internal {
-    vm.prank(player);
-    bytes32 battleId = IWorld(worldAddress).app__createBattle(username, true);
-    _winBattle(player, battleId);
-
+  function _loseRun(address player, string memory username, bool reset) internal {
     vm.startPrank(player);
-    battleId = IWorld(worldAddress).app__createBattle(username, false);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle(username, reset);
     // Need to go through 4 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
@@ -54,10 +80,8 @@ contract BatteryHelpersTest is MudTest {
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     assertEq(activeBalance, 0);
 
-    // Create and end battle to get a battery, and to give back stake
-    vm.prank(aliceAddress);
-    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
-    _winBattle(aliceAddress, battleId);
+    // Beat tutorial to get a battery, and to give back stake
+    _beatTutorial(aliceAddress, "Alice");
 
     globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     lastRechargeTimestamp = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
@@ -83,30 +107,29 @@ contract BatteryHelpersTest is MudTest {
   // Test revert active balance too low to stake electricity
   function testRevertSakeActiveBalanceTooLow() public {
     // Win 1st battle as Bob
-    vm.prank(bobAddress);
-    bytes32 bobBattleId = IWorld(worldAddress).app__createBattle("Bob", true);
-    _winBattle(bobAddress, bobBattleId);
+    _beatTutorial(bobAddress, "Bob");
 
     // Lose first run as Alice
-    _loseRun(aliceAddress, "Alice");
+    _beatTutorial(aliceAddress, "Alice");
+    _loseRun(aliceAddress, "Alice", false);
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
     uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     assertEq(activeBalance, BATTERY_STORAGE_LIMIT - 4000);
 
     // Lose to Bob 4 more times to have less than 8kWh in active balance
-    _loseRun(aliceAddress, "Alice");
+    _loseRun(aliceAddress, "Alice", true);
     activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     assertEq(activeBalance, BATTERY_STORAGE_LIMIT - 8000);
 
-    _loseRun(aliceAddress, "Alice");
+    _loseRun(aliceAddress, "Alice", true);
     activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     assertEq(activeBalance, BATTERY_STORAGE_LIMIT - 12000);
 
-    _loseRun(aliceAddress, "Alice");
+    _loseRun(aliceAddress, "Alice", true);
     activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     assertEq(activeBalance, BATTERY_STORAGE_LIMIT - 16000);
 
-    _loseRun(aliceAddress, "Alice");
+    _loseRun(aliceAddress, "Alice", true);
     activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
     assertEq(activeBalance, BATTERY_STORAGE_LIMIT - 20000);
 
@@ -117,33 +140,31 @@ contract BatteryHelpersTest is MudTest {
 
   // Test winStake to fill part of active balance; no author split
   function testWinStake() public {
-    // Bob should start a battle and create a SavedKingdom
-    vm.prank(bobAddress);
-    bytes32 bobBattleId = IWorld(worldAddress).app__createBattle("Bob", true);
-    _winBattle(bobAddress, bobBattleId);
+    // Bob beat tutorial and create a SavedKingdom
+    _beatTutorial(bobAddress, "Bob");
 
-    bytes32[] memory kingdoms = KingdomsByLevel.get(1);
+    bytes32[] memory kingdoms = KingdomsByLevel.get(2);
     bytes32 bobSavedKingdomId = kingdoms[0];
     bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
     assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Have Jane reach top spot, so that Alice's stake does not get returned to active balance later
-    vm.prank(janeAddress);
-    bytes32 janeBattleId = IWorld(worldAddress).app__createBattle("Jane", true);
-    _winBattle(janeAddress, janeBattleId);
+    _beatTutorial(janeAddress, "Jane");
+    
     vm.startPrank(janeAddress);
-    janeBattleId = IWorld(worldAddress).app__createBattle("Jane", false);
-    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
-    // Need to go through 4 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(janeBattleId);
-    IWorld(worldAddress).app__nextTurn(janeBattleId);
+    bytes32 janeBattleId = IWorld(worldAddress).app__createBattle("Jane", false);
+    IWorld(worldAddress).app__playerInstallTower(true, 15, 35);
+    IWorld(worldAddress).app__playerInstallTower(true, 25, 35);
+
+    // Need to go through 2 turns to end the battle
     IWorld(worldAddress).app__nextTurn(janeBattleId);
     IWorld(worldAddress).app__nextTurn(janeBattleId);
     vm.stopPrank();
+    vm.warp(block.timestamp + 1 hours);
 
     // Jane should lose her 2nd run stake to Bob's SavedKingdom
-    _loseRun(janeAddress, "Jane");
+    _loseRun(janeAddress, "Jane", true);
+
     uint256 bobSavedKingdomElectricityBalance = SavedKingdom.getElectricityBalance(bobSavedKingdomId);
     assertEq(bobSavedKingdomElectricityBalance, 2000); // 2kWh
     uint256 bobSavedKingdomWins = SavedKingdom.getWins(bobSavedKingdomId);
@@ -151,20 +172,20 @@ contract BatteryHelpersTest is MudTest {
     uint256 bobSavedKingdomLosses = SavedKingdom.getLosses(bobSavedKingdomId);
     assertEq(bobSavedKingdomLosses, 1);
 
+    // Alice should complete tutorial
+    _beatTutorial(aliceAddress, "Alice");
+
     // Alice should win the stake from Bob's SavedKingdom
-    vm.prank(aliceAddress);
-    bytes32 aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", true);
-    _winBattle(aliceAddress, aliceBattleId);
     vm.startPrank(aliceAddress);
-    aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", false);
-    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
-    // Need to go through 4 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
+    bytes32 aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", false);
+    IWorld(worldAddress).app__playerInstallTower(true, 15, 35);
+    IWorld(worldAddress).app__playerInstallTower(true, 55, 35);
+
+    // Need to go through 2 turns to end the battle
     IWorld(worldAddress).app__nextTurn(aliceBattleId);
     IWorld(worldAddress).app__nextTurn(aliceBattleId);
     vm.stopPrank();
+    vm.warp(block.timestamp + 1 hours);
 
     // Make sure Alice's staked balance is 25% of Bob's SavedKingdom stake (500Wh)
     bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
@@ -193,33 +214,28 @@ contract BatteryHelpersTest is MudTest {
 
   // Test winStake to fill all of active balance and part of reserve balance; no author split
   function testWinStakeFillReserve() public {
-    // Bob should start a battle and create a SavedKingdom
-    vm.prank(bobAddress);
-    bytes32 bobBattleId = IWorld(worldAddress).app__createBattle("Bob", true);
-    _winBattle(bobAddress, bobBattleId);
+    // Bob should beat tutorial and create a SavedKingdom
+    _beatTutorial(bobAddress, "Bob");
 
-    bytes32[] memory kingdoms = KingdomsByLevel.get(1);
+    bytes32[] memory kingdoms = KingdomsByLevel.get(2);
     bytes32 bobSavedKingdomId = kingdoms[0];
     bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
     assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Have Jane reach top spot, so that Alice's stake does not get returned to active balance later
-    vm.prank(janeAddress);
-    bytes32 janeBattleId = IWorld(worldAddress).app__createBattle("Jane", true);
-    _winBattle(janeAddress, janeBattleId);
+    _beatTutorial(janeAddress, "Jane");
     vm.startPrank(janeAddress);
-    janeBattleId = IWorld(worldAddress).app__createBattle("Jane", false);
-    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
-    // Need to go through 4 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(janeBattleId);
-    IWorld(worldAddress).app__nextTurn(janeBattleId);
+    bytes32 janeBattleId = IWorld(worldAddress).app__createBattle("Jane", false);
+    IWorld(worldAddress).app__playerInstallTower(true, 15, 35);
+    IWorld(worldAddress).app__playerInstallTower(true, 25, 35);
+    // Need to go through 2 turns to end the battle
     IWorld(worldAddress).app__nextTurn(janeBattleId);
     IWorld(worldAddress).app__nextTurn(janeBattleId);
     vm.stopPrank();
+    vm.warp(block.timestamp + 1 hours);
 
     // Jane should lose her 2nd run stake to Bob's SavedKingdom
-    _loseRun(janeAddress, "Jane");
+    _loseRun(janeAddress, "Jane", true);
     uint256 bobSavedKingdomElectricityBalance = SavedKingdom.getElectricityBalance(bobSavedKingdomId);
     assertEq(bobSavedKingdomElectricityBalance, 2000); // 2kWh
     uint256 bobSavedKingdomWins = SavedKingdom.getWins(bobSavedKingdomId);
@@ -228,31 +244,32 @@ contract BatteryHelpersTest is MudTest {
     assertEq(bobSavedKingdomLosses, 1);
 
     // John should lose his 16 times so there is 34kWh to Bob's SavedKingdom
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
+    _beatTutorial(johnAddress, "John");
+    _loseRun(johnAddress, "John", false);
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
     vm.warp(block.timestamp + 24 hours);
     vm.prank(johnAddress);
     IWorld(worldAddress).app__claimRecharge();
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
     vm.warp(block.timestamp + 24 hours);
     vm.prank(johnAddress);
     IWorld(worldAddress).app__claimRecharge();
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
     vm.warp(block.timestamp + 24 hours);
     vm.prank(johnAddress);
     IWorld(worldAddress).app__claimRecharge();
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
-    _loseRun(johnAddress, "John");
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
+    _loseRun(johnAddress, "John", true);
     bobSavedKingdomElectricityBalance = SavedKingdom.getElectricityBalance(bobSavedKingdomId);
     assertEq(bobSavedKingdomElectricityBalance, 34000); // 34kWh
     bobSavedKingdomWins = SavedKingdom.getWins(bobSavedKingdomId);
@@ -261,19 +278,8 @@ contract BatteryHelpersTest is MudTest {
     assertEq(bobSavedKingdomLosses, 1);
 
     // Alice should win the stake from Bob's SavedKingdom
-    vm.prank(aliceAddress);
-    bytes32 aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", true);
-    _winBattle(aliceAddress, aliceBattleId);
-    vm.startPrank(aliceAddress);
-    aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", false);
-    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
-    // Need to go through 4 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    vm.stopPrank();
+    _beatTutorial(aliceAddress, "Alice");
+    _winBattle(aliceAddress, "Alice", false);
 
     // Make sure her staked balance is 25% of Bob's SavedKingdom stake (34kWh)
     bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
@@ -302,18 +308,17 @@ contract BatteryHelpersTest is MudTest {
 
   // Test winStake to fill part of active balance, while also splitting with authors
   function testWinStakeAuthorSplit() public {
-    // Bob should start a battle and create a SavedKingdom
-    vm.prank(bobAddress);
-    bytes32 bobBattleId = IWorld(worldAddress).app__createBattle("Bob", true);
-    _winBattle(bobAddress, bobBattleId);
+    // Bob beat tutorial and create a SavedKingdom
+    _beatTutorial(bobAddress, "Bob");
 
-    bytes32[] memory kingdoms = KingdomsByLevel.get(1);
+    bytes32[] memory kingdoms = KingdomsByLevel.get(2);
     bytes32 bobSavedKingdomId = kingdoms[0];
     bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
     assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Jane should lose her stake to Bob's SavedKingdom
-    _loseRun(janeAddress, "Jane");
+    _beatTutorial(janeAddress, "Jane");
+    _loseRun(janeAddress, "Jane", false);
     uint256 bobSavedKingdomElectricityBalance = SavedKingdom.getElectricityBalance(bobSavedKingdomId);
     assertEq(bobSavedKingdomElectricityBalance, 2000); // 2kWh
     uint256 bobSavedKingdomWins = SavedKingdom.getWins(bobSavedKingdomId);
@@ -326,19 +331,16 @@ contract BatteryHelpersTest is MudTest {
     IWorld(worldAddress).app__registerPatent(AUTHORED_BYTECODE, "My description", "Jane's Patent", "");
 
     // Alice should win the stake from Bob's SavedKingdom
-    vm.prank(aliceAddress);
-    bytes32 aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", true);
-    _winBattle(aliceAddress, aliceBattleId);
+    _beatTutorial(aliceAddress, "Alice");
     vm.startPrank(aliceAddress);
-    aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", false);
-    IWorld(worldAddress).app__playerInstallTower(false, 35, 35);
+    bytes32 aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", false);
     bytes32 authoredTowerId = IWorld(worldAddress).app__playerInstallTower(true, 45, 15);
+    IWorld(worldAddress).app__playerModifyTowerSystem(authoredTowerId, AUTHORED_BYTECODE, "");
     // Go to next round to get more actions
     IWorld(worldAddress).app__nextTurn(aliceBattleId);
     IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    IWorld(worldAddress).app__playerModifyTowerSystem(authoredTowerId, AUTHORED_BYTECODE, "");
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
+    IWorld(worldAddress).app__playerInstallTower(false, 15, 35);
+    IWorld(worldAddress).app__playerInstallTower(false, 25, 35);
     IWorld(worldAddress).app__nextTurn(aliceBattleId);
     IWorld(worldAddress).app__nextTurn(aliceBattleId);
     vm.stopPrank();
@@ -377,47 +379,32 @@ contract BatteryHelpersTest is MudTest {
 
   // Test winStake when opponent's SavedKingdom has less than 1.92kWh of electricity
   function testWinStakeLowKingdomBalance() public {
-    // Bob should start a battle and create a SavedKingdom
-    vm.prank(bobAddress);
-    bytes32 bobBattleId = IWorld(worldAddress).app__createBattle("Bob", true);
-    _winBattle(bobAddress, bobBattleId);
+    // Bob beat tutorial and create a SavedKingdom
+    _beatTutorial(bobAddress, "Bob");
 
-    bytes32[] memory kingdoms = KingdomsByLevel.get(1);
+    bytes32[] memory kingdoms = KingdomsByLevel.get(2);
     bytes32 bobSavedKingdomId = kingdoms[0];
     bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
     assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Jane should lose her stake to Bob's SavedKingdom
-    _loseRun(janeAddress, "Jane");
+    _beatTutorial(janeAddress, "Jane");
+    _loseRun(janeAddress, "Jane", false);
 
-    // Jane should win some stake back in 2nd run
-    vm.prank(janeAddress);
-    bytes32 janeBattleId = IWorld(worldAddress).app__createBattle("Jane", true);
-    _winBattle(janeAddress, janeBattleId);
+    // Jane should win some stake back in 2nd run, and become top player
     vm.startPrank(janeAddress);
-    janeBattleId = IWorld(worldAddress).app__createBattle("Jane", false);
-    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
-    IWorld(worldAddress).app__nextTurn(janeBattleId);
-    IWorld(worldAddress).app__nextTurn(janeBattleId);
+    bytes32 janeBattleId = IWorld(worldAddress).app__createBattle("Jane", true);
+    IWorld(worldAddress).app__playerInstallTower(true, 15, 35);
+    IWorld(worldAddress).app__playerInstallTower(true, 25, 35);
+    // Need to go through 2 turns to end the battle
     IWorld(worldAddress).app__nextTurn(janeBattleId);
     IWorld(worldAddress).app__nextTurn(janeBattleId);
     vm.stopPrank();
+    vm.warp(block.timestamp + 1 hours);
 
     // Alice should win the stake from Bob's SavedKingdom
-    vm.prank(aliceAddress);
-    bytes32 aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", true);
-    _winBattle(aliceAddress, aliceBattleId);
-    vm.startPrank(aliceAddress);
-    aliceBattleId = IWorld(worldAddress).app__createBattle("Alice", false);
-    IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
-    IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
-    // Need to go through 4 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    vm.stopPrank();
+    _beatTutorial(aliceAddress, "Alice");
+    _winBattle(aliceAddress, "Alice", false);
 
     // Staked balance should be 8kWh since Bob's SavedKingdom has less than 1.92kWh
     bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
@@ -439,18 +426,17 @@ contract BatteryHelpersTest is MudTest {
 
   // Test loseStake to increase opponent SavedKingdom balance and opponent reserve balance; no author split
   function testLoseStake() public {
-    // Bob should start a battle and create a SavedKingdom
-    vm.prank(bobAddress);
-    bytes32 bobBattleId = IWorld(worldAddress).app__createBattle("Bob", true);
-    _winBattle(bobAddress, bobBattleId);
+    // Bob should beat tutorial and create a SavedKingdom
+    _beatTutorial(bobAddress, "Bob");
 
-    bytes32[] memory kingdoms = KingdomsByLevel.get(1);
+    bytes32[] memory kingdoms = KingdomsByLevel.get(2);
     bytes32 bobSavedKingdomId = kingdoms[0];
     bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
     assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Alice should lose her stake to Bob's SavedKingdom
-    _loseRun(aliceAddress, "Alice");
+    _beatTutorial(aliceAddress, "Alice");
+    _loseRun(aliceAddress, "Alice", false);
 
     // Make sure that Alice's stakedBalance is 0kWh
     bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
@@ -486,23 +472,16 @@ contract BatteryHelpersTest is MudTest {
     vm.stopPrank();
 
     // Bob should start a battle and create a SavedKingdom using Jane's patent
-    vm.startPrank(bobAddress);
-    bytes32 bobBattleId = IWorld(worldAddress).app__createBattle("Bob", true);
-    bytes32 authoredTowerId = IWorld(worldAddress).app__playerInstallTower(true, 45, 15);
-    IWorld(worldAddress).app__playerModifyTowerSystem(authoredTowerId, AUTHORED_BYTECODE, "");
-    IWorld(worldAddress).app__nextTurn(bobBattleId);
-    IWorld(worldAddress).app__nextTurn(bobBattleId);
-    IWorld(worldAddress).app__nextTurn(bobBattleId);
-    IWorld(worldAddress).app__nextTurn(bobBattleId);
-    vm.stopPrank();
+    _beatTutorial(bobAddress, "Bob");
 
-    bytes32[] memory kingdoms = KingdomsByLevel.get(1);
+    bytes32[] memory kingdoms = KingdomsByLevel.get(2);
     bytes32 bobSavedKingdomId = kingdoms[0];
     bytes32 bobSavedKingdomAuthor = SavedKingdom.getAuthor(bobSavedKingdomId);
     assertEq(bobSavedKingdomAuthor, EntityHelpers.addressToGlobalPlayerId(bobAddress));
 
     // Alice should lose her stake to Bob's SavedKingdom
-    _loseRun(aliceAddress, "Alice");
+    _beatTutorial(aliceAddress, "Alice");
+    _loseRun(aliceAddress, "Alice", false);
 
     // Make sure that Alice's stakedBalance is 0kWh
     bytes32 globalAliceId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);

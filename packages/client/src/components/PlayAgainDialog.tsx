@@ -102,6 +102,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
 
       const resetLevel =
         battle.winner !== battle.player1Id ||
+        winStreak > (topLevel ?? 0n) ||
         (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0);
 
       const savedUsername = getComponentValue(Username, globalPlayerId)?.value;
@@ -238,7 +239,10 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     );
   }
 
-  if (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0) {
+  if (
+    winStreak > (topLevel ?? 0n) ||
+    (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0)
+  ) {
     return (
       <Dialog
         open={isBattleOverDialogOpen}

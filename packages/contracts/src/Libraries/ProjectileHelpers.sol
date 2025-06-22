@@ -339,7 +339,7 @@ library ProjectileHelpers {
       bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(winStreak);
       bytes32 savedKingdomId = LastBattleWonInRun.get(globalPlayer1Id);
 
-      if (savedKingdomId != bytes32(0) && winStreak > 0) {
+      if (savedKingdomId != bytes32(0) && winStreak > 2) {
         _updateKingdomsByLevel(kingdomsByLevel, savedKingdomId, winStreak, globalPlayer1Id);
       }
 

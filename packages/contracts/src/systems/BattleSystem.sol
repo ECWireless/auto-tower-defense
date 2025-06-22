@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { CurrentBattle, Battle, BattleData, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
+import { CurrentBattle, Battle, BattleData, HighestLevel, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
 import { ProjectileHelpers } from "../Libraries/ProjectileHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { BattleHelpers } from "../Libraries/BattleHelpers.sol";
@@ -33,7 +33,12 @@ contract BattleSystem is System {
     bytes32[] memory defaultActionIds = new bytes32[](0);
     bytes32 savedKingdomId = keccak256(abi.encode(defaultActionIds));
     if (resetLevel) {
-      WinStreak.set(globalPlayer1Id, 0);
+      WinStreak.set(globalPlayer1Id, 2); // This allows the player to potentially skip the tutorial levels
+      if (HighestLevel.get(globalPlayer1Id) > 0 && BatteryHelpers.arePlayableKingdoms(globalPlayer1Id)) {
+        savedKingdomId = BattleHelpers.nextLevel(globalPlayer1Id);
+      } else {
+        WinStreak.set(globalPlayer1Id, 0);
+      }
       // Stake 8 kWh of electricity
       BatteryHelpers.stakeElectricity(globalPlayer1Id);
     } else {

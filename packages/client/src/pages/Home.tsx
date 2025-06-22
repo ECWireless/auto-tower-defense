@@ -184,7 +184,8 @@ export const Home = (): JSX.Element => {
 
         const resetLevel =
           winStreak === 0n ||
-          (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0);
+          winStreak > (topLevel ?? 0n) ||
+          (topLevel >= winStreak && topLevelKingdomsICanPlay.length === 0);
 
         const activeBalance = batteryDetails?.activeBalance ?? BigInt(0);
         const reserveBalance = batteryDetails?.reserveBalance ?? BigInt(0);
