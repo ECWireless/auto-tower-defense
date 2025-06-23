@@ -20,6 +20,7 @@ export enum TutorialSteps {
   FOUR_FIVE = '4.5', // Select patent in assembly drawer
   FOUR_SIX = '4.6', // Click deploy button
   FOUR_SEVEN = '4.7', // Next turn
+  FIVE = '5', // Tutorial complete
 }
 
 export const useTutorialIndicator = (
@@ -30,7 +31,7 @@ export const useTutorialIndicator = (
     components: { DefaultLogic, TutorialProgress },
     network: { globalPlayerId },
   } = useMUD();
-  const { activeTowerId, battle, towers } = useBattle();
+  const { activeTowerId, battle, towers, triggerAnimation } = useBattle();
   const tutorialProgress = useComponentValue(TutorialProgress, globalPlayerId);
   const defaultLogicAddress = useComponentValue(
     DefaultLogic,
@@ -132,6 +133,15 @@ export const useTutorialIndicator = (
     ) {
       return TutorialSteps.FOUR_SEVEN; // Next turn
     }
+
+    if (
+      tutorialProgress.step4Completed &&
+      battle?.roundCount === 2 &&
+      !triggerAnimation &&
+      !tutorialProgress.step5Completed
+    ) {
+      return TutorialSteps.FIVE;
+    }
     return TutorialSteps.NONE;
   }, [
     activeTowerId,
@@ -140,6 +150,7 @@ export const useTutorialIndicator = (
     defaultLogicAddress,
     selectedPatent,
     towers,
+    triggerAnimation,
     tutorialProgress,
   ]);
 

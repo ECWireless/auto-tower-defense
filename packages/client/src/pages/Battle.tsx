@@ -30,6 +30,7 @@ import { InstallInfoDialog } from '@/components/dialogs/InstallInfoDialog';
 import { ModifyInfoDialog } from '@/components/dialogs/ModifyInfoDialog';
 import { NoActionsDialog } from '@/components/dialogs/NoActionsDialog';
 import { PlayAgainDialog } from '@/components/dialogs/PlayAgainDialog';
+import { TutorialCompeleteDialog } from '@/components/dialogs/TutorialCompleteDialog';
 import { WelcomeDialog } from '@/components/dialogs/WelcomeDialog';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { NoBattleScreen } from '@/components/NoBattleScreen';
@@ -406,6 +407,7 @@ export const InnerBattlePage = (): JSX.Element => {
         <WelcomeDialog />
         <InstallInfoDialog />
         <ModifyInfoDialog />
+        <TutorialCompeleteDialog />
         <HowToPlayDialog
           isHelpDialogOpen={isHelpDialogOpen}
           setIsHelpDialogOpen={setIsHelpDialogOpen}
