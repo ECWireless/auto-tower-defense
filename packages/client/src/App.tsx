@@ -2,9 +2,9 @@ import { useComponentValue } from '@latticexyz/react';
 import { Analytics } from '@vercel/analytics/react';
 import { BrowserRouter as Router } from 'react-router-dom';
 
-import { AsyncRevenueDialog } from '@/components/AsyncRevenueDialog';
-import { SettingsDialog } from '@/components/SettingsDialog';
-import { SolarFarmDialog } from '@/components/SolarFarmDialog';
+import { AsyncRevenueDialog } from '@/components/dialogs/AsyncRevenueDialog';
+import { SettingsDialog } from '@/components/dialogs/SettingsDialog';
+import { SolarFarmDialog } from '@/components/dialogs/SolarFarmDialog';
 import { Toaster } from '@/components/ui/sonner';
 import { useMUD } from '@/hooks/useMUD';
 import AppRoutes from '@/Routes';

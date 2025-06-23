@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { zeroHash } from 'viem';
 
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -28,8 +29,6 @@ import { useMUD } from '@/hooks/useMUD';
 import { BATTLES_PATH } from '@/Routes';
 import { MAX_ROUNDS } from '@/utils/constants';
 import { formatWattHours } from '@/utils/helpers';
-
-import { Button } from './ui/button';
 
 type PlayAgainDialogProps = {
   isBattleOverDialogOpen: boolean;
