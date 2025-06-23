@@ -54,6 +54,7 @@ export const WelcomeDialog: React.FC = () => {
       <DialogContent
         aria-describedby={undefined}
         className="bg-gray-900/95 border border-cyan-900/50 max-h-[90vh] overflow-y-auto text-white"
+        showClose={false}
       >
         <DialogHeader>
           <DialogTitle className="font-bold text-cyan-400 text-2xl">

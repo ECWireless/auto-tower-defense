@@ -5,19 +5,24 @@ import { zeroHash } from 'viem';
 
 import { Button } from '@/components/ui/button';
 import { useMUD } from '@/hooks/useMUD';
+import { TutorialSteps } from '@/hooks/useTutorialIndicator';
 import { cn } from '@/lib/utils';
 import { formatDateFromTimestamp, shortenAddress } from '@/utils/helpers';
 import { type Patent as PatentType } from '@/utils/types';
 
+import { ClickIndicator } from './ClickIndicator';
+
 type PatentsListProps = {
   onSelectPatent: (patent: PatentType) => void;
   patents: PatentType[];
+  tutorialStep: TutorialSteps;
   selectedPatent: PatentType;
 };
 
 export const PatentsList: React.FC<PatentsListProps> = ({
   onSelectPatent,
   patents,
+  tutorialStep,
   selectedPatent,
 }) => {
   const {
@@ -132,7 +137,7 @@ export const PatentsList: React.FC<PatentsListProps> = ({
               <div
                 key={patent.id}
                 className={cn(
-                  'border-l-2 cursor-pointer flex gap-2 items-start py-2 px-3 rounded transition-all',
+                  'border-l-2 cursor-pointer flex gap-2 items-start py-2 px-3 relative rounded transition-all',
                   selectedPatent.id === patent.id
                     ? 'bg-cyan-950/30 border-l-cyan-500'
                     : 'bg-gray-900/50 border-l-transparent hover:bg-gray-900/80 hover:border-l-gray-700',
@@ -171,6 +176,12 @@ export const PatentsList: React.FC<PatentsListProps> = ({
                     </span>
                   </div>
                 </div>
+                {patent.name === '45 Degrees Down' &&
+                  tutorialStep === TutorialSteps.FOUR_FIVE && (
+                    <div className="absolute left-50 top-5">
+                      <ClickIndicator />
+                    </div>
+                  )}
               </div>
             ),
           )}

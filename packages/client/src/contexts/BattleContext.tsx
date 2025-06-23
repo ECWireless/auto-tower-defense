@@ -502,8 +502,20 @@ export const BattleProvider = ({
       }
 
       // This is purely for the sake of the tutorial
-      if (tutorialProgress && !tutorialProgress.step4Completed) {
+      if (
+        tutorialProgress &&
+        !tutorialProgress.step4Completed &&
+        battle.level === BigInt(0)
+      ) {
         await completeTutorialStep(3);
+      }
+
+      if (
+        tutorialProgress &&
+        !tutorialProgress.step4Completed &&
+        battle.level === BigInt(1)
+      ) {
+        await completeTutorialStep(4);
       }
 
       if (battle.turn === battle.player2Id) {

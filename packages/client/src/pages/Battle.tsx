@@ -237,7 +237,7 @@ export const InnerBattlePage = (): JSX.Element => {
       onDragStart={onDragStart}
       sensors={sensors}
     >
-      <div className="flex flex-col min-h-screen bg-black text-white relative">
+      <div className="flex flex-col min-h-screen bg-black text-white">
         <BackgroundAnimation />
 
         {/* Top Navigation */}
@@ -331,7 +331,7 @@ export const InnerBattlePage = (): JSX.Element => {
             {batteryDetails && (
               <div className="flex flex-col items-center mb-2 sm:hidden">
                 <div
-                  className="bg-gray-900/80 border border-gray-800 cursor-pointer flex gap-2 hover:bg-gray-800/80 items-center px-3 py-1.5 relative rounded-full transition-colors"
+                  className="bg-gray-900/80 border border-gray-800 cursor-pointer flex gap-2 hover:bg-gray-800/80 items-center px-3 py-1.5 rounded-full transition-colors"
                   onClick={() => setIsBatteryInfoDialogOpen(true)}
                 >
                   {/* Battery Charge */}

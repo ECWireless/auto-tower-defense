@@ -266,9 +266,17 @@ export const BattleBoard: React.FC = () => {
                                     className="absolute bg-gray-800 border border-cyan-500 hover:bg-gray-700 hover:cursor-pointer p-1.5 rounded-full shadow-lg top-1/2 transition-colors z-20 -left-[35px]"
                                     onClick={() => onViewTower(towerOnTile)}
                                     style={{
-                                      transform: 'translateY(-50%)',
+                                      left: `calc(${colIndex} * (100% / ${GRID_COLS} - 2px))`,
+                                      top: `calc(${rowIndex} * (100% / ${GRID_ROWS} - 4px))`,
+                                      transform: 'translate(-75%, 125%)',
                                     }}
                                   >
+                                    {tutorialStep ===
+                                      TutorialSteps.FOUR_FOUR && (
+                                      <div className="absolute -top-1 left-8">
+                                        <ClickIndicator />
+                                      </div>
+                                    )}
                                     <Wrench className="h-4 text-cyan-400 w-4" />
                                   </div>
                                 )}
@@ -282,7 +290,9 @@ export const BattleBoard: React.FC = () => {
                                       handleTowerSelect('', 'offense');
                                     }}
                                     style={{
-                                      transform: 'translateY(-50%)',
+                                      left: `calc(${colIndex} * (100% / ${GRID_COLS} - 2px))`,
+                                      top: `calc(${rowIndex} * (100% / ${GRID_ROWS} - 4px))`,
+                                      transform: 'translate(-75%, 125%)',
                                     }}
                                   >
                                     <Binoculars className="h-4 text-pink-400 w-4" />
@@ -396,7 +406,6 @@ export const BattleBoard: React.FC = () => {
                     )}
                     {rowIndex === 3 &&
                       colIndex === 4 &&
-                      activeTowerId === 'tower1' &&
                       !isInstalling &&
                       tutorialStep === TutorialSteps.THREE_TWO && (
                         <div
@@ -404,6 +413,33 @@ export const BattleBoard: React.FC = () => {
                             left: `calc(${colIndex} * (100% / ${GRID_COLS}))`,
                             top: `calc(${rowIndex} * (100% / ${GRID_ROWS}))`,
                             transform: 'translate(0%, -50%)',
+                          }}
+                        >
+                          <ClickIndicator />
+                        </div>
+                      )}
+                    {rowIndex === 0 &&
+                      colIndex === 6 &&
+                      !isInstalling &&
+                      tutorialStep === TutorialSteps.FOUR_TWO && (
+                        <div
+                          style={{
+                            left: `calc(${colIndex} * (100% / ${GRID_COLS}))`,
+                            top: `calc(${rowIndex} * (100% / ${GRID_ROWS}))`,
+                            transform: 'translate(0%, -50%)',
+                          }}
+                        >
+                          <ClickIndicator />
+                        </div>
+                      )}
+                    {rowIndex === 1 &&
+                      colIndex === 7 &&
+                      tutorialStep === TutorialSteps.FOUR_THREE && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: `calc(${colIndex} * (100% / ${GRID_COLS})  - 5px)`,
+                            top: `calc(${rowIndex} * (100% / ${GRID_ROWS}) - 25px)`,
                           }}
                         >
                           <ClickIndicator />

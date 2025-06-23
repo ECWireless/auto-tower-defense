@@ -58,9 +58,9 @@ export const BattleControlButtons: React.FC<BattleControlButtonsProps> = ({
           )}
           Next Turn
         </Button>
-        {tutorialStep === TutorialSteps.THREE_THREE && !isChangingTurn && (
-          <ClickIndicator />
-        )}
+        {(tutorialStep === TutorialSteps.THREE_THREE ||
+          tutorialStep === TutorialSteps.FOUR_SEVEN) &&
+          !isChangingTurn && <ClickIndicator />}
       </div>
     </>
   );

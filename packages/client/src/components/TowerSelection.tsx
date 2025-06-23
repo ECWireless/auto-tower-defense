@@ -41,7 +41,10 @@ export const TowerSelection = (): JSX.Element => {
               <span className="mt-1 text-white text-xs">{tower.name}</span>
               {tower.id === 'tower1' &&
                 activeTowerId !== tower.id &&
-                tutorialStep === TutorialSteps.THREE_ONE && <ClickIndicator />}
+                (tutorialStep === TutorialSteps.THREE_ONE ||
+                  tutorialStep === TutorialSteps.FOUR_ONE) && (
+                  <ClickIndicator />
+                )}
             </div>
           </Draggable>
         ))}
