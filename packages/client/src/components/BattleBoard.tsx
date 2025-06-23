@@ -22,6 +22,10 @@ import {
 import { useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
+import {
+  TutorialSteps,
+  useTutorialIndicator,
+} from '@/hooks/useTutorialIndicator';
 import { type Tower } from '@/utils/types';
 
 export const INSTALLABLE_TOWERS = [
@@ -67,6 +71,7 @@ export const BattleBoard: React.FC = () => {
   } = useBattle();
   const { playSfx } = useSettings();
   const { over: draggingOver, active: draggingActive } = useDndContext();
+  const { tutorialStep } = useTutorialIndicator();
 
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [isAssemblyDrawerOpen, setIsAssemblyDrawerOpen] = useState(false);
@@ -201,7 +206,7 @@ export const BattleBoard: React.FC = () => {
               return (
                 <Droppable key={tileId} disabled={!canInstall} id={tileId}>
                   <div
-                    className={`aspect-square relative ${draggingOver?.id === tileId ? 'hover' : ''} ${isLeftSide ? 'left' : ''} ${isTowerSelected ? 'selected' : ''} 
+                    className={`aspect-square ${draggingOver?.id === tileId ? 'hover' : ''} ${isLeftSide ? 'left' : ''} ${isTowerSelected ? 'selected' : ''} 
                         ${
                           isBlueBase
                             ? 'base-blue flex battle-cell items-center justify-center'
@@ -391,7 +396,19 @@ export const BattleBoard: React.FC = () => {
                     )}
                     {rowIndex === 3 &&
                       colIndex === 4 &&
-                      activeTowerId === 'tower1' && <ClickIndicator />}
+                      activeTowerId === 'tower1' &&
+                      !isInstalling &&
+                      tutorialStep === TutorialSteps.THREE_TWO && (
+                        <div
+                          style={{
+                            left: `calc(${colIndex} * (100% / ${GRID_COLS}))`,
+                            top: `calc(${rowIndex} * (100% / ${GRID_ROWS}))`,
+                            transform: 'translate(0%, -50%)',
+                          }}
+                        >
+                          <ClickIndicator />
+                        </div>
+                      )}
                   </div>
                 </Droppable>
               );

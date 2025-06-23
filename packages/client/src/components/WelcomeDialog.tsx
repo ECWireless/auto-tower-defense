@@ -1,6 +1,5 @@
-import { useComponentValue } from '@latticexyz/react';
 import { Loader2 } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -13,24 +12,20 @@ import {
 } from '@/components/ui/dialog';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
+import {
+  TutorialSteps,
+  useTutorialIndicator,
+} from '@/hooks/useTutorialIndicator';
 
 export const WelcomeDialog: React.FC = () => {
   const {
-    components: { TutorialProgress },
-    network: { globalPlayerId },
     systemCalls: { completeTutorialStep },
   } = useMUD();
   const { playSfx } = useSettings();
+  const { tutorialStep } = useTutorialIndicator();
 
   const [isCompleting, setIsCompleting] = useState(false);
   const [isSecondPage, setIsSecondPage] = useState(false);
-
-  const tutorialProgress = useComponentValue(TutorialProgress, globalPlayerId);
-
-  const isWelcomeDialogOpen = useMemo(() => {
-    if (!tutorialProgress) return true;
-    return !tutorialProgress.step1Completed;
-  }, [tutorialProgress]);
 
   const onCompleteWelcomeTutorial = useCallback(async () => {
     try {
@@ -55,7 +50,7 @@ export const WelcomeDialog: React.FC = () => {
   }, [completeTutorialStep, playSfx]);
 
   return (
-    <Dialog open={isWelcomeDialogOpen}>
+    <Dialog open={tutorialStep === TutorialSteps.ONE}>
       <DialogContent
         aria-describedby={undefined}
         className="bg-gray-900/95 border border-cyan-900/50 max-h-[90vh] overflow-y-auto text-white"

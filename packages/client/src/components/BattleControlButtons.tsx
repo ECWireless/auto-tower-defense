@@ -1,11 +1,12 @@
-import { useComponentValue } from '@latticexyz/react';
 import { HelpCircle, Loader2, Play, Undo2 } from 'lucide-react';
-import { useMemo } from 'react';
 
 import { ClickIndicator } from '@/components/ClickIndicator';
 import { Button } from '@/components/ui/button';
 import { useBattle } from '@/contexts/BattleContext';
-import { useMUD } from '@/hooks/useMUD';
+import {
+  TutorialSteps,
+  useTutorialIndicator,
+} from '@/hooks/useTutorialIndicator';
 
 type BattleControlButtonsProps = {
   setIsHelpDialogOpen: (open: boolean) => void;
@@ -14,24 +15,9 @@ type BattleControlButtonsProps = {
 export const BattleControlButtons: React.FC<BattleControlButtonsProps> = ({
   setIsHelpDialogOpen,
 }) => {
-  const {
-    components: { TutorialProgress },
-    network: { globalPlayerId },
-  } = useMUD();
   const { battle, isChangingTurn, isUndoing, onNextTurn, onUndoAction } =
     useBattle();
-
-  const tutorialProgress = useComponentValue(TutorialProgress, globalPlayerId);
-
-  const showNextTurnPrompt = useMemo(() => {
-    if (!tutorialProgress) return false;
-    return (
-      tutorialProgress.step1Completed &&
-      tutorialProgress.step2Completed &&
-      tutorialProgress.step3Completed &&
-      !tutorialProgress.step4Completed
-    );
-  }, [tutorialProgress]);
+  const { tutorialStep } = useTutorialIndicator();
 
   return (
     <>
@@ -72,7 +58,9 @@ export const BattleControlButtons: React.FC<BattleControlButtonsProps> = ({
           )}
           Next Turn
         </Button>
-        {showNextTurnPrompt && <ClickIndicator />}
+        {tutorialStep === TutorialSteps.THREE_THREE && !isChangingTurn && (
+          <ClickIndicator />
+        )}
       </div>
     </>
   );

@@ -18,6 +18,4 @@ interface ITutorialSystem {
   function app__completeTutorialStep4() external;
 
   function app__completeTutorialStep5() external;
-
-  function app__completeTutorialStep6() external;
 }

@@ -1,31 +1,18 @@
 import { useDndContext } from '@dnd-kit/core';
-import { useComponentValue } from '@latticexyz/react';
-import { useMemo } from 'react';
 
 import { INSTALLABLE_TOWERS } from '@/components/BattleBoard';
 import { ClickIndicator } from '@/components/ClickIndicator';
 import { Draggable } from '@/components/Draggable';
 import { useBattle } from '@/contexts/BattleContext';
-import { useMUD } from '@/hooks/useMUD';
+import {
+  TutorialSteps,
+  useTutorialIndicator,
+} from '@/hooks/useTutorialIndicator';
 
 export const TowerSelection = (): JSX.Element => {
-  const {
-    components: { TutorialProgress },
-    network: { globalPlayerId },
-  } = useMUD();
   const { activeTowerId, handleTowerSelect, isPlayer1 } = useBattle();
   const { active: draggingActive } = useDndContext();
-
-  const tutorialProgress = useComponentValue(TutorialProgress, globalPlayerId);
-
-  const showInstallPrompt = useMemo(() => {
-    if (!tutorialProgress) return false;
-    return (
-      tutorialProgress.step1Completed &&
-      tutorialProgress.step2Completed &&
-      !tutorialProgress.step3Completed
-    );
-  }, [tutorialProgress]);
+  const { tutorialStep } = useTutorialIndicator();
 
   return (
     <div className="bg-gray-900 border border-cyan-900/50 mt-1 p-2 rounded-b-md">
@@ -54,7 +41,7 @@ export const TowerSelection = (): JSX.Element => {
               <span className="mt-1 text-white text-xs">{tower.name}</span>
               {tower.id === 'tower1' &&
                 activeTowerId !== tower.id &&
-                showInstallPrompt && <ClickIndicator />}
+                tutorialStep === TutorialSteps.THREE_ONE && <ClickIndicator />}
             </div>
           </Draggable>
         ))}

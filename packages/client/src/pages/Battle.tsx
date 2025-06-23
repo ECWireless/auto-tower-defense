@@ -37,6 +37,10 @@ import { WelcomeDialog } from '@/components/WelcomeDialog';
 import { BattleProvider, useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
+import {
+  TutorialSteps,
+  useTutorialIndicator,
+} from '@/hooks/useTutorialIndicator';
 import { BATTERY_STORAGE_LIMIT } from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
@@ -56,7 +60,7 @@ export const InnerBattlePage = (): JSX.Element => {
   const { isConnected, isReconnecting } = useAccount();
   const { data: sessionClient } = useSessionClient();
   const {
-    components: { BatteryDetails, SolarFarmDetails, TutorialProgress },
+    components: { BatteryDetails, SolarFarmDetails },
     network: { globalPlayerId },
     systemCalls: { claimRecharge },
   } = useMUD();
@@ -73,18 +77,13 @@ export const InnerBattlePage = (): JSX.Element => {
     towers,
   } = useBattle();
   const { playSfx } = useSettings();
+  const { tutorialStep } = useTutorialIndicator();
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: {
       distance: 5,
     },
   });
   const sensors = useSensors(pointerSensor);
-  const tutorialProgress = useComponentValue(TutorialProgress, globalPlayerId);
-
-  const showSolarFarmDialogPrompt = useMemo(() => {
-    if (!tutorialProgress) return false;
-    return tutorialProgress.step1Completed && !tutorialProgress.step2Completed;
-  }, [tutorialProgress]);
 
   // Add battle ID to tab title
   useEffect(() => {
@@ -304,7 +303,7 @@ export const InnerBattlePage = (): JSX.Element => {
                   <span className="ml-1 text-gray-400 text-xs">Reserve</span>
                 </div>
               </div>
-              {showSolarFarmDialogPrompt && <ClickIndicator />}
+              {tutorialStep === TutorialSteps.TWO && <ClickIndicator />}
             </div>
             {/* Claim Recharge Button */}
             {claimableRecharge > BigInt(1_000) &&
@@ -360,7 +359,7 @@ export const InnerBattlePage = (): JSX.Element => {
                       <span className="text-gray-400 text-xs">Reserve</span>
                     </div>
                   </div>
-                  {showSolarFarmDialogPrompt && <ClickIndicator />}
+                  {tutorialStep === TutorialSteps.TWO && <ClickIndicator />}
                 </div>
                 {/* Claim Recharge Button */}
                 {claimableRecharge > BigInt(1_000) &&
@@ -412,7 +411,7 @@ export const InnerBattlePage = (): JSX.Element => {
         <BatteryInfoDialog
           isBatteryInfoDialogOpen={isBatteryInfoDialogOpen}
           onChangeBatteryInfoDialog={onChangeBatteryInfoDialog}
-          showSolarFarmDialogPrompt={showSolarFarmDialogPrompt}
+          showSolarFarmDialogPrompt={tutorialStep === TutorialSteps.TWO}
         />
         <NoActionsDialog />
         <CastleHitDialog />

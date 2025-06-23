@@ -291,11 +291,6 @@ export const BattleProvider = ({
 
         const hasProjectile = activePiece === 'offense';
 
-        // This is purely for the sake of the tutorial
-        if (col === 4 && row === 3 && activeTowerId === 'tower1') {
-          await completeTutorialStep(3);
-        }
-
         const { error, success } = await installTower(
           hasProjectile,
           col * 10,
@@ -326,15 +321,7 @@ export const BattleProvider = ({
         setActiveTowerId(null);
       }
     },
-    [
-      activePiece,
-      activeTowerId,
-      battle,
-      completeTutorialStep,
-      fetchBattle,
-      installTower,
-      playSfx,
-    ],
+    [activePiece, activeTowerId, battle, fetchBattle, installTower, playSfx],
   );
 
   const onMoveTower = useCallback(
@@ -516,7 +503,7 @@ export const BattleProvider = ({
 
       // This is purely for the sake of the tutorial
       if (tutorialProgress && !tutorialProgress.step4Completed) {
-        await completeTutorialStep(4);
+        await completeTutorialStep(3);
       }
 
       if (battle.turn === battle.player2Id) {
