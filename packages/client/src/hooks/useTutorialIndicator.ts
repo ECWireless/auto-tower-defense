@@ -11,6 +11,7 @@ export enum TutorialSteps {
   THREE_ONE = '3.1',
   THREE_TWO = '3.2',
   THREE_THREE = '3.3',
+  FOUR_ONE = '4.1',
 }
 
 export const useTutorialIndicator = (): { tutorialStep: TutorialSteps } => {
@@ -18,7 +19,7 @@ export const useTutorialIndicator = (): { tutorialStep: TutorialSteps } => {
     components: { TutorialProgress },
     network: { globalPlayerId },
   } = useMUD();
-  const { activeTowerId, towers } = useBattle();
+  const { activeTowerId, battle, towers } = useBattle();
   const tutorialProgress = useComponentValue(TutorialProgress, globalPlayerId);
 
   const tutorialStep = useMemo((): TutorialSteps => {
@@ -42,8 +43,11 @@ export const useTutorialIndicator = (): { tutorialStep: TutorialSteps } => {
     if (towers.length > 0 && !tutorialProgress.step3Completed) {
       return TutorialSteps.THREE_THREE;
     }
+    if (!tutorialProgress.step4Completed && battle?.level === BigInt(1)) {
+      return TutorialSteps.FOUR_ONE;
+    }
     return TutorialSteps.NONE;
-  }, [activeTowerId, towers, tutorialProgress]);
+  }, [activeTowerId, battle, towers, tutorialProgress]);
 
   return { tutorialStep };
 };

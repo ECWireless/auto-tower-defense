@@ -27,6 +27,7 @@ import { CastleHitDialog } from '@/components/dialogs/CastleHitDialog';
 import { ForfeitDialog } from '@/components/dialogs/ForfeitDialog';
 import { HowToPlayDialog } from '@/components/dialogs/HowToPlayDialog';
 import { InstallInfoDialog } from '@/components/dialogs/InstallInfoDialog';
+import { ModifyInfoDialog } from '@/components/dialogs/ModifyInfoDialog';
 import { NoActionsDialog } from '@/components/dialogs/NoActionsDialog';
 import { PlayAgainDialog } from '@/components/dialogs/PlayAgainDialog';
 import { WelcomeDialog } from '@/components/dialogs/WelcomeDialog';
@@ -404,6 +405,7 @@ export const InnerBattlePage = (): JSX.Element => {
 
         <WelcomeDialog />
         <InstallInfoDialog />
+        <ModifyInfoDialog />
         <HowToPlayDialog
           isHelpDialogOpen={isHelpDialogOpen}
           setIsHelpDialogOpen={setIsHelpDialogOpen}

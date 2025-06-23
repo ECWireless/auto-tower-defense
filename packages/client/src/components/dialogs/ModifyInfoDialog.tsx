@@ -13,23 +13,23 @@ import {
   useTutorialIndicator,
 } from '@/hooks/useTutorialIndicator';
 
-export const InstallInfoDialog: React.FC = () => {
+export const ModifyInfoDialog: React.FC = () => {
   const { tutorialStep } = useTutorialIndicator();
 
-  const [isInstallDialogOpen, setIsInstallDialogOpen] = useState(false);
+  const [isModifyDialogOpen, setIsModifyDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (tutorialStep === TutorialSteps.THREE_ONE) {
-      setIsInstallDialogOpen(true);
+    if (tutorialStep === TutorialSteps.FOUR_ONE) {
+      setIsModifyDialogOpen(true);
     } else {
-      setIsInstallDialogOpen(false);
+      setIsModifyDialogOpen(false);
     }
   }, [tutorialStep]);
 
   return (
     <Dialog
-      onOpenChange={open => setIsInstallDialogOpen(!open)}
-      open={isInstallDialogOpen}
+      onOpenChange={open => setIsModifyDialogOpen(!open)}
+      open={isModifyDialogOpen}
     >
       <DialogContent
         aria-describedby={undefined}
@@ -43,36 +43,41 @@ export const InstallInfoDialog: React.FC = () => {
 
         <div className="bg-gray-800/50 my-4 p-4 rounded-lg">
           <h3 className="font-semibold mb-2 text-lg text-white">
-            Install a Tower
+            Modify a Tower
           </h3>
           <p>
-            On your turn, you can perform 3 types of{' '}
-            <span className="font-semibold text-blue-400">actions</span>:
+            In order to beat level 1, you&apos;ll need to{' '}
+            <span className="font-semibold text-blue-400">modify</span> a tower.
+            To do this:
           </p>
           <ul className="mt-2 space-y-2 text-gray-200">
             <li className="flex gap-2 items-start">
               <div className="mt-1">•</div>
-              <p>Install</p>
+              <p>Install a tower</p>
             </li>
             <li className="flex gap-2 items-start">
               <div className="mt-1">•</div>
-              <p>Move</p>
+              <p>Click the assembly button</p>
             </li>
             <li className="flex gap-2 items-start">
               <div className="mt-1">•</div>
-              <p>Modify</p>
+              <p>Select a patent you want to modify with</p>
+            </li>
+            <li className="flex gap-2 items-start">
+              <div className="mt-1">•</div>
+              <p>Click &quot;deploy&quot;</p>
             </li>
           </ul>
           <p className="mt-4">
-            We&apos;ll deal with &quot;modify&quot; actions later, but for now,
-            go ahead and install a tower to beat level 0.
+            Don&apos;t worry if you don&apos;t quite understand these steps yet.
+            We&apos;ll walk you through them next.
           </p>
         </div>
 
         <DialogFooter>
           <Button
             className="bg-cyan-800 hover:bg-cyan-700 text-white w-full"
-            onClick={() => setIsInstallDialogOpen(false)}
+            onClick={() => setIsModifyDialogOpen(false)}
           >
             Got it
           </Button>
