@@ -1,5 +1,6 @@
 import { Signal } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,8 +9,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { MAX_PLAYERS } from '@/utils/constants';
-
-import { Button } from './ui/button';
 
 type MaxPlayersDialogProps = {
   isMaxPlayersDialogOpen: boolean;

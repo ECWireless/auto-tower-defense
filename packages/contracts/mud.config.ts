@@ -129,6 +129,27 @@ export default defineWorld({
     },
     Owner: "bytes32", // ID it the tower ID; return is the globalPlayerId
     OwnerTowers: "bytes32[]", // ID is the localPlayerId; value is list of towerIds
+    Patent: {
+      id: "bytes32", // keccak256(abi.encodePacked(bytecode))
+      patentee: "bytes32", // globalPlayerId
+      size: "uint256",
+      timestamp: "uint256",
+      useCount: "uint256",
+      bytecode: "bytes",
+      description: "string",
+      name: "string",
+      sourceCode: "string",
+    },
+    PatentNameTaken: {
+      schema: {
+        nameAsBytes: "bytes32", // keccak256(abi.encodePacked(name))
+        value: "bytes32", // patentId
+      },
+      key: ["nameAsBytes"],
+      codegen: {
+        dataStruct: false,
+      },
+    },
     PlayerCount: {
       schema: {
         value: "uint256",
@@ -195,27 +216,6 @@ export default defineWorld({
       wins: "uint256",
       actions: "bytes32[]",
     },
-    Patent: {
-      id: "bytes32", // keccak256(abi.encodePacked(bytecode))
-      patentee: "bytes32", // globalPlayerId
-      size: "uint256",
-      timestamp: "uint256",
-      useCount: "uint256",
-      bytecode: "bytes",
-      description: "string",
-      name: "string",
-      sourceCode: "string",
-    },
-    PatentNameTaken: {
-      schema: {
-        nameAsBytes: "bytes32", // keccak256(abi.encodePacked(name))
-        value: "bytes32", // patentId
-      },
-      key: ["nameAsBytes"],
-      codegen: {
-        dataStruct: false,
-      },
-    },
     SolarFarmDetails: {
       schema: {
         electricityBalance: "uint256", // 16.8 MWh (16800000 watt-hours) to start
@@ -225,6 +225,7 @@ export default defineWorld({
       },
       key: [],
     },
+    // This is the top level reached by any player
     TopLevel: {
       schema: {
         level: "uint256",
@@ -240,6 +241,18 @@ export default defineWorld({
         value: "uint256",
       },
       key: [],
+    },
+    TutorialProgress: {
+      key: ["id"],
+      schema: {
+        id: "bytes32", // globalPlayerId
+        step1Completed: "bool", // Welcome
+        step2Completed: "bool", // Energy System
+        step3Completed: "bool", // Install and move
+        step4Completed: "bool", // Modify
+        step5Completed: "bool", // Complete
+      },
+      type: "offchainTable",
     },
     Username: "string", // ID is globalPlayerId
     UsernameTaken: {

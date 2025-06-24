@@ -14,8 +14,8 @@ import { toast } from 'sonner';
 import { useAccount } from 'wagmi';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
+import { MaxPlayersDialog } from '@/components/dialogs/MaxPlayersDialog';
 import { HomeTabs } from '@/components/HomeTabs';
-import { MaxPlayersDialog } from '@/components/MaxPlayersDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -184,7 +184,8 @@ export const Home = (): JSX.Element => {
 
         const resetLevel =
           winStreak === 0n ||
-          (topLevel === winStreak && topLevelKingdomsICanPlay.length === 0);
+          winStreak > (topLevel ?? 0n) ||
+          (topLevel >= winStreak && topLevelKingdomsICanPlay.length === 0);
 
         const activeBalance = batteryDetails?.activeBalance ?? BigInt(0);
         const reserveBalance = batteryDetails?.reserveBalance ?? BigInt(0);

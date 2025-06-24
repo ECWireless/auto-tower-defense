@@ -18,22 +18,31 @@ import { zeroAddress, zeroHash } from 'viem';
 import { useAccount } from 'wagmi';
 
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
-import { BatteryInfoDialog } from '@/components/BatteryInfoDialog';
 import { BattleBoard, INSTALLABLE_TOWERS } from '@/components/BattleBoard';
 import { BattleControlButtons } from '@/components/BattleControlButtons';
 import { BattleStatusBar } from '@/components/BattleStatusBar';
-import { CastleHitDialog } from '@/components/CastleHitDialog';
-import { ForfeitDialog } from '@/components/ForfeitDialog';
-import { HowToPlayDialog } from '@/components/HowToPlayDialog';
+import { ClickIndicator } from '@/components/ClickIndicator';
+import { BatteryInfoDialog } from '@/components/dialogs/BatteryInfoDialog';
+import { CastleHitDialog } from '@/components/dialogs/CastleHitDialog';
+import { ForfeitDialog } from '@/components/dialogs/ForfeitDialog';
+import { HowToPlayDialog } from '@/components/dialogs/HowToPlayDialog';
+import { InstallInfoDialog } from '@/components/dialogs/InstallInfoDialog';
+import { ModifyInfoDialog } from '@/components/dialogs/ModifyInfoDialog';
+import { NoActionsDialog } from '@/components/dialogs/NoActionsDialog';
+import { PlayAgainDialog } from '@/components/dialogs/PlayAgainDialog';
+import { TutorialCompeleteDialog } from '@/components/dialogs/TutorialCompleteDialog';
+import { WelcomeDialog } from '@/components/dialogs/WelcomeDialog';
 import { LoadingScreen } from '@/components/LoadingScreen';
-import { NoActionsDialog } from '@/components/NoActionsDialog';
 import { NoBattleScreen } from '@/components/NoBattleScreen';
-import { PlayAgainDialog } from '@/components/PlayAgainDialog';
 import { TowerSelection } from '@/components/TowerSelection';
 import { Button } from '@/components/ui/button';
 import { BattleProvider, useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
+import {
+  TutorialSteps,
+  useTutorialIndicator,
+} from '@/hooks/useTutorialIndicator';
 import { BATTERY_STORAGE_LIMIT } from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
@@ -70,6 +79,7 @@ export const InnerBattlePage = (): JSX.Element => {
     towers,
   } = useBattle();
   const { playSfx } = useSettings();
+  const { tutorialStep } = useTutorialIndicator();
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: {
       distance: 5,
@@ -228,7 +238,7 @@ export const InnerBattlePage = (): JSX.Element => {
       onDragStart={onDragStart}
       sensors={sensors}
     >
-      <div className="flex flex-col min-h-screen bg-black text-white relative">
+      <div className="flex flex-col min-h-screen bg-black text-white">
         <BackgroundAnimation />
 
         {/* Top Navigation */}
@@ -295,6 +305,7 @@ export const InnerBattlePage = (): JSX.Element => {
                   <span className="ml-1 text-gray-400 text-xs">Reserve</span>
                 </div>
               </div>
+              {tutorialStep === TutorialSteps.TWO && <ClickIndicator />}
             </div>
             {/* Claim Recharge Button */}
             {claimableRecharge > BigInt(1_000) &&
@@ -350,6 +361,7 @@ export const InnerBattlePage = (): JSX.Element => {
                       <span className="text-gray-400 text-xs">Reserve</span>
                     </div>
                   </div>
+                  {tutorialStep === TutorialSteps.TWO && <ClickIndicator />}
                 </div>
                 {/* Claim Recharge Button */}
                 {claimableRecharge > BigInt(1_000) &&
@@ -392,10 +404,10 @@ export const InnerBattlePage = (): JSX.Element => {
           </div>
         </div>
 
-        <ForfeitDialog
-          isForfeitDialogOpen={isForfeitDialogOpen}
-          setIsForfeitDialogOpen={setShowForfeitDialog}
-        />
+        <WelcomeDialog />
+        <InstallInfoDialog />
+        <ModifyInfoDialog />
+        <TutorialCompeleteDialog />
         <HowToPlayDialog
           isHelpDialogOpen={isHelpDialogOpen}
           setIsHelpDialogOpen={setIsHelpDialogOpen}
@@ -403,13 +415,18 @@ export const InnerBattlePage = (): JSX.Element => {
         <BatteryInfoDialog
           isBatteryInfoDialogOpen={isBatteryInfoDialogOpen}
           onChangeBatteryInfoDialog={onChangeBatteryInfoDialog}
+          showSolarFarmDialogPrompt={tutorialStep === TutorialSteps.TWO}
+        />
+        <NoActionsDialog />
+        <CastleHitDialog />
+        <ForfeitDialog
+          isForfeitDialogOpen={isForfeitDialogOpen}
+          setIsForfeitDialogOpen={setShowForfeitDialog}
         />
         <PlayAgainDialog
           isBattleOverDialogOpen={isBattleOverDialogOpen}
           setIsBattleOverDialogOpen={setIsBattleOverDialogOpen}
         />
-        <NoActionsDialog />
-        <CastleHitDialog />
       </div>
     </DndContext>
   );

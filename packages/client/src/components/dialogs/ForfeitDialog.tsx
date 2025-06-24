@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -14,8 +15,6 @@ import { useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
 import { HOME_PATH } from '@/Routes';
-
-import { Button } from './ui/button';
 
 type ForfeitDialogProps = {
   isForfeitDialogOpen: boolean;

@@ -1,5 +1,6 @@
 import { Loader2, Play } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,8 +9,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useBattle } from '@/contexts/BattleContext';
-
-import { Button } from './ui/button';
 
 export const NoActionsDialog: React.FC = () => {
   const {

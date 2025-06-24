@@ -15,6 +15,9 @@ contract SolarFarmTest is MudTest {
   address aliceAddress = vm.addr(1);
   address bobAddress = vm.addr(2);
 
+  bytes constant AUTHORED_BYTECODE =
+    hex"6080604052348015600e575f5ffd5b506101ef8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063cae93eb91461002d575b5f5ffd5b610047600480360381019061004291906100bf565b61005e565b60405161005592919061010c565b60405180910390f35b5f5f60058461006d9190610160565b60018461007a9190610160565b915091509250929050565b5f5ffd5b5f8160010b9050919050565b61009e81610089565b81146100a8575f5ffd5b50565b5f813590506100b981610095565b92915050565b5f5f604083850312156100d5576100d4610085565b5b5f6100e2858286016100ab565b92505060206100f3858286016100ab565b9150509250929050565b61010681610089565b82525050565b5f60408201905061011f5f8301856100fd565b61012c60208301846100fd565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61016a82610089565b915061017583610089565b925082820190507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008112617fff821317156101b3576101b2610133565b5b9291505056fea26469706673582212200f36ce47d179e4a4274b65916ffd491b33285775935ab7ab90dc53e854837fdb64736f6c634300081c0033";
+
   function _mintUsdc(address to, uint256 amount) internal returns (MockUSDC) {
     address mockUsdcAddress = AddressBook.getUsdcAddress();
     MockUSDC usdc = MockUSDC(mockUsdcAddress);
@@ -22,16 +25,34 @@ contract SolarFarmTest is MudTest {
     return usdc;
   }
 
-  function _endBattle(address player, bytes32 battleId) internal {
+  function _beatTutorial(address player, string memory username) internal {  
     vm.startPrank(player);
+    bytes32 battleId = IWorld(worldAddress).app__createBattle(username, true);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
+    IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
 
-    // Need to go through 4 turns to end the battle
+    // Need to go through 2 turns to end the battle
+    IWorld(worldAddress).app__nextTurn(battleId);
+    IWorld(worldAddress).app__nextTurn(battleId);
+
+    vm.warp(block.timestamp + 1 hours);
+    
+    battleId = IWorld(worldAddress).app__createBattle(username, false);
+    bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 55, 15);
+    IWorld(worldAddress).app__playerModifyTowerSystem(
+      towerId,
+      AUTHORED_BYTECODE,
+      ""
+    );
+
+    // Need to go through 2 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
+
     vm.stopPrank();
+    vm.warp(block.timestamp + 1 hours);
   }
 
   function testBuyElectricity() public {
@@ -168,11 +189,7 @@ contract SolarFarmTest is MudTest {
     MockUSDC usdc = _mintUsdc(aliceAddress, 1 * 1e6); // 1 USDC
 
     // Create a battle in order to get a battery
-    vm.prank(aliceAddress);
-    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
-
-    // End battle to put stake back in active balance
-    _endBattle(aliceAddress, battleId);
+    _beatTutorial(aliceAddress, "Alice");
 
     // Make sure active balance is full
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
@@ -339,11 +356,7 @@ contract SolarFarmTest is MudTest {
   // Test revert claiming recharge when the battery is full
   function testRevertClaimRechargeFull() public {
     // Create a battle in order to get a battery, and to stake 8kWh
-    vm.prank(aliceAddress);
-    bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
-
-    // End battle to return stake to active balance
-    _endBattle(aliceAddress, battleId);
+    _beatTutorial(aliceAddress, "Alice");
 
     // Warp forward 24 hours (86400000 ms)
     vm.warp(block.timestamp + 86400);

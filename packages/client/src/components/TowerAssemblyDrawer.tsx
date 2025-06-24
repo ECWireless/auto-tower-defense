@@ -50,9 +50,14 @@ import {
 import { NO_ACTIONS_ERROR, useBattle } from '@/contexts/BattleContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
+import {
+  TutorialSteps,
+  useTutorialIndicator,
+} from '@/hooks/useTutorialIndicator';
 import { API_ENDPOINT } from '@/utils/constants';
 import type { Patent as PatentType, Tower } from '@/utils/types';
 
+import { ClickIndicator } from './ClickIndicator';
 import { Button } from './ui/button';
 
 type TowerAssemblyDrawerProps = {
@@ -80,8 +85,10 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
     useBattle();
   const { playSfx } = useSettings();
 
-  const [patents, setPatents] = useState<PatentType[]>([]);
   const [selectedPatent, setSelectedPatent] = useState<PatentType | null>(null);
+  const { tutorialStep } = useTutorialIndicator(tower, selectedPatent);
+
+  const [patents, setPatents] = useState<PatentType[]>([]);
   const [tooltipSelection, setTooltipSelection] = useState<string | null>(null);
 
   const [isSemiTransparent, setIsSemiTransparent] = useState<boolean>(false);
@@ -663,6 +670,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
             <PatentsList
               onSelectPatent={onSelectPatent}
               patents={patents}
+              tutorialStep={tutorialStep}
               selectedPatent={selectedPatent}
             />
           )}
@@ -670,19 +678,24 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
           <div className="flex flex-col gap-3 mb-6 mt-6 sm:flex-row">
             <div className="flex gap-3">
               {isMyTower && (
-                <Button
-                  className="bg-cyan-950/30 border-cyan-500 hover:bg-cyan-900/50 hover:text-cyan-300 text-cyan-400"
-                  disabled={isDeploying}
-                  onClick={onModifyTower}
-                  variant="outline"
-                >
-                  {isDeploying ? (
-                    <Loader2 className="animate-spin h-6 w-6" />
-                  ) : (
-                    <Rocket className="h-4 mr-2 w-4" />
+                <div className="relative">
+                  {tutorialStep === TutorialSteps.FOUR_SIX && (
+                    <ClickIndicator />
                   )}
-                  Deploy
-                </Button>
+                  <Button
+                    className="bg-cyan-950/30 border-cyan-500 hover:bg-cyan-900/50 hover:text-cyan-300 text-cyan-400"
+                    disabled={isDeploying}
+                    onClick={onModifyTower}
+                    variant="outline"
+                  >
+                    {isDeploying ? (
+                      <Loader2 className="animate-spin h-6 w-6" />
+                    ) : (
+                      <Rocket className="h-4 mr-2 w-4" />
+                    )}
+                    Deploy
+                  </Button>
+                </div>
               )}
               <Button
                 className="border-purple-500 hover:bg-purple-950/50 hover:text-purple-300 text-purple-400"

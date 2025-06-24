@@ -1,4 +1,4 @@
-import { useEntityQuery } from '@latticexyz/react';
+import { useComponentValue, useEntityQuery } from '@latticexyz/react';
 import {
   Entity,
   getComponentValue,
@@ -119,12 +119,20 @@ export const BattleProvider = ({
       Projectile,
       ProjectileTrajectory,
       Tower,
+      TutorialProgress,
       Username,
     },
     network: { globalPlayerId },
-    systemCalls: { installTower, moveTower, nextTurn, undoAction },
+    systemCalls: {
+      completeTutorialStep,
+      installTower,
+      moveTower,
+      nextTurn,
+      undoAction,
+    },
   } = useMUD();
   const { playSfx } = useSettings();
+  const tutorialProgress = useComponentValue(TutorialProgress, globalPlayerId);
 
   const [battle, setBattle] = useState<Battle | null>(null);
   const [isLoadingBattle, setIsLoadingBattle] = useState(true);
@@ -493,6 +501,23 @@ export const BattleProvider = ({
         throw new Error('Battle not found.');
       }
 
+      // This is purely for the sake of the tutorial
+      if (
+        tutorialProgress &&
+        !tutorialProgress.step4Completed &&
+        battle.level === BigInt(0)
+      ) {
+        await completeTutorialStep(3);
+      }
+
+      if (
+        tutorialProgress &&
+        !tutorialProgress.step4Completed &&
+        battle.level === BigInt(1)
+      ) {
+        await completeTutorialStep(4);
+      }
+
       if (battle.turn === battle.player2Id) {
         await onNextRound();
         return;
@@ -516,7 +541,15 @@ export const BattleProvider = ({
     } finally {
       setIsChangingTurn(false);
     }
-  }, [battle, fetchBattle, nextTurn, onNextRound, playSfx]);
+  }, [
+    battle,
+    completeTutorialStep,
+    fetchBattle,
+    nextTurn,
+    onNextRound,
+    playSfx,
+    tutorialProgress,
+  ]);
 
   useEffect(() => {
     if (!battle) return () => {};

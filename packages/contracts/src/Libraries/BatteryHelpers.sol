@@ -291,7 +291,7 @@ library BatteryHelpers {
    * @param globalPlayer1Id The global ID of the player
    */
   function _processPotentialStakeReturn(bytes32 globalPlayer1Id) internal {
-    if (!_arePlayableKingdoms(globalPlayer1Id)) {
+    if (!arePlayableKingdoms(globalPlayer1Id)) {
       uint256 stakedBalance = BatteryDetails.getStakedBalance(globalPlayer1Id);
       uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayer1Id);
       uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayer1Id);
@@ -314,7 +314,7 @@ library BatteryHelpers {
    * @param globalPlayerId The global ID of the player
    * @return bool True if there are playable kingdoms, false otherwise
    */
-  function _arePlayableKingdoms(bytes32 globalPlayerId) internal view returns (bool) {
+  function arePlayableKingdoms(bytes32 globalPlayerId) public view returns (bool) {
     uint256 startingLevel = WinStreak.get(globalPlayerId);
     uint256 topLevel = TopLevel.get();
     for (uint256 i = startingLevel; i <= topLevel; i++) {
