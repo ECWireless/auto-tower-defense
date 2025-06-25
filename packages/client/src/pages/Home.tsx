@@ -285,8 +285,8 @@ export const Home = (): JSX.Element => {
       <BackgroundAnimation />
       {/* Claim Recharge Button */}
       {claimableRecharge > BigInt(1_000) &&
-        (batteryDetails?.activeBalance ?? BigInt(0)) <
-          BATTERY_STORAGE_LIMIT && (
+        batteryDetails &&
+        (batteryDetails.activeBalance ?? BigInt(0)) < BATTERY_STORAGE_LIMIT && (
           <Button
             className="bg-green-800/80 border border-green-600/50 fixed hover:bg-green-700/90 left-1/2 mt-2 shadow-green-900/20 shadow-md text-green-100 text-xs top-4"
             disabled={isClaimingRecharge}
@@ -297,7 +297,13 @@ export const Home = (): JSX.Element => {
             }}
           >
             {isClaimingRecharge && <Loader2 className="animate-spin h-6 w-6" />}
-            Claim Recharge (+{formatWattHours(claimableRecharge)})
+            Claim Recharge (+
+            {formatWattHours(
+              claimableRecharge + batteryDetails.activeBalance > BigInt(24000)
+                ? BigInt(BATTERY_STORAGE_LIMIT) - batteryDetails.activeBalance
+                : claimableRecharge,
+            )}
+            )
           </Button>
         )}
 
