@@ -319,7 +319,15 @@ export const InnerBattlePage = (): JSX.Element => {
                   {isClaimingRecharge && (
                     <Loader2 className="animate-spin h-6 w-6" />
                   )}
-                  Claim Recharge (+{formatWattHours(claimableRecharge)})
+                  Claim Recharge (+
+                  {formatWattHours(
+                    claimableRecharge + batteryDetails.activeBalance >
+                      BigInt(24000)
+                      ? BigInt(BATTERY_STORAGE_LIMIT) -
+                          batteryDetails.activeBalance
+                      : claimableRecharge,
+                  )}
+                  )
                 </Button>
               )}
           </div>
@@ -375,7 +383,15 @@ export const InnerBattlePage = (): JSX.Element => {
                       {isClaimingRecharge && (
                         <Loader2 className="animate-spin h-6 w-6" />
                       )}
-                      Claim Recharge (+{formatWattHours(claimableRecharge)})
+                      Claim Recharge (+
+                      {formatWattHours(
+                        claimableRecharge + batteryDetails.activeBalance >
+                          BigInt(24000)
+                          ? BigInt(BATTERY_STORAGE_LIMIT) -
+                              batteryDetails.activeBalance
+                          : claimableRecharge,
+                      )}
+                      )
                     </Button>
                   )}
               </div>
