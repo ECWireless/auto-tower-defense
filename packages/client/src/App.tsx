@@ -1,10 +1,12 @@
 import { pyrope, redstone } from '@latticexyz/common/chains';
-import { useSessionClient } from '@latticexyz/entrykit/internal';
 import { useComponentValue } from '@latticexyz/react';
 import { Analytics } from '@vercel/analytics/react';
+import { toSimpleSmartAccount } from 'permissionless/accounts';
 import { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { createPublicClient, http, parseEther } from 'viem';
+import { createPublicClient, createWalletClient, http, parseEther } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { useAccount } from 'wagmi';
 
 import { AsyncRevenueDialog } from '@/components/dialogs/AsyncRevenueDialog';
 import { SettingsDialog } from '@/components/dialogs/SettingsDialog';
@@ -20,58 +22,85 @@ export const App = (): JSX.Element => {
     components: { Username },
     network: { globalPlayerId },
   } = useMUD();
-  const { data: sessionClient } = useSessionClient();
+  const { address: playerAddress } = useAccount();
   const savedUsername = useComponentValue(Username, globalPlayerId)?.value;
 
   useEffect(() => {
-    if (!sessionClient) return;
-    const gameChain = getGameChain();
-    if (gameChain.id === pyrope.id || gameChain.id === redstone.id) {
-      const sessionAddress = sessionClient.account.address;
-      // eslint-disable-next-line no-console
-      console.info('[Faucet]: Session address -> ', sessionAddress);
+    (async () => {
+      if (!playerAddress) return;
+      let sessionAddress: `0x${string}` | undefined;
+      // get session wallet address from 'mud:entrykit' in local storage
+      const entrykit = localStorage.getItem('mud:entrykit');
+      if (entrykit) {
+        const parsedEntryKit = JSON.parse(entrykit);
+        const sessionWalletsMapping = parsedEntryKit?.state?.signers;
+        if (!sessionWalletsMapping) return;
 
-      const requestDrip = async () => {
-        const publicClient = createPublicClient({
-          batch: { multicall: false },
-          chain: gameChain,
+        const sessionSignerPrivateKey = sessionWalletsMapping[
+          playerAddress.toLowerCase() as `0x${string}`
+        ] as `0x${string}` | undefined;
+        if (!sessionSignerPrivateKey) return;
+
+        const sessionSigner = privateKeyToAccount(sessionSignerPrivateKey);
+        const sessionSignerWalletClient = createWalletClient({
+          account: sessionSigner,
+          chain: getGameChain(),
           transport: http(),
         });
-        const balance = await publicClient.getBalance({
-          address: sessionAddress,
+        const sessionAccount = await toSimpleSmartAccount({
+          client: sessionSignerWalletClient,
+          owner: sessionSigner,
         });
+        sessionAddress = sessionAccount.address;
+      }
+      if (!sessionAddress) return;
+      const gameChain = getGameChain();
+      if (gameChain.id === pyrope.id || gameChain.id === redstone.id) {
         // eslint-disable-next-line no-console
-        console.info(`[Faucet]: Player balance -> ${balance}`);
-        const lowBalance = balance < parseEther('0.00001');
-        if (lowBalance) {
-          // eslint-disable-next-line no-console
-          console.info('[Faucet]: Balance is low, dripping funds to player');
+        console.info('[Faucet]: Session address -> ', sessionAddress);
 
-          const res = await fetch(`${API_ENDPOINT}/api/faucet`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              address: sessionAddress,
-              chainId: gameChain.id,
-            }),
+        const requestDrip = async () => {
+          const publicClient = createPublicClient({
+            batch: { multicall: false },
+            chain: gameChain,
+            transport: http(),
           });
-          if (res.ok) {
+          const balance = await publicClient.getBalance({
+            address: sessionAddress,
+          });
+          // eslint-disable-next-line no-console
+          console.info(`[Faucet]: Player balance -> ${balance}`);
+          const lowBalance = balance < parseEther('0.00001');
+          if (lowBalance) {
             // eslint-disable-next-line no-console
-            console.info('[Faucet]: Drip successful');
-          } else {
-            // eslint-disable-next-line no-console
-            console.error('[Faucet]: Drip failed');
-          }
-        }
-      };
+            console.info('[Faucet]: Balance is low, dripping funds to player');
 
-      requestDrip();
-      // Request a drip every 20 seconds
-      setInterval(requestDrip, 20000);
-    }
-  }, [sessionClient, globalPlayerId]);
+            const res = await fetch(`${API_ENDPOINT}/api/faucet`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                address: sessionAddress,
+                chainId: gameChain.id,
+              }),
+            });
+            if (res.ok) {
+              // eslint-disable-next-line no-console
+              console.info('[Faucet]: Drip successful');
+            } else {
+              // eslint-disable-next-line no-console
+              console.error('[Faucet]: Drip failed');
+            }
+          }
+        };
+
+        requestDrip();
+        // Request a drip every 20 seconds
+        setInterval(requestDrip, 20000);
+      }
+    })();
+  }, [globalPlayerId, playerAddress]);
 
   return (
     <Router>
