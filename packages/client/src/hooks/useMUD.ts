@@ -9,6 +9,7 @@ import {
   createPublicClient,
   http,
 } from 'viem';
+import { UserOperationExecutionError } from 'viem/account-abstraction';
 import { useAccount } from 'wagmi';
 
 import { components } from '@/mud/recs';
@@ -23,6 +24,16 @@ const getContractError = (error: BaseError): string => {
   if (revertError instanceof ContractFunctionRevertedError) {
     const args = revertError.data?.args ?? [];
     return (args[0] as string) ?? 'An error occurred calling the contract.';
+  }
+
+  if (error instanceof UserOperationExecutionError) {
+    const errorMessage = error.cause.shortMessage;
+    if (errorMessage.includes('sufficient funds')) {
+      return 'Insufficient funds. Please top up your account.';
+    }
+    return (
+      error.cause.shortMessage ?? 'An error occurred calling the contract.'
+    );
   }
   return 'An error occurred calling the contract.';
 };

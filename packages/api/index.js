@@ -7,10 +7,14 @@ const {
   createWalletClient,
   decodeEventLog,
   encodeAbiParameters,
+  formatEther,
+  getAddress,
   http,
+  isAddress,
   keccak256,
-  toHex,
+  parseEther,
 } = require("viem");
+const sgMail = require("@sendgrid/mail");
 const { privateKeyToAccount } = require("viem/accounts");
 const { base, baseSepolia, pyrope, redstone } = require("viem/chains");
 const BASE_ESCOW_ABI = require("./abi/baseEscrowAbi.json");
@@ -37,10 +41,115 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// SendGrid setup
+if (!process.env.SENDGRID_API_KEY) {
+  console.error("Missing SENDGRID_API_KEY in environment variables");
+  process.exit(1);
+}
+
+if (!process.env.ALERT_EMAIL) {
+  console.error("Missing ALERT_EMAIL in environment variables");
+  process.exit(1);
+}
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const LOW_BALANCE_THRESHOLD = parseFloat("0.00001"); // Around $0.02 right now
+const alertEmail = process.env.ALERT_EMAIL;
+let lastAlertSent = 0;
+const ALERT_INTERVAL_MS = 1000 * 60 * 60; // 1 hour cooldown
+
+// In-memory rate limits for faucet
+const ipTimestamps = new Map();
+const addressTimestamps = new Map();
+const FAUCET_INTERVAL = 1000 * 60 * 60 * 1; // 1 hour
+const FAUCET_AMOUNT = parseEther("0.000001"); // Around $0.002 right now
+
 const port = process.env.PORT || 3002;
 
 app.get("/", (_, res) => {
-  res.send("Auto Defense API");
+  res.send("Auto Tower Defense API");
+});
+
+app.post("/api/faucet", async (req, res) => {
+  const ip = req.ip;
+  const { address, chainId } = req.body;
+
+  if (!(address && isAddress(address))) {
+    return res.status(400).json({ success: false, error: "Invalid address" });
+  }
+
+  if (!(chainId && SUPPORTED_CHAINS[chainId])) {
+    return res.status(400).json({ success: false, error: "Invalid chainId" });
+  }
+
+  const normalizedAddress = getAddress(address);
+  const now = Date.now();
+
+  // Rate limiting
+  const lastIp = ipTimestamps.get(ip) || 0;
+  const lastAddr = addressTimestamps.get(normalizedAddress) || 0;
+  if (now - lastIp < FAUCET_INTERVAL || now - lastAddr < FAUCET_INTERVAL) {
+    return res
+      .status(429)
+      .json({ success: false, error: "Rate limit exceeded" });
+  }
+
+  try {
+    const faucetPrivateKey = process.env.FAUCET_PRIVATE_KEY;
+
+    if (!faucetPrivateKey) {
+      return res
+        .status(500)
+        .json({ success: false, error: "Faucet not configured" });
+    }
+
+    const account = privateKeyToAccount(faucetPrivateKey);
+    const faucetClient = createWalletClient({
+      account,
+      chain: SUPPORTED_CHAINS[chainId],
+      transport: http(),
+    });
+
+    const txHash = await faucetClient.sendTransaction({
+      to: normalizedAddress,
+      value: FAUCET_AMOUNT,
+    });
+
+    ipTimestamps.set(ip, now);
+    addressTimestamps.set(normalizedAddress, now);
+
+    // Check balance + send alert if needed
+    const publicClient = createPublicClient({
+      chain: SUPPORTED_CHAINS[chainId],
+      transport: http(),
+    });
+    const balance = await publicClient.getBalance({ address: account.address });
+    const balanceEth = parseFloat(formatEther(balance));
+
+    if (
+      balanceEth < LOW_BALANCE_THRESHOLD &&
+      now - lastAlertSent > ALERT_INTERVAL_MS
+    ) {
+      try {
+        await sgMail.send({
+          to: alertEmail,
+          from: alertEmail,
+          subject: "⚠️ Faucet balance is low!",
+          text: `Your faucet has a low balance: ${balanceEth} ETH remaining on chain ID ${chainId}. Please refill it soon to keep the faucet operational.`,
+        });
+        lastAlertSent = now;
+      } catch (emailErr) {
+        console.error("SendGrid error:", emailErr);
+      }
+    }
+
+    return res.json({ success: true, txHash });
+  } catch (err) {
+    console.error("Faucet error:", err);
+    return res
+      .status(500)
+      .json({ success: false, error: "Internal server error" });
+  }
 });
 
 app.post("/compile", (req, res) => {
