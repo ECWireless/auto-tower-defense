@@ -34,6 +34,8 @@ contract PostDeploy is Script {
       electricityBalance: 16800000, // 16.8 MWh
       fiatBalance: 0,
       msPerWh: 3600,
+      rechargePaused: false,
+      unpausedTimestamp: block.timestamp,
       whPerCentPrice: 1920 // 1.92kWh/cent
     });
     SolarFarmDetails.set(solarFarmDetails);
@@ -123,7 +125,7 @@ contract PostDeploy is Script {
       ActionData memory wallInstall = ActionData({
         actionType: ActionType.Install,
         componentAddress: address(0),
-        newX: 15  + int16(uint16(i) * 10), // Increment x by 10 for each action
+        newX: 15 + int16(uint16(i) * 10), // Increment x by 10 for each action
         newY: 35,
         oldX: 0,
         oldY: 0,

@@ -215,6 +215,10 @@ contract SolarFarmSystem is System {
    * Also decreases SolarFarmSystem electricityBalance
    */
   function claimRecharge() external onlyRegisteredPlayer {
+    // Make sure recharge is not paused
+    bool rechargePaused = SolarFarmDetails.getRechargePaused();
+    require(!rechargePaused, "SolarFarmSystem: recharge is paused");
+
     // Make sure the player already has a Battery
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
     require(
@@ -224,6 +228,12 @@ contract SolarFarmSystem is System {
 
     // Get time elapsed in ms since last recharge
     uint256 lastRechargeTimestamp = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
+    // If unpause was more recent than last recharge, use unpaused timestamp
+    uint256 unpausedTimestamp = SolarFarmDetails.getUnpausedTimestamp();
+    if (unpausedTimestamp > lastRechargeTimestamp) {
+      lastRechargeTimestamp = unpausedTimestamp;
+    }
+
     uint256 currentTimestamp = block.timestamp;
     uint256 timeElapsed = currentTimestamp - lastRechargeTimestamp;
     uint256 timeElapsedMs = timeElapsed * 1000; // Convert to milliseconds

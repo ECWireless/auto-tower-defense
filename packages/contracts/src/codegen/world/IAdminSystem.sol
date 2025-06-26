@@ -22,6 +22,8 @@ interface IAdminSystem {
 
   function app__updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external;
 
+  function app__toggleSolarFarmRecharge() external;
+
   function app__updatUsdcAddress(address usdcAddress) external;
 
   function app__updateBuyReceiverAddress(address buyReceiverAddress) external;

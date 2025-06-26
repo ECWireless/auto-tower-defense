@@ -220,7 +220,9 @@ export default defineWorld({
       schema: {
         electricityBalance: "uint256", // 16.8 MWh (16800000 watt-hours) to start
         fiatBalance: "uint256", // Unformatted balance of USDC with 6 decimals
-        msPerWh: "uint256", // Number of milliseconds per watt hour; start at 3600ms
+        msPerWh: "uint256", // Number of milliseconds per watt hour for recharge; start at 3600ms
+        rechargePaused: "bool", // If true, the recharge is paused
+        unpausedTimestamp: "uint256", // Timestamp when the recharge was last unpaused
         whPerCentPrice: "uint256", // Electricity in watt-hours per 1 cent in USDC; 1.92kWh/cent; start at 1920
       },
       key: [],

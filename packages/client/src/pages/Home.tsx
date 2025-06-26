@@ -81,11 +81,21 @@ export const Home = (): JSX.Element => {
     if (!(batteryDetails && solarFarmDetails)) return BigInt(0);
     const { lastRechargeTimestamp } = batteryDetails;
     const currentTime = Date.now();
-    const timeSinceLastRecharge =
+    let timeSinceLastRecharge =
       currentTime - Number(lastRechargeTimestamp) * 1000;
-    return BigInt(
+    if (
+      timeSinceLastRecharge <
+      Number(solarFarmDetails.unpausedTimestamp) * 1000
+    ) {
+      timeSinceLastRecharge = Number(solarFarmDetails.unpausedTimestamp) * 1000;
+    }
+
+    const baseClaimable = BigInt(
       Math.floor(timeSinceLastRecharge / Number(solarFarmDetails.msPerWh)),
     );
+    return baseClaimable + batteryDetails.activeBalance > BigInt(24000)
+      ? BigInt(BATTERY_STORAGE_LIMIT) - batteryDetails.activeBalance
+      : baseClaimable;
   }, [batteryDetails, solarFarmDetails]);
 
   const onCreateBattle = useCallback(
@@ -285,6 +295,8 @@ export const Home = (): JSX.Element => {
       <BackgroundAnimation />
       {/* Claim Recharge Button */}
       {claimableRecharge > BigInt(1_000) &&
+        solarFarmDetails &&
+        !solarFarmDetails.rechargePaused &&
         batteryDetails &&
         (batteryDetails.activeBalance ?? BigInt(0)) < BATTERY_STORAGE_LIMIT && (
           <Button
@@ -298,14 +310,21 @@ export const Home = (): JSX.Element => {
           >
             {isClaimingRecharge && <Loader2 className="animate-spin h-6 w-6" />}
             Claim Recharge (+
-            {formatWattHours(
-              claimableRecharge + batteryDetails.activeBalance > BigInt(24000)
-                ? BigInt(BATTERY_STORAGE_LIMIT) - batteryDetails.activeBalance
-                : claimableRecharge,
-            )}
-            )
+            {formatWattHours(claimableRecharge)})
           </Button>
         )}
+      {solarFarmDetails && solarFarmDetails.rechargePaused && (
+        <div
+          className="bg-yellow-800/80 border border-yellow-600/50 fixed left-1/2 p-2 rounded-md text-xs top-4"
+          style={{
+            transform: 'translateX(-50%)',
+          }}
+        >
+          <p className="font-bold text-yellow-100">
+            Battery charging is currently paused
+          </p>
+        </div>
+      )}
 
       <h1 className="bg-clip-text bg-gradient-to-r font-bold from-purple-400 mb-6 mt-20 text-center text-transparent text-4xl to-pink-400 via-cyan-400">
         AUTO TOWER DEFENSE

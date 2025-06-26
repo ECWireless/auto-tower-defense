@@ -46,8 +46,6 @@ import {
 import { BATTERY_STORAGE_LIMIT } from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
-const BATTERY_INFO_SEEN_KEY = 'battery-info-seen';
-
 export const BattlePage = (): JSX.Element => {
   const { id } = useParams();
   return (
@@ -115,22 +113,6 @@ export const InnerBattlePage = (): JSX.Element => {
     }
     setIsBattleOverDialogOpen(true);
   }, [battle, globalPlayerId, playSfx]);
-
-  // Open Battery Info Dialog if this is the first time the user is playing a battle.
-  useEffect(() => {
-    const hasSeenBatteryInfo = localStorage.getItem(BATTERY_INFO_SEEN_KEY);
-    if (hasSeenBatteryInfo) return;
-    setIsBatteryInfoDialogOpen(true);
-  }, []);
-
-  const onChangeBatteryInfoDialog = useCallback((open: boolean) => {
-    if (!open) {
-      setIsBatteryInfoDialogOpen(false);
-      localStorage.setItem(BATTERY_INFO_SEEN_KEY, 'true');
-    } else {
-      setIsBatteryInfoDialogOpen(true);
-    }
-  }, []);
 
   const onClaimRecharge = useCallback(async () => {
     try {
@@ -217,11 +199,21 @@ export const InnerBattlePage = (): JSX.Element => {
     if (!(batteryDetails && solarFarmDetails)) return BigInt(0);
     const { lastRechargeTimestamp } = batteryDetails;
     const currentTime = Date.now();
-    const timeSinceLastRecharge =
+    let timeSinceLastRecharge =
       currentTime - Number(lastRechargeTimestamp) * 1000;
-    return BigInt(
+    if (
+      timeSinceLastRecharge <
+      Number(solarFarmDetails.unpausedTimestamp) * 1000
+    ) {
+      timeSinceLastRecharge = Number(solarFarmDetails.unpausedTimestamp) * 1000;
+    }
+
+    const baseClaimable = BigInt(
       Math.floor(timeSinceLastRecharge / Number(solarFarmDetails.msPerWh)),
     );
+    return baseClaimable + batteryDetails.activeBalance > BigInt(24000)
+      ? BigInt(BATTERY_STORAGE_LIMIT) - batteryDetails.activeBalance
+      : baseClaimable;
   }, [batteryDetails, solarFarmDetails]);
 
   if (isRefreshing) {
@@ -309,6 +301,8 @@ export const InnerBattlePage = (): JSX.Element => {
             </div>
             {/* Claim Recharge Button */}
             {claimableRecharge > BigInt(1_000) &&
+              solarFarmDetails &&
+              !solarFarmDetails.rechargePaused &&
               batteryDetails.activeBalance < BATTERY_STORAGE_LIMIT && (
                 <Button
                   className="bg-green-800/80 border border-green-600/50 mt-2 hover:bg-green-700/90 shadow-green-900/20 shadow-md text-green-100 text-xs"
@@ -320,16 +314,16 @@ export const InnerBattlePage = (): JSX.Element => {
                     <Loader2 className="animate-spin h-6 w-6" />
                   )}
                   Claim Recharge (+
-                  {formatWattHours(
-                    claimableRecharge + batteryDetails.activeBalance >
-                      BigInt(24000)
-                      ? BigInt(BATTERY_STORAGE_LIMIT) -
-                          batteryDetails.activeBalance
-                      : claimableRecharge,
-                  )}
-                  )
+                  {formatWattHours(claimableRecharge)})
                 </Button>
               )}
+            {solarFarmDetails && solarFarmDetails.rechargePaused && (
+              <div className="bg-yellow-800/80 border border-yellow-600/50 left-1/2 mt-2 p-2 rounded-md text-xs">
+                <p className="font-bold text-yellow-100">
+                  Battery charging is currently paused
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -340,7 +334,7 @@ export const InnerBattlePage = (): JSX.Element => {
             {batteryDetails && (
               <div className="flex flex-col items-center mb-2 sm:hidden">
                 <div
-                  className="bg-gray-900/80 border border-gray-800 cursor-pointer flex gap-2 hover:bg-gray-800/80 items-center px-3 py-1.5 rounded-full transition-colors"
+                  className="bg-gray-900/80 border border-gray-800 cursor-pointer flex gap-2 hover:bg-gray-800/80 items-center px-3 py-1.5 relative rounded-full transition-colors"
                   onClick={() => setIsBatteryInfoDialogOpen(true)}
                 >
                   {/* Battery Charge */}
@@ -372,7 +366,9 @@ export const InnerBattlePage = (): JSX.Element => {
                   {tutorialStep === TutorialSteps.TWO && <ClickIndicator />}
                 </div>
                 {/* Claim Recharge Button */}
-                {claimableRecharge > BigInt(1_000) &&
+                {claimableRecharge > BigInt(10) &&
+                  solarFarmDetails &&
+                  !solarFarmDetails.rechargePaused &&
                   batteryDetails.activeBalance < BATTERY_STORAGE_LIMIT && (
                     <Button
                       className="bg-green-800/80 border border-green-600/50 mt-2 h-7 hover:bg-green-700/90 px-3 py-1 shadow-green-900/20 shadow-md text-green-100 text-xs"
@@ -384,16 +380,17 @@ export const InnerBattlePage = (): JSX.Element => {
                         <Loader2 className="animate-spin h-6 w-6" />
                       )}
                       Claim Recharge (+
-                      {formatWattHours(
-                        claimableRecharge + batteryDetails.activeBalance >
-                          BigInt(24000)
-                          ? BigInt(BATTERY_STORAGE_LIMIT) -
-                              batteryDetails.activeBalance
-                          : claimableRecharge,
-                      )}
-                      )
+                      {formatWattHours(claimableRecharge)})
                     </Button>
                   )}
+
+                {solarFarmDetails && solarFarmDetails.rechargePaused && (
+                  <div className="bg-yellow-800/80 border border-yellow-600/50 left-1/2 mt-2 p-2 rounded-md text-xs">
+                    <p className="font-bold text-yellow-100">
+                      Battery charging is currently paused
+                    </p>
+                  </div>
+                )}
               </div>
             )}
             <BattleStatusBar
@@ -430,7 +427,7 @@ export const InnerBattlePage = (): JSX.Element => {
         />
         <BatteryInfoDialog
           isBatteryInfoDialogOpen={isBatteryInfoDialogOpen}
-          onChangeBatteryInfoDialog={onChangeBatteryInfoDialog}
+          setIsBatteryInfoDialogOpen={setIsBatteryInfoDialogOpen}
           showSolarFarmDialogPrompt={tutorialStep === TutorialSteps.TWO}
         />
         <NoActionsDialog />
