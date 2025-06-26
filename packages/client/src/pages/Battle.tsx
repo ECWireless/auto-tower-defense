@@ -46,8 +46,6 @@ import {
 import { BATTERY_STORAGE_LIMIT } from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
-const BATTERY_INFO_SEEN_KEY = 'battery-info-seen';
-
 export const BattlePage = (): JSX.Element => {
   const { id } = useParams();
   return (
@@ -115,22 +113,6 @@ export const InnerBattlePage = (): JSX.Element => {
     }
     setIsBattleOverDialogOpen(true);
   }, [battle, globalPlayerId, playSfx]);
-
-  // Open Battery Info Dialog if this is the first time the user is playing a battle.
-  useEffect(() => {
-    const hasSeenBatteryInfo = localStorage.getItem(BATTERY_INFO_SEEN_KEY);
-    if (hasSeenBatteryInfo) return;
-    setIsBatteryInfoDialogOpen(true);
-  }, []);
-
-  const onChangeBatteryInfoDialog = useCallback((open: boolean) => {
-    if (!open) {
-      setIsBatteryInfoDialogOpen(false);
-      localStorage.setItem(BATTERY_INFO_SEEN_KEY, 'true');
-    } else {
-      setIsBatteryInfoDialogOpen(true);
-    }
-  }, []);
 
   const onClaimRecharge = useCallback(async () => {
     try {
@@ -430,7 +412,7 @@ export const InnerBattlePage = (): JSX.Element => {
         />
         <BatteryInfoDialog
           isBatteryInfoDialogOpen={isBatteryInfoDialogOpen}
-          onChangeBatteryInfoDialog={onChangeBatteryInfoDialog}
+          setIsBatteryInfoDialogOpen={setIsBatteryInfoDialogOpen}
           showSolarFarmDialogPrompt={tutorialStep === TutorialSteps.TWO}
         />
         <NoActionsDialog />

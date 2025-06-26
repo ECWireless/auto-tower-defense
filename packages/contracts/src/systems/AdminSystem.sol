@@ -37,24 +37,11 @@ contract AdminSystem is System {
     patentId = keccak256(abi.encodePacked(bytecode));
 
     bytes memory patentBytecode = Patent.getBytecode(patentId);
-    require(
-      keccak256(abi.encodePacked(patentBytecode)) != patentId,
-      "AdminSystem: patent already exists"
-    );
+    require(keccak256(abi.encodePacked(patentBytecode)) != patentId, "AdminSystem: patent already exists");
 
     PatentHelpers.validatePatent(patentId, description, name);
 
-    Patent.set(
-      patentId,
-      bytes32(0),
-      contractSize,
-      block.timestamp,
-      0,
-      bytecode,
-      description,
-      name,
-      sourceCode
-    );
+    Patent.set(patentId, bytes32(0), contractSize, block.timestamp, 0, bytecode, description, name, sourceCode);
     return patentId;
   }
 
@@ -71,6 +58,14 @@ contract AdminSystem is System {
 
   function updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external {
     SolarFarmDetails.setElectricityBalance(newElectricityBalance);
+  }
+
+  function toggleSolarFarmRecharge() external {
+    bool isPaused = SolarFarmDetails.getRechargePaused();
+    SolarFarmDetails.setRechargePaused(!isPaused);
+    if (!isPaused) {
+      SolarFarmDetails.setUnpausedTimestamp(block.timestamp);
+    }
   }
 
   function updatUsdcAddress(address usdcAddress) external {

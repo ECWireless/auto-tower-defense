@@ -15,6 +15,7 @@ contract SolarFarmTest is MudTest {
   address aliceAddress = vm.addr(1);
   address bobAddress = vm.addr(2);
 
+  address public adminAddress = vm.addr(vm.envUint("PRIVATE_KEY"));
   bytes constant AUTHORED_BYTECODE =
     hex"6080604052348015600e575f5ffd5b506101ef8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063cae93eb91461002d575b5f5ffd5b610047600480360381019061004291906100bf565b61005e565b60405161005592919061010c565b60405180910390f35b5f5f60058461006d9190610160565b60018461007a9190610160565b915091509250929050565b5f5ffd5b5f8160010b9050919050565b61009e81610089565b81146100a8575f5ffd5b50565b5f813590506100b981610095565b92915050565b5f5f604083850312156100d5576100d4610085565b5b5f6100e2858286016100ab565b92505060206100f3858286016100ab565b9150509250929050565b61010681610089565b82525050565b5f60408201905061011f5f8301856100fd565b61012c60208301846100fd565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61016a82610089565b915061017583610089565b925082820190507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008112617fff821317156101b3576101b2610133565b5b9291505056fea26469706673582212200f36ce47d179e4a4274b65916ffd491b33285775935ab7ab90dc53e854837fdb64736f6c634300081c0033";
 
@@ -25,7 +26,7 @@ contract SolarFarmTest is MudTest {
     return usdc;
   }
 
-  function _beatTutorial(address player, string memory username) internal {  
+  function _beatTutorial(address player, string memory username) internal {
     vm.startPrank(player);
     bytes32 battleId = IWorld(worldAddress).app__createBattle(username, true);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
@@ -36,14 +37,10 @@ contract SolarFarmTest is MudTest {
     IWorld(worldAddress).app__nextTurn(battleId);
 
     vm.warp(block.timestamp + 1 hours);
-    
+
     battleId = IWorld(worldAddress).app__createBattle(username, false);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 55, 15);
-    IWorld(worldAddress).app__playerModifyTowerSystem(
-      towerId,
-      AUTHORED_BYTECODE,
-      ""
-    );
+    IWorld(worldAddress).app__playerModifyTowerSystem(towerId, AUTHORED_BYTECODE, "");
 
     // Need to go through 2 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
@@ -401,5 +398,60 @@ contract SolarFarmTest is MudTest {
     vm.expectRevert("SolarFarmSystem: not enough electricity in Solar Farm");
     vm.prank(aliceAddress);
     IWorld(worldAddress).app__claimRecharge();
+  }
+
+  function testRevertClaimRechargePaused() public {
+    // Create a battle in order to get a battery, and to stake 8kWh
+    vm.prank(aliceAddress);
+    IWorld(worldAddress).app__createBattle("Alice", true);
+
+    // Pause the recharge
+    vm.prank(adminAddress);
+    IWorld(worldAddress).app__toggleSolarFarmRecharge();
+
+    // Warp forward 1 hour (3600000 ms)
+    vm.warp(block.timestamp + 3600);
+    vm.expectRevert("SolarFarmSystem: recharge is paused");
+    vm.prank(aliceAddress);
+    IWorld(worldAddress).app__claimRecharge();
+    vm.stopPrank();
+  }
+
+  function testClaimChargeAfterUnpause() public {
+    // Create a battle in order to get a battery, and to stake 8kWh
+    vm.prank(aliceAddress);
+    IWorld(worldAddress).app__createBattle("Alice", true);
+
+    // Warp forward 1 hour (3600000 ms)
+    vm.warp(block.timestamp + 3600);
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
+    uint256 lastRechargeTimestamp = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
+    uint256 timeSinceLastRecharge = block.timestamp - lastRechargeTimestamp;
+    assertEq(timeSinceLastRecharge, 3600);
+
+    // Pause and unpause recharge
+    vm.startPrank(adminAddress);
+    IWorld(worldAddress).app__toggleSolarFarmRecharge();
+    IWorld(worldAddress).app__toggleSolarFarmRecharge();
+    vm.stopPrank();
+
+    // Warp forward 1 more hour (3600000 ms)
+    vm.warp(block.timestamp + 3600);
+    globalPlayerId = EntityHelpers.addressToGlobalPlayerId(aliceAddress);
+    lastRechargeTimestamp = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
+    timeSinceLastRecharge = block.timestamp - lastRechargeTimestamp;
+    assertEq(timeSinceLastRecharge, 3600 * 2); // 2 hours since last recharge
+
+    // Before ending the battle, the player should claim their recharge
+    // This should only recharge 1 hour worth of electricity because of unpause
+    vm.startPrank(aliceAddress);
+    IWorld(worldAddress).app__claimRecharge();
+    uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayerId);
+    uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayerId);
+    assertEq(activeBalance, BATTERY_STORAGE_LIMIT - 8000 + 1000); // 24kWh - 8kWh + 1kWh
+    assertEq(reserveBalance, 0); // 0.00kWh
+    uint256 lastRechargeTimestampAfter = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
+    assertEq(lastRechargeTimestampAfter, block.timestamp); // Last recharge timestamp should be updated
+    vm.stopPrank();
   }
 }

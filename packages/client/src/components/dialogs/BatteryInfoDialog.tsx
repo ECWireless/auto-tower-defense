@@ -17,13 +17,13 @@ import { useMUD } from '@/hooks/useMUD';
 
 type BatteryInfoDialogProps = {
   isBatteryInfoDialogOpen: boolean;
-  onChangeBatteryInfoDialog: (show: boolean) => void;
+  setIsBatteryInfoDialogOpen: (show: boolean) => void;
   showSolarFarmDialogPrompt: boolean;
 };
 
 export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
   isBatteryInfoDialogOpen,
-  onChangeBatteryInfoDialog,
+  setIsBatteryInfoDialogOpen,
   showSolarFarmDialogPrompt,
 }) => {
   const {
@@ -44,7 +44,7 @@ export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
       if (error && !success) {
         throw new Error(error);
       }
-      onChangeBatteryInfoDialog(false);
+      setIsBatteryInfoDialogOpen(false);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -55,11 +55,11 @@ export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
     } finally {
       setIsCompleting(false);
     }
-  }, [completeTutorialStep, onChangeBatteryInfoDialog, playSfx]);
+  }, [completeTutorialStep, playSfx, setIsBatteryInfoDialogOpen]);
 
   return (
     <Dialog
-      onOpenChange={onChangeBatteryInfoDialog}
+      onOpenChange={setIsBatteryInfoDialogOpen}
       open={isBatteryInfoDialogOpen}
     >
       <DialogContent className="bg-gray-900/95 border border-cyan-900/50 max-h-[90vh] overflow-y-auto text-white">
@@ -126,7 +126,7 @@ export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
                   <span
                     className="font-semibold hover:cursor-pointer hover:underline text-green-400"
                     onClick={() => {
-                      onChangeBatteryInfoDialog(false);
+                      setIsBatteryInfoDialogOpen(false);
                       setIsSolarFarmDialogOpen(true);
                     }}
                   >
@@ -155,7 +155,7 @@ export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
             onClick={() =>
               showSolarFarmDialogPrompt
                 ? onCompleteBatteryTutorial()
-                : onChangeBatteryInfoDialog(false)
+                : setIsBatteryInfoDialogOpen(false)
             }
           >
             {isCompleting && <Loader2 className="animate-spin h-6 w-6" />}
