@@ -34,7 +34,7 @@ const ESCROW_CONTRACTS = {
 
 const SELL_EMITTER_CONTRACTS = {
   [pyrope.id]: "0x745d57Ff5D45cAF46cf26c416a708B05cE59F08a",
-  [redstone.id]: "",
+  [redstone.id]: "0x378bbc1a01D1976c5C13f2393744bFE7034457be",
 };
 
 const app = express();
