@@ -29,12 +29,12 @@ const SUPPORTED_CHAINS = {
 
 const ESCROW_CONTRACTS = {
   [base.id]: "0x977437F82fb629FBF3028d485144Ad5666228133",
-  [baseSepolia.id]: "0x1ee0C3C8A365fC31eF1eAfAf83bA628940a9498a",
+  [baseSepolia.id]: "0xcF490CB83152Fd01F19aD1aB3C44445B2436f14E",
 };
 
 const SELL_EMITTER_CONTRACTS = {
-  [pyrope.id]: "0x0AB13388351C49919C5a6E747De868ad9D8B7437",
-  [redstone.id]: "",
+  [pyrope.id]: "0x745d57Ff5D45cAF46cf26c416a708B05cE59F08a",
+  [redstone.id]: "0x378bbc1a01D1976c5C13f2393744bFE7034457be",
 };
 
 const app = express();
@@ -62,7 +62,7 @@ const ALERT_INTERVAL_MS = 1000 * 60 * 60; // 1 hour cooldown
 const ipTimestamps = new Map();
 const addressTimestamps = new Map();
 const FAUCET_INTERVAL = 1000 * 60 * 60 * 1; // 1 hour
-const FAUCET_AMOUNT = parseEther("0.000001"); // Around $0.002 right now
+const FAUCET_AMOUNT = parseEther("0.000002"); // Around $0.004 right now
 
 const port = process.env.PORT || 3002;
 

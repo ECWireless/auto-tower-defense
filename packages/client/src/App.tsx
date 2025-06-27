@@ -2,7 +2,7 @@ import { pyrope, redstone } from '@latticexyz/common/chains';
 import { useComponentValue } from '@latticexyz/react';
 import { Analytics } from '@vercel/analytics/react';
 import { toSimpleSmartAccount } from 'permissionless/accounts';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { createPublicClient, createWalletClient, http, parseEther } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -25,9 +25,15 @@ export const App = (): JSX.Element => {
   const { address: playerAddress } = useAccount();
   const savedUsername = useComponentValue(Username, globalPlayerId)?.value;
 
+  const hasRun = useRef(false);
+
   useEffect(() => {
     (async () => {
       if (!playerAddress) return;
+      // This prevents the effect from running twice in StrictMode
+      if (hasRun.current) return;
+      hasRun.current = true;
+
       let sessionAddress: `0x${string}` | undefined;
       // get session wallet address from 'mud:entrykit' in local storage
       const entrykit = localStorage.getItem('mud:entrykit');
@@ -70,7 +76,7 @@ export const App = (): JSX.Element => {
           });
           // eslint-disable-next-line no-console
           console.info(`[Faucet]: Player balance -> ${balance}`);
-          const lowBalance = balance < parseEther('0.00001');
+          const lowBalance = balance < parseEther('0.000001');
           if (lowBalance) {
             // eslint-disable-next-line no-console
             console.info('[Faucet]: Balance is low, dripping funds to player');
@@ -100,7 +106,7 @@ export const App = (): JSX.Element => {
         setInterval(requestDrip, 20000);
       }
     })();
-  }, [globalPlayerId, playerAddress]);
+  }, [playerAddress]);
 
   return (
     <Router>
