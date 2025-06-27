@@ -71,7 +71,7 @@ export const USDC_ADDRESSES: { [key: number]: string } = {
 
 export const ESCROW_ADDRESSES: { [key: number]: string } = {
   [base.id]: '0x977437F82fb629FBF3028d485144Ad5666228133',
-  [baseSepolia.id]: '0xE0F09CAf7b81d6b5ed75e19D63b84ddf0A81197A',
+  [baseSepolia.id]: '0xcF490CB83152Fd01F19aD1aB3C44445B2436f14E',
 };
 
 export const BUY_ESCROW_TX_KEY = 'buy-escrow-tx';
