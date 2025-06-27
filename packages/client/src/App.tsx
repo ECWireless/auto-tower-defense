@@ -76,7 +76,7 @@ export const App = (): JSX.Element => {
           });
           // eslint-disable-next-line no-console
           console.info(`[Faucet]: Player balance -> ${balance}`);
-          const lowBalance = balance < parseEther('0.000001');
+          const lowBalance = balance < parseEther('0.000004');
           if (lowBalance) {
             // eslint-disable-next-line no-console
             console.info('[Faucet]: Balance is low, dripping funds to player');
