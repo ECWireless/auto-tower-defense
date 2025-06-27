@@ -1,32 +1,25 @@
-import { useComponentValue } from '@latticexyz/react';
-import { SyncStep } from '@latticexyz/store-sync';
-import { singletonEntity } from '@latticexyz/store-sync/recs';
 import { Route, Routes } from 'react-router-dom';
 
 import { LoadingScreen } from '@/components/LoadingScreen';
-import { useMUD } from '@/MUDContext';
-import { GamePage } from '@/pages/Game';
+import { Synced } from '@/mud/Synced';
+import { BattlePage } from '@/pages/Battle';
 import { Home } from '@/pages/Home';
 
 export const HOME_PATH = '/';
-export const GAMES_PATH = '/games';
+export const BATTLES_PATH = '/battles';
 
 const AppRoutes: React.FC = () => {
-  const {
-    components: { SyncProgress },
-  } = useMUD();
-
-  const syncProgress = useComponentValue(SyncProgress, singletonEntity);
-
-  if (syncProgress && syncProgress.step !== SyncStep.LIVE) {
-    return <LoadingScreen width={Math.round(syncProgress.percentage)} />;
-  }
-
   return (
-    <Routes>
-      <Route path={HOME_PATH} element={<Home />} />
-      <Route path={`${GAMES_PATH}/:id`} element={<GamePage />} />
-    </Routes>
+    <Synced
+      fallback={({ percentage }) => (
+        <LoadingScreen width={Math.round(percentage)} />
+      )}
+    >
+      <Routes>
+        <Route path={HOME_PATH} element={<Home />} />
+        <Route path={`${BATTLES_PATH}/:id`} element={<BattlePage />} />
+      </Routes>
+    </Synced>
   );
 };
 

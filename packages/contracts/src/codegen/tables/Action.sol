@@ -21,6 +21,7 @@ import { ActionType } from "../common.sol";
 
 struct ActionData {
   ActionType actionType;
+  address componentAddress;
   int16 newX;
   int16 newY;
   int16 oldX;
@@ -33,12 +34,12 @@ library Action {
   ResourceId constant _tableId = ResourceId.wrap(0x74626170700000000000000000000000416374696f6e00000000000000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x000a060001020202020100000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x001e070001140202020201000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (uint8, int16, int16, int16, int16, bool)
-  Schema constant _valueSchema = Schema.wrap(0x000a060000212121216000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (uint8, address, int16, int16, int16, int16, bool)
+  Schema constant _valueSchema = Schema.wrap(0x001e070000612121212160000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -54,13 +55,14 @@ library Action {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](6);
+    fieldNames = new string[](7);
     fieldNames[0] = "actionType";
-    fieldNames[1] = "newX";
-    fieldNames[2] = "newY";
-    fieldNames[3] = "oldX";
-    fieldNames[4] = "oldY";
-    fieldNames[5] = "projectile";
+    fieldNames[1] = "componentAddress";
+    fieldNames[2] = "newX";
+    fieldNames[3] = "newY";
+    fieldNames[4] = "oldX";
+    fieldNames[5] = "oldY";
+    fieldNames[6] = "projectile";
   }
 
   /**
@@ -120,13 +122,55 @@ library Action {
   }
 
   /**
+   * @notice Get componentAddress.
+   */
+  function getComponentAddress(bytes32 id) internal view returns (address componentAddress) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Get componentAddress.
+   */
+  function _getComponentAddress(bytes32 id) internal view returns (address componentAddress) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (address(bytes20(_blob)));
+  }
+
+  /**
+   * @notice Set componentAddress.
+   */
+  function setComponentAddress(bytes32 id, address componentAddress) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((componentAddress)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set componentAddress.
+   */
+  function _setComponentAddress(bytes32 id, address componentAddress) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = id;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((componentAddress)), _fieldLayout);
+  }
+
+  /**
    * @notice Get newX.
    */
   function getNewX(bytes32 id) internal view returns (int16 newX) {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
     return (int16(uint16(bytes2(_blob))));
   }
 
@@ -137,7 +181,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
     return (int16(uint16(bytes2(_blob))));
   }
 
@@ -148,7 +192,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((newX)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((newX)), _fieldLayout);
   }
 
   /**
@@ -158,7 +202,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((newX)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((newX)), _fieldLayout);
   }
 
   /**
@@ -168,7 +212,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
     return (int16(uint16(bytes2(_blob))));
   }
 
@@ -179,7 +223,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 2, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
     return (int16(uint16(bytes2(_blob))));
   }
 
@@ -190,7 +234,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((newY)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((newY)), _fieldLayout);
   }
 
   /**
@@ -200,7 +244,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((newY)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((newY)), _fieldLayout);
   }
 
   /**
@@ -210,7 +254,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
     return (int16(uint16(bytes2(_blob))));
   }
 
@@ -221,7 +265,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
     return (int16(uint16(bytes2(_blob))));
   }
 
@@ -232,7 +276,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((oldX)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((oldX)), _fieldLayout);
   }
 
   /**
@@ -242,7 +286,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((oldX)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((oldX)), _fieldLayout);
   }
 
   /**
@@ -252,7 +296,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 5, _fieldLayout);
     return (int16(uint16(bytes2(_blob))));
   }
 
@@ -263,7 +307,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 5, _fieldLayout);
     return (int16(uint16(bytes2(_blob))));
   }
 
@@ -274,7 +318,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((oldY)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 5, abi.encodePacked((oldY)), _fieldLayout);
   }
 
   /**
@@ -284,7 +328,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((oldY)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 5, abi.encodePacked((oldY)), _fieldLayout);
   }
 
   /**
@@ -294,7 +338,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 5, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 6, _fieldLayout);
     return (_toBool(uint8(bytes1(_blob))));
   }
 
@@ -305,7 +349,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 5, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 6, _fieldLayout);
     return (_toBool(uint8(bytes1(_blob))));
   }
 
@@ -316,7 +360,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 5, abi.encodePacked((projectile)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 6, abi.encodePacked((projectile)), _fieldLayout);
   }
 
   /**
@@ -326,7 +370,7 @@ library Action {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 5, abi.encodePacked((projectile)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 6, abi.encodePacked((projectile)), _fieldLayout);
   }
 
   /**
@@ -365,13 +409,14 @@ library Action {
   function set(
     bytes32 id,
     ActionType actionType,
+    address componentAddress,
     int16 newX,
     int16 newY,
     int16 oldX,
     int16 oldY,
     bool projectile
   ) internal {
-    bytes memory _staticData = encodeStatic(actionType, newX, newY, oldX, oldY, projectile);
+    bytes memory _staticData = encodeStatic(actionType, componentAddress, newX, newY, oldX, oldY, projectile);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -388,13 +433,14 @@ library Action {
   function _set(
     bytes32 id,
     ActionType actionType,
+    address componentAddress,
     int16 newX,
     int16 newY,
     int16 oldX,
     int16 oldY,
     bool projectile
   ) internal {
-    bytes memory _staticData = encodeStatic(actionType, newX, newY, oldX, oldY, projectile);
+    bytes memory _staticData = encodeStatic(actionType, componentAddress, newX, newY, oldX, oldY, projectile);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -411,6 +457,7 @@ library Action {
   function set(bytes32 id, ActionData memory _table) internal {
     bytes memory _staticData = encodeStatic(
       _table.actionType,
+      _table.componentAddress,
       _table.newX,
       _table.newY,
       _table.oldX,
@@ -433,6 +480,7 @@ library Action {
   function _set(bytes32 id, ActionData memory _table) internal {
     bytes memory _staticData = encodeStatic(
       _table.actionType,
+      _table.componentAddress,
       _table.newX,
       _table.newY,
       _table.oldX,
@@ -454,18 +502,32 @@ library Action {
    */
   function decodeStatic(
     bytes memory _blob
-  ) internal pure returns (ActionType actionType, int16 newX, int16 newY, int16 oldX, int16 oldY, bool projectile) {
+  )
+    internal
+    pure
+    returns (
+      ActionType actionType,
+      address componentAddress,
+      int16 newX,
+      int16 newY,
+      int16 oldX,
+      int16 oldY,
+      bool projectile
+    )
+  {
     actionType = ActionType(uint8(Bytes.getBytes1(_blob, 0)));
 
-    newX = (int16(uint16(Bytes.getBytes2(_blob, 1))));
+    componentAddress = (address(Bytes.getBytes20(_blob, 1)));
 
-    newY = (int16(uint16(Bytes.getBytes2(_blob, 3))));
+    newX = (int16(uint16(Bytes.getBytes2(_blob, 21))));
 
-    oldX = (int16(uint16(Bytes.getBytes2(_blob, 5))));
+    newY = (int16(uint16(Bytes.getBytes2(_blob, 23))));
 
-    oldY = (int16(uint16(Bytes.getBytes2(_blob, 7))));
+    oldX = (int16(uint16(Bytes.getBytes2(_blob, 25))));
 
-    projectile = (_toBool(uint8(Bytes.getBytes1(_blob, 9))));
+    oldY = (int16(uint16(Bytes.getBytes2(_blob, 27))));
+
+    projectile = (_toBool(uint8(Bytes.getBytes1(_blob, 29))));
   }
 
   /**
@@ -479,9 +541,15 @@ library Action {
     EncodedLengths,
     bytes memory
   ) internal pure returns (ActionData memory _table) {
-    (_table.actionType, _table.newX, _table.newY, _table.oldX, _table.oldY, _table.projectile) = decodeStatic(
-      _staticData
-    );
+    (
+      _table.actionType,
+      _table.componentAddress,
+      _table.newX,
+      _table.newY,
+      _table.oldX,
+      _table.oldY,
+      _table.projectile
+    ) = decodeStatic(_staticData);
   }
 
   /**
@@ -510,13 +578,14 @@ library Action {
    */
   function encodeStatic(
     ActionType actionType,
+    address componentAddress,
     int16 newX,
     int16 newY,
     int16 oldX,
     int16 oldY,
     bool projectile
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(actionType, newX, newY, oldX, oldY, projectile);
+    return abi.encodePacked(actionType, componentAddress, newX, newY, oldX, oldY, projectile);
   }
 
   /**
@@ -527,13 +596,14 @@ library Action {
    */
   function encode(
     ActionType actionType,
+    address componentAddress,
     int16 newX,
     int16 newY,
     int16 oldX,
     int16 oldY,
     bool projectile
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(actionType, newX, newY, oldX, oldY, projectile);
+    bytes memory _staticData = encodeStatic(actionType, componentAddress, newX, newY, oldX, oldY, projectile);
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;

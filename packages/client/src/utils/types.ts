@@ -16,27 +16,27 @@ export type Castle = {
   y: number;
 };
 
-export type Game = {
+export type Battle = {
   id: Entity;
   actionCount: number;
   endTimestamp: bigint;
   level: bigint;
-  player1Address: Address;
+  player1Id: Entity;
   player1Username: string;
-  player2Address: Address;
+  player2Id: Entity;
   player2Username: string;
   roundCount: number;
   startTimestamp: bigint;
-  turn: Address;
-  winner: Address;
+  turn: Entity;
+  winner: Entity;
 };
 
-export type SavedModification = {
+export type Patent = {
   id: Entity;
-  author: string;
   bytecode: string;
   description: string;
   name: string;
+  patentee: string;
   size: string;
   sourceCode: string;
   timestamp: bigint;

@@ -13,10 +13,6 @@ contract MintUsdcToPlayer is Script {
     uint256 amount = 10 * 1e6; // 10 USDC
 
     vm.startBroadcast(deployerPrivateKey);
-    // address usdcTokenAddress = TokenAddresses.getUsdcAddress();
-    // require(usdcTokenAddress != address(0), "USDC token address not set");
-    // MockUSDC usdc = MockUSDC(usdcTokenAddress);
-    // usdc.mint(player, amount);
     IWorld(worldAddress).app__mintUsdcToPlayer(playerAddress, amount);
     vm.stopBroadcast();
   }

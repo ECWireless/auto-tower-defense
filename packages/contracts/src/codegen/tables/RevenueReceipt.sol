@@ -19,11 +19,11 @@ import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 struct RevenueReceiptData {
   uint256 amountToKingdom;
   uint256 amountToReserve;
-  bytes32 gameId;
-  address playerAddress;
+  bytes32 battleId;
+  bytes32 playerId;
   bytes32 savedKingdomId;
   uint256 timestamp;
-  address[] authors;
+  bytes32[] patentees;
 }
 
 library RevenueReceipt {
@@ -31,12 +31,12 @@ library RevenueReceipt {
   ResourceId constant _tableId = ResourceId.wrap(0x6f746170700000000000000000000000526576656e7565526563656970740000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x00b4060120202014202000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x00c0060120202020202000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (uint256, uint256, bytes32, address, bytes32, uint256, address[])
-  Schema constant _valueSchema = Schema.wrap(0x00b406011f1f5f615f1fc3000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (uint256, uint256, bytes32, bytes32, bytes32, uint256, bytes32[])
+  Schema constant _valueSchema = Schema.wrap(0x00c006011f1f5f5f5f1fc1000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -55,11 +55,11 @@ library RevenueReceipt {
     fieldNames = new string[](7);
     fieldNames[0] = "amountToKingdom";
     fieldNames[1] = "amountToReserve";
-    fieldNames[2] = "gameId";
-    fieldNames[3] = "playerAddress";
+    fieldNames[2] = "battleId";
+    fieldNames[3] = "playerId";
     fieldNames[4] = "savedKingdomId";
     fieldNames[5] = "timestamp";
-    fieldNames[6] = "authors";
+    fieldNames[6] = "patentees";
   }
 
   /**
@@ -117,43 +117,43 @@ library RevenueReceipt {
   }
 
   /**
-   * @notice Set gameId.
+   * @notice Set battleId.
    */
-  function setGameId(bytes32 id, bytes32 gameId) internal {
+  function setBattleId(bytes32 id, bytes32 battleId) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((gameId)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((battleId)), _fieldLayout);
   }
 
   /**
-   * @notice Set gameId.
+   * @notice Set battleId.
    */
-  function _setGameId(bytes32 id, bytes32 gameId) internal {
+  function _setBattleId(bytes32 id, bytes32 battleId) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((gameId)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 2, abi.encodePacked((battleId)), _fieldLayout);
   }
 
   /**
-   * @notice Set playerAddress.
+   * @notice Set playerId.
    */
-  function setPlayerAddress(bytes32 id, address playerAddress) internal {
+  function setPlayerId(bytes32 id, bytes32 playerId) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((playerAddress)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((playerId)), _fieldLayout);
   }
 
   /**
-   * @notice Set playerAddress.
+   * @notice Set playerId.
    */
-  function _setPlayerAddress(bytes32 id, address playerAddress) internal {
+  function _setPlayerId(bytes32 id, bytes32 playerId) internal {
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((playerAddress)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((playerId)), _fieldLayout);
   }
 
   /**
@@ -203,23 +203,23 @@ library RevenueReceipt {
     bytes32 id,
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    bytes32 gameId,
-    address playerAddress,
+    bytes32 battleId,
+    bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp,
-    address[] memory authors
+    bytes32[] memory patentees
   ) internal {
     bytes memory _staticData = encodeStatic(
       amountToKingdom,
       amountToReserve,
-      gameId,
-      playerAddress,
+      battleId,
+      playerId,
       savedKingdomId,
       timestamp
     );
 
-    EncodedLengths _encodedLengths = encodeLengths(authors);
-    bytes memory _dynamicData = encodeDynamic(authors);
+    EncodedLengths _encodedLengths = encodeLengths(patentees);
+    bytes memory _dynamicData = encodeDynamic(patentees);
 
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
@@ -234,23 +234,23 @@ library RevenueReceipt {
     bytes32 id,
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    bytes32 gameId,
-    address playerAddress,
+    bytes32 battleId,
+    bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp,
-    address[] memory authors
+    bytes32[] memory patentees
   ) internal {
     bytes memory _staticData = encodeStatic(
       amountToKingdom,
       amountToReserve,
-      gameId,
-      playerAddress,
+      battleId,
+      playerId,
       savedKingdomId,
       timestamp
     );
 
-    EncodedLengths _encodedLengths = encodeLengths(authors);
-    bytes memory _dynamicData = encodeDynamic(authors);
+    EncodedLengths _encodedLengths = encodeLengths(patentees);
+    bytes memory _dynamicData = encodeDynamic(patentees);
 
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
@@ -265,14 +265,14 @@ library RevenueReceipt {
     bytes memory _staticData = encodeStatic(
       _table.amountToKingdom,
       _table.amountToReserve,
-      _table.gameId,
-      _table.playerAddress,
+      _table.battleId,
+      _table.playerId,
       _table.savedKingdomId,
       _table.timestamp
     );
 
-    EncodedLengths _encodedLengths = encodeLengths(_table.authors);
-    bytes memory _dynamicData = encodeDynamic(_table.authors);
+    EncodedLengths _encodedLengths = encodeLengths(_table.patentees);
+    bytes memory _dynamicData = encodeDynamic(_table.patentees);
 
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
@@ -287,14 +287,14 @@ library RevenueReceipt {
     bytes memory _staticData = encodeStatic(
       _table.amountToKingdom,
       _table.amountToReserve,
-      _table.gameId,
-      _table.playerAddress,
+      _table.battleId,
+      _table.playerId,
       _table.savedKingdomId,
       _table.timestamp
     );
 
-    EncodedLengths _encodedLengths = encodeLengths(_table.authors);
-    bytes memory _dynamicData = encodeDynamic(_table.authors);
+    EncodedLengths _encodedLengths = encodeLengths(_table.patentees);
+    bytes memory _dynamicData = encodeDynamic(_table.patentees);
 
     bytes32[] memory _keyTuple = new bytes32[](1);
     _keyTuple[0] = id;
@@ -313,8 +313,8 @@ library RevenueReceipt {
     returns (
       uint256 amountToKingdom,
       uint256 amountToReserve,
-      bytes32 gameId,
-      address playerAddress,
+      bytes32 battleId,
+      bytes32 playerId,
       bytes32 savedKingdomId,
       uint256 timestamp
     )
@@ -323,13 +323,13 @@ library RevenueReceipt {
 
     amountToReserve = (uint256(Bytes.getBytes32(_blob, 32)));
 
-    gameId = (Bytes.getBytes32(_blob, 64));
+    battleId = (Bytes.getBytes32(_blob, 64));
 
-    playerAddress = (address(Bytes.getBytes20(_blob, 96)));
+    playerId = (Bytes.getBytes32(_blob, 96));
 
-    savedKingdomId = (Bytes.getBytes32(_blob, 116));
+    savedKingdomId = (Bytes.getBytes32(_blob, 128));
 
-    timestamp = (uint256(Bytes.getBytes32(_blob, 148)));
+    timestamp = (uint256(Bytes.getBytes32(_blob, 160)));
   }
 
   /**
@@ -338,13 +338,13 @@ library RevenueReceipt {
   function decodeDynamic(
     EncodedLengths _encodedLengths,
     bytes memory _blob
-  ) internal pure returns (address[] memory authors) {
+  ) internal pure returns (bytes32[] memory patentees) {
     uint256 _start;
     uint256 _end;
     unchecked {
       _end = _encodedLengths.atIndex(0);
     }
-    authors = (SliceLib.getSubslice(_blob, _start, _end).decodeArray_address());
+    patentees = (SliceLib.getSubslice(_blob, _start, _end).decodeArray_bytes32());
   }
 
   /**
@@ -361,13 +361,13 @@ library RevenueReceipt {
     (
       _table.amountToKingdom,
       _table.amountToReserve,
-      _table.gameId,
-      _table.playerAddress,
+      _table.battleId,
+      _table.playerId,
       _table.savedKingdomId,
       _table.timestamp
     ) = decodeStatic(_staticData);
 
-    (_table.authors) = decodeDynamic(_encodedLengths, _dynamicData);
+    (_table.patentees) = decodeDynamic(_encodedLengths, _dynamicData);
   }
 
   /**
@@ -397,22 +397,22 @@ library RevenueReceipt {
   function encodeStatic(
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    bytes32 gameId,
-    address playerAddress,
+    bytes32 battleId,
+    bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(amountToKingdom, amountToReserve, gameId, playerAddress, savedKingdomId, timestamp);
+    return abi.encodePacked(amountToKingdom, amountToReserve, battleId, playerId, savedKingdomId, timestamp);
   }
 
   /**
    * @notice Tightly pack dynamic data lengths using this table's schema.
    * @return _encodedLengths The lengths of the dynamic fields (packed into a single bytes32 value).
    */
-  function encodeLengths(address[] memory authors) internal pure returns (EncodedLengths _encodedLengths) {
+  function encodeLengths(bytes32[] memory patentees) internal pure returns (EncodedLengths _encodedLengths) {
     // Lengths are effectively checked during copy by 2**40 bytes exceeding gas limits
     unchecked {
-      _encodedLengths = EncodedLengthsLib.pack(authors.length * 20);
+      _encodedLengths = EncodedLengthsLib.pack(patentees.length * 32);
     }
   }
 
@@ -420,8 +420,8 @@ library RevenueReceipt {
    * @notice Tightly pack dynamic (variable length) data using this table's schema.
    * @return The dynamic data, encoded into a sequence of bytes.
    */
-  function encodeDynamic(address[] memory authors) internal pure returns (bytes memory) {
-    return abi.encodePacked(EncodeArray.encode((authors)));
+  function encodeDynamic(bytes32[] memory patentees) internal pure returns (bytes memory) {
+    return abi.encodePacked(EncodeArray.encode((patentees)));
   }
 
   /**
@@ -433,23 +433,23 @@ library RevenueReceipt {
   function encode(
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    bytes32 gameId,
-    address playerAddress,
+    bytes32 battleId,
+    bytes32 playerId,
     bytes32 savedKingdomId,
     uint256 timestamp,
-    address[] memory authors
+    bytes32[] memory patentees
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
     bytes memory _staticData = encodeStatic(
       amountToKingdom,
       amountToReserve,
-      gameId,
-      playerAddress,
+      battleId,
+      playerId,
       savedKingdomId,
       timestamp
     );
 
-    EncodedLengths _encodedLengths = encodeLengths(authors);
-    bytes memory _dynamicData = encodeDynamic(authors);
+    EncodedLengths _encodedLengths = encodeLengths(patentees);
+    bytes memory _dynamicData = encodeDynamic(patentees);
 
     return (_staticData, _encodedLengths, _dynamicData);
   }

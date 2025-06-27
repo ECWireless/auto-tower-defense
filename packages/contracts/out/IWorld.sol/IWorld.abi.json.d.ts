@@ -1,49 +1,22 @@
 declare const abi: [
   {
     "type": "function",
-    "name": "app__addSavedKingdomRow",
+    "name": "app__amendPatent",
     "inputs": [
       {
-        "name": "savedGameId",
+        "name": "patentId",
         "type": "bytes32",
         "internalType": "bytes32"
       },
       {
-        "name": "level",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
+        "name": "description",
+        "type": "string",
+        "internalType": "string"
+      },
       {
-        "name": "added",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__addSolarFarmAddress",
-    "inputs": [
-      {
-        "name": "solarFarmAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__addUsdcTokenAddress",
-    "inputs": [
-      {
-        "name": "usdcTokenAddress",
-        "type": "address",
-        "internalType": "address"
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [],
@@ -64,6 +37,24 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__buyElectricityThroughRelay",
+    "inputs": [
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "usdcAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__claimRecharge",
     "inputs": [],
     "outputs": [],
@@ -71,7 +62,42 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__createGame",
+    "name": "app__completeTutorialStep1",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__completeTutorialStep2",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__completeTutorialStep3",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__completeTutorialStep4",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__completeTutorialStep5",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__createBattle",
     "inputs": [
       {
         "name": "username",
@@ -95,35 +121,12 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__deleteModification",
+    "name": "app__disclaimPatent",
     "inputs": [
       {
-        "name": "savedModificationId",
+        "name": "patentId",
         "type": "bytes32",
         "internalType": "bytes32"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__editModification",
-    "inputs": [
-      {
-        "name": "savedModificationId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "description",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "name",
-        "type": "string",
-        "internalType": "string"
       }
     ],
     "outputs": [],
@@ -157,7 +160,7 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__getGameSystemAddress",
+    "name": "app__getSolarFarmSystemAddress",
     "inputs": [],
     "outputs": [
       {
@@ -167,19 +170,6 @@ declare const abi: [
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "app__givePlayerBattery",
-    "inputs": [
-      {
-        "name": "playerId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -204,7 +194,7 @@ declare const abi: [
     "name": "app__nextTurn",
     "inputs": [
       {
-        "name": "gameId",
+        "name": "battleId",
         "type": "bytes32",
         "internalType": "bytes32"
       }
@@ -301,7 +291,7 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__saveModification",
+    "name": "app__registerPatent",
     "inputs": [
       {
         "name": "bytecode",
@@ -326,7 +316,41 @@ declare const abi: [
     ],
     "outputs": [
       {
-        "name": "savedModificationId",
+        "name": "patentId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__registerTemplatePatent",
+    "inputs": [
+      {
+        "name": "bytecode",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "sourceCode",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "patentId",
         "type": "bytes32",
         "internalType": "bytes32"
       }
@@ -348,10 +372,10 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__updatePlayerCount",
+    "name": "app__sellElectricityThroughRelay",
     "inputs": [
       {
-        "name": "newPlayerCount",
+        "name": "electricityAmount",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -361,17 +385,71 @@ declare const abi: [
   },
   {
     "type": "function",
-    "name": "app__updateSolarFarmDetails",
+    "name": "app__toggleSolarFarmRecharge",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__transferAccount",
     "inputs": [
       {
-        "name": "msPerWh",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
+        "name": "newAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__undoAction",
+    "inputs": [],
+    "outputs": [
       {
-        "name": "whPerCentPrice",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updatUsdcAddress",
+    "inputs": [
+      {
+        "name": "usdcAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateBuyReceiverAddress",
+    "inputs": [
+      {
+        "name": "buyReceiverAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateSellEmitterAddress",
+    "inputs": [
+      {
+        "name": "sellEmitterAddress",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -387,13 +465,6 @@ declare const abi: [
         "internalType": "uint256"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "app__updateSolarFarmFiatBalance",
-    "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },

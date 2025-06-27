@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef } from 'react';
 
 import { SFXManager } from '@/lib/SFXManager';
 
-export function useSFX(): {
+export const useSFX = (): {
   play: (name: string) => void;
   setMuted: (muted: boolean) => void;
   setVolume: (v: number) => void;
-} {
+} => {
   const sfxRef = useRef<SFXManager | null>(null);
 
   useEffect(() => {
@@ -40,4 +40,4 @@ export function useSFX(): {
   };
 
   return { play, setMuted, setVolume };
-}
+};

@@ -2,80 +2,47 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, KingdomsByLevel, Level, PlayerCount, SavedGame, SavedGameData, SavedKingdom, SavedKingdomData, SolarFarmDetails } from "../codegen/index.sol";
+import { AddressBook, Patent, SolarFarmDetails } from "../codegen/index.sol";
 import { BatteryHelpers } from "../Libraries/BatteryHelpers.sol";
+import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
+import { PatentHelpers } from "../Libraries/PatentHelpers.sol";
+import { DEFAULT_LOGIC_SIZE_LIMIT, ROB_ID } from "../../constants.sol";
+import { _solarFarmSystemAddress } from "../utils.sol";
 import "../../mocks/MockUSDC.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract AdminSystem is System {
-  function addSavedKingdomRow(bytes32 savedGameId, uint256 level) external returns (bool added) {
-    // Get the SavedGame by ID
-    SavedGameData memory savedGame = SavedGame.get(savedGameId);
-
-    // Create ID by hashing all actions
-    bytes32 savedKingdomId = keccak256(abi.encode(savedGame.actions));
-
-    // Check if the savedKingdomId already exists
-    if (SavedKingdom.get(savedKingdomId).createdAtTimestamp != 0) {
-      return false;
+  function registerTemplatePatent(
+    bytes memory bytecode,
+    string memory description,
+    string memory name,
+    string memory sourceCode
+  ) external returns (bytes32 patentId) {
+    uint256 contractSize;
+    address newSystem;
+    assembly {
+      newSystem := create(0, add(bytecode, 0x20), mload(bytecode))
     }
 
-    // Convert to SavedKingdom
-    SavedKingdomData memory savedKingdom = SavedKingdomData({
-      author: savedGame.winner,
-      createdAtTimestamp: block.timestamp,
-      electricityBalance: 0,
-      losses: 0,
-      wins: 0,
-      actions: savedGame.actions
-    });
-
-    // Store in KingdomsByLevel
-    bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(level);
-    bytes32[] memory updatedKingdomsByLevel = new bytes32[](kingdomsByLevel.length + 1);
-    for (uint256 i = 0; i < kingdomsByLevel.length; i++) {
-      updatedKingdomsByLevel[i] = kingdomsByLevel[i];
-
-      if (kingdomsByLevel[i] == savedKingdomId) {
-        return false;
-      }
+    assembly {
+      contractSize := extcodesize(newSystem)
     }
 
-    updatedKingdomsByLevel[updatedKingdomsByLevel.length - 1] = savedKingdomId;
-    KingdomsByLevel.set(level, updatedKingdomsByLevel);
-    SavedKingdom.set(savedKingdomId, savedKingdom);
-    Level.set(savedKingdomId, level);
+    require(contractSize > 0, "AdminSystem: bytecode is invalid");
+    require(
+      contractSize <= DEFAULT_LOGIC_SIZE_LIMIT,
+      string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
+    );
 
-    return true;
-  }
+    patentId = keccak256(abi.encodePacked(bytecode));
 
-  function addUsdcTokenAddress(address usdcTokenAddress) external {
-    AddressBook.setUsdcAddress(usdcTokenAddress);
-  }
+    bytes memory patentBytecode = Patent.getBytecode(patentId);
+    require(keccak256(abi.encodePacked(patentBytecode)) != patentId, "AdminSystem: patent already exists");
 
-  function addSolarFarmAddress(address solarFarmAddress) external {
-    AddressBook.setSolarFarmAddress(solarFarmAddress);
-  }
+    PatentHelpers.validatePatent(patentId, description, name);
 
-  function updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external {
-    SolarFarmDetails.setElectricityBalance(newElectricityBalance);
-  }
-
-  function updateSolarFarmDetails(uint256 msPerWh, uint256 whPerCentPrice) external {
-    SolarFarmDetails.setMsPerWh(msPerWh);
-    SolarFarmDetails.setWhPerCentPrice(whPerCentPrice);
-  }
-
-  function updateSolarFarmFiatBalance() external {
-    address usdcTokenAddress = AddressBook.getUsdcAddress();
-    require(usdcTokenAddress != address(0), "USDC token address not set");
-    MockUSDC usdc = MockUSDC(usdcTokenAddress);
-    address solarFarmAddress = AddressBook.getSolarFarmAddress();
-    uint256 usdcBalance = usdc.balanceOf(solarFarmAddress);
-    SolarFarmDetails.setFiatBalance(usdcBalance);
-  }
-
-  function updatePlayerCount(uint256 newPlayerCount) external {
-    PlayerCount.set(newPlayerCount);
+    Patent.set(patentId, bytes32(0), contractSize, block.timestamp, 0, bytecode, description, name, sourceCode);
+    return patentId;
   }
 
   function mintUsdcToPlayer(address player, uint256 amount) external {
@@ -85,7 +52,31 @@ contract AdminSystem is System {
     usdc.mint(player, amount);
   }
 
-  function givePlayerBattery(bytes32 playerId) external {
-    BatteryHelpers.grantBattery(playerId);
+  function getSolarFarmSystemAddress() external view returns (address) {
+    return _solarFarmSystemAddress();
+  }
+
+  function updateSolarFarmElectricityBalance(uint256 newElectricityBalance) external {
+    SolarFarmDetails.setElectricityBalance(newElectricityBalance);
+  }
+
+  function toggleSolarFarmRecharge() external {
+    bool isPaused = SolarFarmDetails.getRechargePaused();
+    SolarFarmDetails.setRechargePaused(!isPaused);
+    if (!isPaused) {
+      SolarFarmDetails.setUnpausedTimestamp(block.timestamp);
+    }
+  }
+
+  function updatUsdcAddress(address usdcAddress) external {
+    AddressBook.setUsdcAddress(usdcAddress);
+  }
+
+  function updateBuyReceiverAddress(address buyReceiverAddress) external {
+    AddressBook.setBuyReceiverAddress(buyReceiverAddress);
+  }
+
+  function updateSellEmitterAddress(address sellEmitterAddress) external {
+    AddressBook.setSellEmitterAddress(sellEmitterAddress);
   }
 }

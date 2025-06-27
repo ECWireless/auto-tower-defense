@@ -1,16 +1,155 @@
 require("dotenv").config();
 const express = require("express");
 const { compile } = require("solc");
-var cors = require("cors");
+const cors = require("cors");
+const {
+  createPublicClient,
+  createWalletClient,
+  decodeEventLog,
+  encodeAbiParameters,
+  formatEther,
+  getAddress,
+  http,
+  isAddress,
+  keccak256,
+  parseEther,
+} = require("viem");
+const sgMail = require("@sendgrid/mail");
+const { privateKeyToAccount } = require("viem/accounts");
+const { base, baseSepolia, pyrope, redstone } = require("viem/chains");
+const BASE_ESCOW_ABI = require("./abi/baseEscrowAbi.json");
+const SELL_EMITTER_ABI = require("./abi/sellEmitterAbi.json");
+
+const SUPPORTED_CHAINS = {
+  [base.id]: base,
+  [baseSepolia.id]: baseSepolia,
+  [pyrope.id]: pyrope,
+  [redstone.id]: redstone,
+};
+
+const ESCROW_CONTRACTS = {
+  [base.id]: "0x977437F82fb629FBF3028d485144Ad5666228133",
+  [baseSepolia.id]: "0xcF490CB83152Fd01F19aD1aB3C44445B2436f14E",
+};
+
+const SELL_EMITTER_CONTRACTS = {
+  [pyrope.id]: "0x745d57Ff5D45cAF46cf26c416a708B05cE59F08a",
+  [redstone.id]: "0x378bbc1a01D1976c5C13f2393744bFE7034457be",
+};
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// SendGrid setup
+if (!process.env.SENDGRID_API_KEY) {
+  console.error("Missing SENDGRID_API_KEY in environment variables");
+  process.exit(1);
+}
+
+if (!process.env.ALERT_EMAIL) {
+  console.error("Missing ALERT_EMAIL in environment variables");
+  process.exit(1);
+}
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const LOW_BALANCE_THRESHOLD = parseFloat("0.00001"); // Around $0.02 right now
+const alertEmail = process.env.ALERT_EMAIL;
+let lastAlertSent = 0;
+const ALERT_INTERVAL_MS = 1000 * 60 * 60; // 1 hour cooldown
+
+// In-memory rate limits for faucet
+const ipTimestamps = new Map();
+const addressTimestamps = new Map();
+const FAUCET_INTERVAL = 1000 * 60 * 60 * 1; // 1 hour
+const FAUCET_AMOUNT = parseEther("0.000002"); // Around $0.004 right now
+
 const port = process.env.PORT || 3002;
 
 app.get("/", (_, res) => {
-  res.send("Auto Defense API");
+  res.send("Auto Tower Defense API");
+});
+
+app.post("/api/faucet", async (req, res) => {
+  const ip = req.ip;
+  const { address, chainId } = req.body;
+
+  if (!(address && isAddress(address))) {
+    return res.status(400).json({ success: false, error: "Invalid address" });
+  }
+
+  if (!(chainId && SUPPORTED_CHAINS[chainId])) {
+    return res.status(400).json({ success: false, error: "Invalid chainId" });
+  }
+
+  const normalizedAddress = getAddress(address);
+  const now = Date.now();
+
+  // Rate limiting
+  const lastIp = ipTimestamps.get(ip) || 0;
+  const lastAddr = addressTimestamps.get(normalizedAddress) || 0;
+  if (now - lastIp < FAUCET_INTERVAL || now - lastAddr < FAUCET_INTERVAL) {
+    return res
+      .status(429)
+      .json({ success: false, error: "Rate limit exceeded" });
+  }
+
+  try {
+    const faucetPrivateKey = process.env.FAUCET_PRIVATE_KEY;
+
+    if (!faucetPrivateKey) {
+      return res
+        .status(500)
+        .json({ success: false, error: "Faucet not configured" });
+    }
+
+    const account = privateKeyToAccount(faucetPrivateKey);
+    const faucetClient = createWalletClient({
+      account,
+      chain: SUPPORTED_CHAINS[chainId],
+      transport: http(),
+    });
+
+    const txHash = await faucetClient.sendTransaction({
+      to: normalizedAddress,
+      value: FAUCET_AMOUNT,
+    });
+
+    ipTimestamps.set(ip, now);
+    addressTimestamps.set(normalizedAddress, now);
+
+    // Check balance + send alert if needed
+    const publicClient = createPublicClient({
+      chain: SUPPORTED_CHAINS[chainId],
+      transport: http(),
+    });
+    const balance = await publicClient.getBalance({ address: account.address });
+    const balanceEth = parseFloat(formatEther(balance));
+
+    if (
+      balanceEth < LOW_BALANCE_THRESHOLD &&
+      now - lastAlertSent > ALERT_INTERVAL_MS
+    ) {
+      try {
+        await sgMail.send({
+          to: alertEmail,
+          from: alertEmail,
+          subject: "⚠️ Faucet balance is low!",
+          text: `Your faucet has a low balance: ${balanceEth} ETH remaining on chain ID ${chainId}. Please refill it soon to keep the faucet operational.`,
+        });
+        lastAlertSent = now;
+      } catch (emailErr) {
+        console.error("SendGrid error:", emailErr);
+      }
+    }
+
+    return res.json({ success: true, txHash });
+  } catch (err) {
+    console.error("Faucet error:", err);
+    return res
+      .status(500)
+      .json({ success: false, error: "Internal server error" });
+  }
 });
 
 app.post("/compile", (req, res) => {
@@ -48,6 +187,195 @@ app.post("/compile", (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Error compiling contract");
+  }
+});
+
+app.post("/buy-validator-signature", async (req, res) => {
+  const { amount, buyer, destinationChainId, nonce, originChainId, txHash } =
+    req.body;
+
+  if (
+    !(amount && buyer && destinationChainId && nonce && originChainId && txHash)
+  ) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const originChain = SUPPORTED_CHAINS[originChainId];
+  const destinationChain = SUPPORTED_CHAINS[destinationChainId];
+  const escrowAddress = ESCROW_CONTRACTS[originChainId];
+
+  if (!SUPPORTED_CHAINS[originChainId]) {
+    return res.status(400).json({ error: "Unsupported origin chain ID" });
+  }
+
+  if (!SUPPORTED_CHAINS[destinationChainId]) {
+    return res.status(400).json({ error: "Unsupported destination chain ID" });
+  }
+
+  if (!escrowAddress) {
+    return res.status(400).json({ error: "Escrow contract not deployed" });
+  }
+
+  try {
+    const publicClient = createPublicClient({
+      chain: originChain,
+      transport: http(),
+    });
+
+    const receipt = await publicClient.getTransactionReceipt({
+      hash: txHash,
+    });
+
+    const eventLog = receipt.logs.find(
+      (log) => log.address.toLowerCase() === escrowAddress.toLowerCase()
+    );
+
+    if (!eventLog) {
+      return res
+        .status(404)
+        .json({ error: "No ElectricityPurchase event found" });
+    }
+
+    const parsedLog = decodeEventLog({
+      abi: BASE_ESCOW_ABI,
+      data: eventLog.data,
+      topics: eventLog.topics,
+    });
+
+    if (
+      parsedLog.eventName !== "ElectricityPurchase" ||
+      parsedLog.args.buyer.toLowerCase() !== buyer.toLowerCase() ||
+      parsedLog.args.amount !== BigInt(amount) ||
+      parsedLog.args.nonce !== BigInt(nonce)
+    ) {
+      return res.status(400).json({ error: "Event mismatch" });
+    }
+
+    const encodedData = encodeAbiParameters(
+      [
+        { type: "address", name: "buyer" },
+        { type: "uint256", name: "amount" },
+        { type: "uint256", name: "nonce" },
+      ],
+      [buyer, amount, nonce]
+    );
+    const structHash = keccak256(encodedData);
+
+    const { VALIDATOR_PRIVATE_KEY } = process.env;
+    if (!VALIDATOR_PRIVATE_KEY) {
+      return res.status(500).json({ error: "VALIDATOR_PRIVATE_KEY not set" });
+    }
+    const validatorAccount = privateKeyToAccount(VALIDATOR_PRIVATE_KEY);
+    const walletClient = createWalletClient({
+      account: validatorAccount,
+      chain: destinationChain,
+      transport: http(),
+    });
+    const signature = await walletClient.signMessage({
+      message: { raw: structHash },
+    });
+    res.json({ signature });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Signature failed" });
+  }
+});
+
+app.post("/sell-validator-signature", async (req, res) => {
+  const { amount, destinationChainId, nonce, originChainId, seller, txHash } =
+    req.body;
+
+  if (
+    !(
+      amount &&
+      destinationChainId &&
+      nonce &&
+      originChainId &&
+      seller &&
+      txHash
+    )
+  ) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const originChain = SUPPORTED_CHAINS[originChainId];
+  const destinationChain = SUPPORTED_CHAINS[destinationChainId];
+  const sellEmitterAddress = SELL_EMITTER_CONTRACTS[originChainId];
+
+  if (!SUPPORTED_CHAINS[originChainId]) {
+    return res.status(400).json({ error: "Unsupported origin chain ID" });
+  }
+
+  if (!SUPPORTED_CHAINS[destinationChainId]) {
+    return res.status(400).json({ error: "Unsupported destination chain ID" });
+  }
+
+  if (!sellEmitterAddress) {
+    return res
+      .status(400)
+      .json({ error: "Sell emitter contract not deployed" });
+  }
+
+  try {
+    const publicClient = createPublicClient({
+      chain: originChain,
+      transport: http(),
+    });
+
+    const receipt = await publicClient.getTransactionReceipt({
+      hash: txHash,
+    });
+
+    const eventLog = receipt.logs.find(
+      (log) => log.address.toLowerCase() === sellEmitterAddress.toLowerCase()
+    );
+
+    if (!eventLog) {
+      return res.status(404).json({ error: "No ElectricitySold event found" });
+    }
+
+    const parsedLog = decodeEventLog({
+      abi: SELL_EMITTER_ABI,
+      data: eventLog.data,
+      topics: eventLog.topics,
+    });
+
+    if (
+      parsedLog.eventName !== "ElectricitySold" ||
+      parsedLog.args.seller.toLowerCase() !== seller.toLowerCase() ||
+      parsedLog.args.receiveAmount !== BigInt(amount) ||
+      parsedLog.args.nonce !== BigInt(nonce)
+    ) {
+      return res.status(400).json({ error: "Event mismatch" });
+    }
+
+    const encodedData = encodeAbiParameters(
+      [
+        { type: "address", name: "seller" },
+        { type: "uint256", name: "amount" },
+        { type: "uint256", name: "nonce" },
+      ],
+      [seller, amount, nonce]
+    );
+    const structHash = keccak256(encodedData);
+
+    const { VALIDATOR_PRIVATE_KEY } = process.env;
+    if (!VALIDATOR_PRIVATE_KEY) {
+      return res.status(500).json({ error: "VALIDATOR_PRIVATE_KEY not set" });
+    }
+    const validatorAccount = privateKeyToAccount(VALIDATOR_PRIVATE_KEY);
+    const walletClient = createWalletClient({
+      account: validatorAccount,
+      chain: destinationChain,
+      transport: http(),
+    });
+    const signature = await walletClient.signMessage({
+      message: { raw: structHash },
+    });
+    res.json({ signature });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Signature failed" });
   }
 });
 

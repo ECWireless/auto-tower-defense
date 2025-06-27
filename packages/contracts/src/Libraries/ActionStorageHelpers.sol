@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, ActionData, Position, Projectile, SavedGame, SavedGameData } from "../codegen/index.sol";
+import { Action, ActionData, DefaultLogic, Position, Projectile, SavedBattle, SavedBattleData } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
 import { DEFAULT_LOGIC_SIZE_LIMIT } from "../../constants.sol";
@@ -11,44 +11,52 @@ import { DEFAULT_LOGIC_SIZE_LIMIT } from "../../constants.sol";
  * @notice This library contains helper functions for action storage
  */
 library ActionStorageHelpers {
-  function storeSkipAction(bytes32 gameId) public {
-    ActionData[] memory actions = new ActionData[](1);
-    actions[0] = ActionData({ actionType: ActionType.Skip, newX: 0, newY: 0, oldX: 0, oldY: 0, projectile: false });
+  function storeSkipAction(bytes32 battleId) public {
+    ActionData memory skipAction = ActionData({
+      actionType: ActionType.Skip,
+      componentAddress: address(0),
+      newX: 0,
+      newY: 0,
+      oldX: 0,
+      oldY: 0,
+      projectile: false
+    });
 
-    bytes32[] memory savedGameActionIds = SavedGame.getActions(gameId);
-    bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
+    bytes32[] memory savedBattleActionIds = SavedBattle.getActions(battleId);
+    bytes32[] memory newSavedBattleActionIds = new bytes32[](savedBattleActionIds.length + 1);
 
-    for (uint256 i = 0; i < savedGameActionIds.length; i++) {
-      newSavedGameActionIds[i] = savedGameActionIds[i];
+    for (uint256 i = 0; i < savedBattleActionIds.length; i++) {
+      newSavedBattleActionIds[i] = savedBattleActionIds[i];
     }
 
-    for (uint256 i = 0; i < actions.length; i++) {
-      newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
-        abi.encodePacked(
-          actions[i].actionType,
-          actions[i].newX,
-          actions[i].newY,
-          actions[i].oldX,
-          actions[i].oldY,
-          actions[i].projectile
-        )
-      );
-      Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
-    }
-
-    SavedGame.setActions(gameId, newSavedGameActionIds);
+    newSavedBattleActionIds[newSavedBattleActionIds.length - 1] = keccak256(
+      abi.encodePacked(
+        skipAction.actionType,
+        skipAction.componentAddress,
+        skipAction.newX,
+        skipAction.newY,
+        skipAction.oldX,
+        skipAction.oldY,
+        skipAction.projectile
+      )
+    );
+    Action.set(newSavedBattleActionIds[newSavedBattleActionIds.length - 1], skipAction);
+    SavedBattle.setActions(battleId, newSavedBattleActionIds);
   }
 
   function storeInstallTowerAction(
-    bytes32 gameId,
-    address playerAddress,
+    bytes32 battleId,
+    bytes32 globalPlayerId,
     int16 newX,
     int16 newY,
     bool hasProjectile
   ) public {
     ActionData[] memory actions = new ActionData[](1);
+    address defaultComponentAddress = DefaultLogic.get();
+
     actions[0] = ActionData({
       actionType: ActionType.Install,
+      componentAddress: hasProjectile ? defaultComponentAddress : address(0),
       newX: newX,
       newY: newY,
       oldX: 0,
@@ -56,17 +64,18 @@ library ActionStorageHelpers {
       projectile: hasProjectile
     });
 
-    bytes32[] memory savedGameActionIds = SavedGame.getActions(gameId);
-    bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
+    bytes32[] memory savedBattleActionIds = SavedBattle.getActions(battleId);
+    bytes32[] memory newSavedBattleActionIds = new bytes32[](savedBattleActionIds.length + actions.length);
 
-    for (uint256 i = 0; i < savedGameActionIds.length; i++) {
-      newSavedGameActionIds[i] = savedGameActionIds[i];
+    for (uint256 i = 0; i < savedBattleActionIds.length; i++) {
+      newSavedBattleActionIds[i] = savedBattleActionIds[i];
     }
 
     for (uint256 i = 0; i < actions.length; i++) {
-      newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
+      newSavedBattleActionIds[savedBattleActionIds.length + i] = keccak256(
         abi.encodePacked(
           actions[i].actionType,
+          actions[i].componentAddress,
           actions[i].newX,
           actions[i].newY,
           actions[i].oldX,
@@ -74,31 +83,29 @@ library ActionStorageHelpers {
           actions[i].projectile
         )
       );
-      Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
+      Action.set(newSavedBattleActionIds[savedBattleActionIds.length + i], actions[i]);
     }
 
-    SavedGameData memory savedGame = SavedGameData({
-      gameId: gameId,
-      winner: playerAddress,
-      actions: newSavedGameActionIds
-    });
+    SavedBattleData memory savedBattle = SavedBattleData({ winner: globalPlayerId, actions: newSavedBattleActionIds });
 
-    SavedGame.set(gameId, savedGame);
+    SavedBattle.set(battleId, savedBattle);
   }
 
   function storeMoveTowerAction(
-    bytes32 gameId,
+    bytes32 battleId,
     bytes32 towerId,
     int16 oldX,
     int16 oldY,
     int16 newX,
     int16 newY
   ) public {
-    bool hasProjectile = Projectile.getLogicAddress(towerId) != address(0);
+    address componentAddress = Projectile.getLogicAddress(towerId);
+    bool hasProjectile = componentAddress != address(0);
 
     ActionData[] memory actions = new ActionData[](1);
     actions[0] = ActionData({
       actionType: ActionType.Move,
+      componentAddress: componentAddress,
       newX: newX,
       newY: newY,
       oldX: oldX,
@@ -106,17 +113,18 @@ library ActionStorageHelpers {
       projectile: hasProjectile
     });
 
-    bytes32[] memory savedGameActionIds = SavedGame.getActions(gameId);
-    bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
+    bytes32[] memory savedBattleActionIds = SavedBattle.getActions(battleId);
+    bytes32[] memory newSavedBattleActionIds = new bytes32[](savedBattleActionIds.length + actions.length);
 
-    for (uint256 i = 0; i < savedGameActionIds.length; i++) {
-      newSavedGameActionIds[i] = savedGameActionIds[i];
+    for (uint256 i = 0; i < savedBattleActionIds.length; i++) {
+      newSavedBattleActionIds[i] = savedBattleActionIds[i];
     }
 
     for (uint256 i = 0; i < actions.length; i++) {
-      newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
+      newSavedBattleActionIds[savedBattleActionIds.length + i] = keccak256(
         abi.encodePacked(
           actions[i].actionType,
+          actions[i].componentAddress,
           actions[i].newX,
           actions[i].newY,
           actions[i].oldX,
@@ -124,17 +132,17 @@ library ActionStorageHelpers {
           actions[i].projectile
         )
       );
-      Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
+      Action.set(newSavedBattleActionIds[savedBattleActionIds.length + i], actions[i]);
     }
 
-    SavedGame.setActions(gameId, newSavedGameActionIds);
+    SavedBattle.setActions(battleId, newSavedBattleActionIds);
   }
 
   function storeModifyTowerAction(
-    bytes32 gameId,
+    bytes32 battleId,
     bytes32 towerId,
     bytes memory bytecode,
-    address systemAddress,
+    address componentAddress,
     string memory sourceCode
   ) public {
     (int16 oldX, int16 oldY) = Position.get(towerId);
@@ -143,6 +151,7 @@ library ActionStorageHelpers {
     ActionData[] memory actions = new ActionData[](1);
     actions[0] = ActionData({
       actionType: ActionType.Modify,
+      componentAddress: componentAddress,
       newX: oldX,
       newY: oldY,
       oldX: oldX,
@@ -150,17 +159,18 @@ library ActionStorageHelpers {
       projectile: hasProjectile
     });
 
-    bytes32[] memory savedGameActionIds = SavedGame.getActions(gameId);
-    bytes32[] memory newSavedGameActionIds = new bytes32[](savedGameActionIds.length + actions.length);
+    bytes32[] memory savedBattleActionIds = SavedBattle.getActions(battleId);
+    bytes32[] memory newSavedBattleActionIds = new bytes32[](savedBattleActionIds.length + actions.length);
 
-    for (uint256 i = 0; i < savedGameActionIds.length; i++) {
-      newSavedGameActionIds[i] = savedGameActionIds[i];
+    for (uint256 i = 0; i < savedBattleActionIds.length; i++) {
+      newSavedBattleActionIds[i] = savedBattleActionIds[i];
     }
 
     for (uint256 i = 0; i < actions.length; i++) {
-      newSavedGameActionIds[savedGameActionIds.length + i] = keccak256(
+      newSavedBattleActionIds[savedBattleActionIds.length + i] = keccak256(
         abi.encodePacked(
           actions[i].actionType,
+          actions[i].componentAddress,
           actions[i].newX,
           actions[i].newY,
           actions[i].oldX,
@@ -168,20 +178,25 @@ library ActionStorageHelpers {
           actions[i].projectile
         )
       );
-      Action.set(newSavedGameActionIds[savedGameActionIds.length + i], actions[i]);
+      Action.set(newSavedBattleActionIds[savedBattleActionIds.length + i], actions[i]);
 
-      _setActionProjectile(newSavedGameActionIds[savedGameActionIds.length + i], systemAddress, bytecode, sourceCode);
+      _setActionProjectile(
+        newSavedBattleActionIds[savedBattleActionIds.length + i],
+        componentAddress,
+        bytecode,
+        sourceCode
+      );
     }
 
-    SavedGame.setActions(gameId, newSavedGameActionIds);
+    SavedBattle.setActions(battleId, newSavedBattleActionIds);
   }
 
   function _setActionProjectile(
     bytes32 actionId,
-    address systemAddress,
+    address componentAddress,
     bytes memory bytecode,
     string memory sourceCode
   ) internal {
-    Projectile.set(actionId, systemAddress, DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
+    Projectile.set(actionId, componentAddress, DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
   }
 }

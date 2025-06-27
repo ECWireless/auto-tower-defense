@@ -20,6 +20,8 @@ struct SolarFarmDetailsData {
   uint256 electricityBalance;
   uint256 fiatBalance;
   uint256 msPerWh;
+  bool rechargePaused;
+  uint256 unpausedTimestamp;
   uint256 whPerCentPrice;
 }
 
@@ -28,12 +30,12 @@ library SolarFarmDetails {
   ResourceId constant _tableId = ResourceId.wrap(0x74626170700000000000000000000000536f6c61724661726d44657461696c73);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0080040020202020000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x00a1060020202001202000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of ()
   Schema constant _keySchema = Schema.wrap(0x0000000000000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (uint256, uint256, uint256, uint256)
-  Schema constant _valueSchema = Schema.wrap(0x008004001f1f1f1f000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (uint256, uint256, uint256, bool, uint256, uint256)
+  Schema constant _valueSchema = Schema.wrap(0x00a106001f1f1f601f1f00000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -48,11 +50,13 @@ library SolarFarmDetails {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](4);
+    fieldNames = new string[](6);
     fieldNames[0] = "electricityBalance";
     fieldNames[1] = "fiatBalance";
     fieldNames[2] = "msPerWh";
-    fieldNames[3] = "whPerCentPrice";
+    fieldNames[3] = "rechargePaused";
+    fieldNames[4] = "unpausedTimestamp";
+    fieldNames[5] = "whPerCentPrice";
   }
 
   /**
@@ -184,12 +188,88 @@ library SolarFarmDetails {
   }
 
   /**
+   * @notice Get rechargePaused.
+   */
+  function getRechargePaused() internal view returns (bool rechargePaused) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    return (_toBool(uint8(bytes1(_blob))));
+  }
+
+  /**
+   * @notice Get rechargePaused.
+   */
+  function _getRechargePaused() internal view returns (bool rechargePaused) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    return (_toBool(uint8(bytes1(_blob))));
+  }
+
+  /**
+   * @notice Set rechargePaused.
+   */
+  function setRechargePaused(bool rechargePaused) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((rechargePaused)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set rechargePaused.
+   */
+  function _setRechargePaused(bool rechargePaused) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((rechargePaused)), _fieldLayout);
+  }
+
+  /**
+   * @notice Get unpausedTimestamp.
+   */
+  function getUnpausedTimestamp() internal view returns (uint256 unpausedTimestamp) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
+    return (uint256(bytes32(_blob)));
+  }
+
+  /**
+   * @notice Get unpausedTimestamp.
+   */
+  function _getUnpausedTimestamp() internal view returns (uint256 unpausedTimestamp) {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 4, _fieldLayout);
+    return (uint256(bytes32(_blob)));
+  }
+
+  /**
+   * @notice Set unpausedTimestamp.
+   */
+  function setUnpausedTimestamp(uint256 unpausedTimestamp) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((unpausedTimestamp)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set unpausedTimestamp.
+   */
+  function _setUnpausedTimestamp(uint256 unpausedTimestamp) internal {
+    bytes32[] memory _keyTuple = new bytes32[](0);
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 4, abi.encodePacked((unpausedTimestamp)), _fieldLayout);
+  }
+
+  /**
    * @notice Get whPerCentPrice.
    */
   function getWhPerCentPrice() internal view returns (uint256 whPerCentPrice) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 5, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -199,7 +279,7 @@ library SolarFarmDetails {
   function _getWhPerCentPrice() internal view returns (uint256 whPerCentPrice) {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 3, _fieldLayout);
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 5, _fieldLayout);
     return (uint256(bytes32(_blob)));
   }
 
@@ -209,7 +289,7 @@ library SolarFarmDetails {
   function setWhPerCentPrice(uint256 whPerCentPrice) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreSwitch.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((whPerCentPrice)), _fieldLayout);
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 5, abi.encodePacked((whPerCentPrice)), _fieldLayout);
   }
 
   /**
@@ -218,7 +298,7 @@ library SolarFarmDetails {
   function _setWhPerCentPrice(uint256 whPerCentPrice) internal {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
-    StoreCore.setStaticField(_tableId, _keyTuple, 3, abi.encodePacked((whPerCentPrice)), _fieldLayout);
+    StoreCore.setStaticField(_tableId, _keyTuple, 5, abi.encodePacked((whPerCentPrice)), _fieldLayout);
   }
 
   /**
@@ -252,8 +332,22 @@ library SolarFarmDetails {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(uint256 electricityBalance, uint256 fiatBalance, uint256 msPerWh, uint256 whPerCentPrice) internal {
-    bytes memory _staticData = encodeStatic(electricityBalance, fiatBalance, msPerWh, whPerCentPrice);
+  function set(
+    uint256 electricityBalance,
+    uint256 fiatBalance,
+    uint256 msPerWh,
+    bool rechargePaused,
+    uint256 unpausedTimestamp,
+    uint256 whPerCentPrice
+  ) internal {
+    bytes memory _staticData = encodeStatic(
+      electricityBalance,
+      fiatBalance,
+      msPerWh,
+      rechargePaused,
+      unpausedTimestamp,
+      whPerCentPrice
+    );
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -266,8 +360,22 @@ library SolarFarmDetails {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(uint256 electricityBalance, uint256 fiatBalance, uint256 msPerWh, uint256 whPerCentPrice) internal {
-    bytes memory _staticData = encodeStatic(electricityBalance, fiatBalance, msPerWh, whPerCentPrice);
+  function _set(
+    uint256 electricityBalance,
+    uint256 fiatBalance,
+    uint256 msPerWh,
+    bool rechargePaused,
+    uint256 unpausedTimestamp,
+    uint256 whPerCentPrice
+  ) internal {
+    bytes memory _staticData = encodeStatic(
+      electricityBalance,
+      fiatBalance,
+      msPerWh,
+      rechargePaused,
+      unpausedTimestamp,
+      whPerCentPrice
+    );
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -285,6 +393,8 @@ library SolarFarmDetails {
       _table.electricityBalance,
       _table.fiatBalance,
       _table.msPerWh,
+      _table.rechargePaused,
+      _table.unpausedTimestamp,
       _table.whPerCentPrice
     );
 
@@ -304,6 +414,8 @@ library SolarFarmDetails {
       _table.electricityBalance,
       _table.fiatBalance,
       _table.msPerWh,
+      _table.rechargePaused,
+      _table.unpausedTimestamp,
       _table.whPerCentPrice
     );
 
@@ -320,14 +432,29 @@ library SolarFarmDetails {
    */
   function decodeStatic(
     bytes memory _blob
-  ) internal pure returns (uint256 electricityBalance, uint256 fiatBalance, uint256 msPerWh, uint256 whPerCentPrice) {
+  )
+    internal
+    pure
+    returns (
+      uint256 electricityBalance,
+      uint256 fiatBalance,
+      uint256 msPerWh,
+      bool rechargePaused,
+      uint256 unpausedTimestamp,
+      uint256 whPerCentPrice
+    )
+  {
     electricityBalance = (uint256(Bytes.getBytes32(_blob, 0)));
 
     fiatBalance = (uint256(Bytes.getBytes32(_blob, 32)));
 
     msPerWh = (uint256(Bytes.getBytes32(_blob, 64)));
 
-    whPerCentPrice = (uint256(Bytes.getBytes32(_blob, 96)));
+    rechargePaused = (_toBool(uint8(Bytes.getBytes1(_blob, 96))));
+
+    unpausedTimestamp = (uint256(Bytes.getBytes32(_blob, 97)));
+
+    whPerCentPrice = (uint256(Bytes.getBytes32(_blob, 129)));
   }
 
   /**
@@ -341,7 +468,14 @@ library SolarFarmDetails {
     EncodedLengths,
     bytes memory
   ) internal pure returns (SolarFarmDetailsData memory _table) {
-    (_table.electricityBalance, _table.fiatBalance, _table.msPerWh, _table.whPerCentPrice) = decodeStatic(_staticData);
+    (
+      _table.electricityBalance,
+      _table.fiatBalance,
+      _table.msPerWh,
+      _table.rechargePaused,
+      _table.unpausedTimestamp,
+      _table.whPerCentPrice
+    ) = decodeStatic(_staticData);
   }
 
   /**
@@ -370,9 +504,12 @@ library SolarFarmDetails {
     uint256 electricityBalance,
     uint256 fiatBalance,
     uint256 msPerWh,
+    bool rechargePaused,
+    uint256 unpausedTimestamp,
     uint256 whPerCentPrice
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(electricityBalance, fiatBalance, msPerWh, whPerCentPrice);
+    return
+      abi.encodePacked(electricityBalance, fiatBalance, msPerWh, rechargePaused, unpausedTimestamp, whPerCentPrice);
   }
 
   /**
@@ -385,9 +522,18 @@ library SolarFarmDetails {
     uint256 electricityBalance,
     uint256 fiatBalance,
     uint256 msPerWh,
+    bool rechargePaused,
+    uint256 unpausedTimestamp,
     uint256 whPerCentPrice
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData = encodeStatic(electricityBalance, fiatBalance, msPerWh, whPerCentPrice);
+    bytes memory _staticData = encodeStatic(
+      electricityBalance,
+      fiatBalance,
+      msPerWh,
+      rechargePaused,
+      unpausedTimestamp,
+      whPerCentPrice
+    );
 
     EncodedLengths _encodedLengths;
     bytes memory _dynamicData;
@@ -402,5 +548,17 @@ library SolarFarmDetails {
     bytes32[] memory _keyTuple = new bytes32[](0);
 
     return _keyTuple;
+  }
+}
+
+/**
+ * @notice Cast a value to a bool.
+ * @dev Boolean values are encoded as uint8 (1 = true, 0 = false), but Solidity doesn't allow casting between uint8 and bool.
+ * @param value The uint8 value to convert.
+ * @return result The boolean value.
+ */
+function _toBool(uint8 value) pure returns (bool result) {
+  assembly {
+    result := value
   }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.24;
 
-import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Projectile, RevenueReceipt, RevenueReceiptData, SavedGame, SavedModification, SavedKingdom, SavedKingdomData, WinStreak } from "../codegen/index.sol";
+import { Action, BatteryDetails, BatteryDetailsData, ExpenseReceipt, ExpenseReceiptData, KingdomsByLevel, LoadedKingdomActions, Patent, Projectile, RevenueReceipt, RevenueReceiptData, SavedBattle, SavedKingdom, SavedKingdomData, TopLevel, WinStreak } from "../codegen/index.sol";
 import { ActionType } from "../codegen/common.sol";
 import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
 import { EntityHelpers } from "./EntityHelpers.sol";
@@ -13,7 +13,7 @@ import { EntityHelpers } from "./EntityHelpers.sol";
 library BatteryHelpers {
   /**
    * Gives fully charged active battery and empty reserve to any new player
-   * Called by validateCreateGame in GameHelpers when a new username is registered
+   * Called by validateCreateBattle in Battle when a new username is registered
    * @param globalPlayerId The global ID of the player
    */
   function grantBattery(bytes32 globalPlayerId) public {
@@ -32,7 +32,7 @@ library BatteryHelpers {
 
   /**
    * Stakes 8kWh of electricity when a new battle run is initiated
-   * Called by initializeGame in GameHelpers
+   * Called by initializeBattle in BattleHelpers
    * @param globalPlayerId The global ID of the player
    */
   function stakeElectricity(bytes32 globalPlayerId) public {
@@ -59,13 +59,13 @@ library BatteryHelpers {
 
   /**
    * Distributes the winning pot when a player wins a battle
-   * Called by endGame in ProjectileHelpers when player 1 wins a battle
-   * @param gameId The ID of the game
+   * Called by endBattle in ProjectileHelpers when player 1 wins a battle
+   * @param battleId The ID of the battle
    * @param globalPlayer1Id The global ID of the winning player (player 1)
    */
-  function winStake(bytes32 gameId, bytes32 globalPlayer1Id) public {
-    // Get SaveKingdomId from LoadedKingdomActions using gameId; then get electricitybalance from SavedKingdom
-    bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(gameId);
+  function winStake(bytes32 battleId, bytes32 globalPlayer1Id) public {
+    // Get SaveKingdomId from LoadedKingdomActions using battleId; then get electricitybalance from SavedKingdom
+    bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(battleId);
     SavedKingdomData memory savedKingdom = SavedKingdom.get(savedKingdomId);
     SavedKingdom.setLosses(savedKingdomId, savedKingdom.losses + 1);
 
@@ -90,11 +90,11 @@ library BatteryHelpers {
     uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayer1Id);
     uint256 activeBalanceEarnings = winningPot / 2;
 
-    // Get all the towers used in the game
-    address[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, true);
+    // Get all the towers used in the battle
+    bytes32[] memory allPatentees = _getAllKingdomTowerPatentees(battleId, true);
 
-    // If there are no authors, give the player the rest of the winningPot
-    if (allAuthors.length == 0) {
+    // If there are no patentees, give the player the rest of the winningPot
+    if (allPatentees.length == 0) {
       activeBalanceEarnings += activeBalanceEarnings;
     }
 
@@ -110,37 +110,37 @@ library BatteryHelpers {
     winningPot -= activeBalanceEarnings;
 
     _processPotentialStakeReturn(globalPlayer1Id);
-    _distributeAuthorEarnings(allAuthors, winningPot);
-    _storeExpenseReceipt(savedKingdomId, gameId, stakedEarnings, activeBalanceEarnings, allAuthors);
+    _distributeRoyalties(allPatentees, winningPot);
+    _storeExpenseReceipt(savedKingdomId, battleId, stakedEarnings, activeBalanceEarnings, allPatentees);
   }
 
   function _storeExpenseReceipt(
     bytes32 savedKingdomId,
-    bytes32 gameId,
+    bytes32 battleId,
     uint256 amountToKingdom,
     uint256 amountToBattery,
-    address[] memory authors
+    bytes32[] memory patentees
   ) internal {
     ExpenseReceiptData memory expenseReceipt = ExpenseReceiptData({
       amountToBattery: amountToBattery,
       amountToKingdom: amountToKingdom,
-      gameId: gameId,
-      playerAddress: SavedKingdom.getAuthor(savedKingdomId),
+      battleId: battleId,
+      playerId: SavedKingdom.getAuthor(savedKingdomId),
       savedKingdomId: savedKingdomId,
       timestamp: block.timestamp,
-      authors: authors
+      patentees: patentees
     });
     ExpenseReceipt.set(keccak256(abi.encodePacked(savedKingdomId, block.timestamp)), expenseReceipt);
   }
 
   /**
    * Distributes the winning pot when a player loses a battle
-   * Called by endGame in ProjectileHelpers when player 1 loses a battle
-   * @param gameId The ID of the game
+   * Called by endBattle in ProjectileHelpers when player 1 loses a battle
+   * @param battleId The ID of the battle
    * @param globalPlayer1Id The global ID of the losing player (player 1)
    */
-  function loseStake(bytes32 gameId, bytes32 globalPlayer1Id) public {
-    bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(gameId);
+  function loseStake(bytes32 battleId, bytes32 globalPlayer1Id) public {
+    bytes32 savedKingdomId = LoadedKingdomActions.getSavedKingdomId(battleId);
     SavedKingdomData memory savedKingdom = SavedKingdom.get(savedKingdomId);
     SavedKingdom.setWins(savedKingdomId, savedKingdom.wins + 1);
 
@@ -176,75 +176,77 @@ library BatteryHelpers {
     // Put 50% of remaining winningPot in opponent's reserveBalance
     uint256 opponentReserveEarnings = winningPot / 2;
 
-    // Get all the towers used in the game
-    address[] memory allAuthors = _getAllKingdomTowerAuthors(gameId, false);
+    // Get all the towers used in the battle
+    bytes32[] memory allPatentees = _getAllKingdomTowerPatentees(battleId, false);
 
-    // If there are no authors, give the player2Address the rest of the winningPot
-    if (allAuthors.length == 0) {
+    // If there are no patentees, give the player2Address the rest of the winningPot
+    if (allPatentees.length == 0) {
       opponentReserveEarnings += opponentReserveEarnings;
     }
-    bytes32 globalPlayer2Id = EntityHelpers.globalAddressToKey(savedKingdom.author);
-    uint256 opponentReserveBalance = BatteryDetails.getReserveBalance(globalPlayer2Id);
+    uint256 opponentReserveBalance = BatteryDetails.getReserveBalance(savedKingdom.author);
     opponentReserveBalance += opponentReserveEarnings;
-    BatteryDetails.setReserveBalance(globalPlayer2Id, opponentReserveBalance);
+    BatteryDetails.setReserveBalance(savedKingdom.author, opponentReserveBalance);
     winningPot -= opponentReserveEarnings;
 
-    _distributeAuthorEarnings(allAuthors, winningPot);
-    _storeRevenueReceipt(savedKingdomId, gameId, opponentSavedKingdomEarnings, opponentReserveEarnings, allAuthors);
+    _distributeRoyalties(allPatentees, winningPot);
+    _storeRevenueReceipt(savedKingdomId, battleId, opponentSavedKingdomEarnings, opponentReserveEarnings, allPatentees);
   }
 
-  function _distributeAuthorEarnings(address[] memory allAuthors, uint256 winningPot) internal {
-    // Move remaining winningPot to authors (their reserveBalance) of all the towers used by winner (player 2)
-    if (allAuthors.length == 0) return;
+  function _distributeRoyalties(bytes32[] memory allPatentees, uint256 winningPot) internal {
+    // Move remaining winningPot to patentees (their reserveBalance) of all the tower patents used by winner (player 2)
+    if (allPatentees.length == 0) return;
 
-    uint256 authorEarnings = winningPot / allAuthors.length;
-    for (uint256 i = 0; i < allAuthors.length; i++) {
-      bytes32 authorId = EntityHelpers.globalAddressToKey(allAuthors[i]);
-      uint256 authorReserveBalance = BatteryDetails.getReserveBalance(authorId);
-      authorReserveBalance += authorEarnings;
-      BatteryDetails.setReserveBalance(authorId, authorReserveBalance);
+    uint256 royalty = winningPot / allPatentees.length;
+    for (uint256 i = 0; i < allPatentees.length; i++) {
+      bytes32 patenteeId = allPatentees[i];
+      uint256 patenteeReserveBalance = BatteryDetails.getReserveBalance(patenteeId);
+      patenteeReserveBalance += royalty;
+      BatteryDetails.setReserveBalance(patenteeId, patenteeReserveBalance);
     }
   }
 
   function _storeRevenueReceipt(
     bytes32 savedKingdomId,
-    bytes32 gameId,
+    bytes32 battleId,
     uint256 amountToKingdom,
     uint256 amountToReserve,
-    address[] memory authors
+    bytes32[] memory patentees
   ) internal {
     RevenueReceiptData memory revenueReceipt = RevenueReceiptData({
       amountToKingdom: amountToKingdom,
       amountToReserve: amountToReserve,
-      gameId: gameId,
-      playerAddress: SavedKingdom.getAuthor(savedKingdomId),
+      battleId: battleId,
+      playerId: SavedKingdom.getAuthor(savedKingdomId),
       savedKingdomId: savedKingdomId,
       timestamp: block.timestamp,
-      authors: authors
+      patentees: patentees
     });
     RevenueReceipt.set(keccak256(abi.encodePacked(savedKingdomId, block.timestamp)), revenueReceipt);
   }
 
   /**
-   * Get all the authors of the towers on one side of the board
-   * @param gameId The ID of the game
+   * Get all the patentees of the tower patents on one side of the board
+   * @param battleId The ID of the battle
    * @param player1Kingdom Boolean for scanning left or right side of the board
    */
-  function _getAllKingdomTowerAuthors(bytes32 gameId, bool player1Kingdom) internal view returns (address[] memory) {
-    // If player1Kingdom is true, get all actions from SavedGame
+  function _getAllKingdomTowerPatentees(
+    bytes32 battleId,
+    bool player1Kingdom
+  ) internal view returns (bytes32[] memory) {
+    // If player1Kingdom is true, get all actions from SavedBattle
     // If player1Kingdom is false, get all actions from LoadedKingdomActions
-    bytes32[] memory savedGameActionIds = player1Kingdom
-      ? SavedGame.getActions(gameId)
-      : LoadedKingdomActions.getActions(gameId);
-    bytes32[] memory modifyActions = new bytes32[](savedGameActionIds.length);
+    bytes32[] memory savedBattleActionIds = player1Kingdom
+      ? SavedBattle.getActions(battleId)
+      : LoadedKingdomActions.getActions(battleId);
+    bytes32[] memory modifyActions = new bytes32[](savedBattleActionIds.length);
 
     // Get actionType from ActionData, then filter by actionType == Modify
     // Resize the modifyActions array to the actual number of Modify actions
     uint256 modifyCount = 0;
-    for (uint256 i = 0; i < savedGameActionIds.length; i++) {
-      ActionType actionType = Action.getActionType(savedGameActionIds[i]);
+    for (uint256 i = 0; i < savedBattleActionIds.length; i++) {
+      ActionType actionType = Action.getActionType(savedBattleActionIds[i]);
       if (actionType == ActionType.Modify) {
-        modifyActions[modifyCount] = savedGameActionIds[i];
+        modifyActions[modifyCount] = savedBattleActionIds[i];
         modifyCount++;
       }
     }
@@ -255,44 +257,41 @@ library BatteryHelpers {
     modifyActions = resizedModifyActions;
 
     // Use the actionId to get the bytes from Projectile
-    // Use SavedModification with keccak256(abi.encodePacked(bytecode)) to get all the authors of the towers used in the game
-    address[] memory authors = new address[](modifyActions.length);
+    // Use Patent with keccak256(abi.encodePacked(bytecode)) to get all the patentees of the tower patents used in the battle
+    bytes32[] memory patentees = new bytes32[](modifyActions.length);
     for (uint256 i = 0; i < modifyActions.length; i++) {
       bytes32 actionId = modifyActions[i];
       bytes32 bytecodeHash = keccak256(abi.encodePacked(Projectile.getBytecode(actionId)));
-      address author = SavedModification.getAuthor(bytecodeHash);
-      authors[i] = author;
+      bytes32 patentee = Patent.getPatentee(bytecodeHash);
+      patentees[i] = patentee;
     }
 
-    // Remove all empty addresses from the authors array
+    // Remove all empty bytes32 from the patentees array
     uint256 count = 0;
-    for (uint256 i = 0; i < authors.length; i++) {
-      if (authors[i] != address(0)) {
+    for (uint256 i = 0; i < patentees.length; i++) {
+      if (patentees[i] != bytes32(0)) {
         count++;
       }
     }
-    address[] memory nonEmptyAuthors = new address[](count);
+    bytes32[] memory nonEmptyPatentees = new bytes32[](count);
     uint256 index = 0;
-    for (uint256 i = 0; i < authors.length; i++) {
-      if (authors[i] != address(0)) {
-        nonEmptyAuthors[index] = authors[i];
+    for (uint256 i = 0; i < patentees.length; i++) {
+      if (patentees[i] != bytes32(0)) {
+        nonEmptyPatentees[index] = patentees[i];
         index++;
       }
     }
 
-    return nonEmptyAuthors;
+    return nonEmptyPatentees;
   }
 
   /**
-   * Checks if the player is the top player in the game
+   * Checks if the player is the top player in the battle
    * If they are, return their stake to active and reserve balance
    * @param globalPlayer1Id The global ID of the player
    */
   function _processPotentialStakeReturn(bytes32 globalPlayer1Id) internal {
-    uint256 winStreak = WinStreak.get(globalPlayer1Id);
-    bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(winStreak);
-
-    if (kingdomsByLevel.length == 0) {
+    if (!arePlayableKingdoms(globalPlayer1Id)) {
       uint256 stakedBalance = BatteryDetails.getStakedBalance(globalPlayer1Id);
       uint256 activeBalance = BatteryDetails.getActiveBalance(globalPlayer1Id);
       uint256 reserveBalance = BatteryDetails.getReserveBalance(globalPlayer1Id);
@@ -307,5 +306,40 @@ library BatteryHelpers {
       BatteryDetails.setReserveBalance(globalPlayer1Id, reserveBalance);
       BatteryDetails.setStakedBalance(globalPlayer1Id, 0);
     }
+  }
+
+  /**
+   * Checks if any kingdoms are playable between the current level and the top level
+   * Only kingdoms that are not authored by the player can be played
+   * @param globalPlayerId The global ID of the player
+   * @return bool True if there are playable kingdoms, false otherwise
+   */
+  function arePlayableKingdoms(bytes32 globalPlayerId) public view returns (bool) {
+    uint256 startingLevel = WinStreak.get(globalPlayerId);
+    uint256 topLevel = TopLevel.get();
+    for (uint256 i = startingLevel; i <= topLevel; i++) {
+      if (_arePlayableKingdomsInLevel(globalPlayerId, i)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Checks if any kingdoms in a given level are playable
+   * Only kingdoms that are not authored by the player can be played
+   * @param globalPlayerId The global ID of the player
+   * @param level level to check for playable kingdoms
+   * @return bool True if there are playable kingdoms, false otherwise
+   */
+  function _arePlayableKingdomsInLevel(bytes32 globalPlayerId, uint256 level) internal view returns (bool) {
+    bytes32[] memory kingdomsByLevel = KingdomsByLevel.get(level);
+    for (uint256 i = 0; i < kingdomsByLevel.length; i++) {
+      bytes32 kingdomId = kingdomsByLevel[i];
+      if (SavedKingdom.getAuthor(kingdomId) != globalPlayerId) {
+        return true; // Found a playable kingdom
+      }
+    }
+    return false; // No playable kingdoms found
   }
 }
