@@ -83,11 +83,10 @@ export const Home = (): JSX.Element => {
     const currentTime = Date.now();
     let timeSinceLastRecharge =
       currentTime - Number(lastRechargeTimestamp) * 1000;
-    if (
-      timeSinceLastRecharge <
-      Number(solarFarmDetails.unpausedTimestamp) * 1000
-    ) {
-      timeSinceLastRecharge = Number(solarFarmDetails.unpausedTimestamp) * 1000;
+    const timeSinceRechargeUnpaused =
+      currentTime - Number(solarFarmDetails.unpausedTimestamp) * 1000;
+    if (timeSinceLastRecharge < timeSinceRechargeUnpaused) {
+      timeSinceLastRecharge = timeSinceRechargeUnpaused;
     }
 
     const baseClaimable = BigInt(
