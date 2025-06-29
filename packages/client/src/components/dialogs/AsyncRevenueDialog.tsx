@@ -78,7 +78,7 @@ export const AsyncRevenueDialog: React.FC = () => {
 
     setRevenueSinceTimestamp(totalAmountToReserve);
     const timeSinceLastCheck = Math.floor(
-      (now.getTime() - lastTimestampDate.getTime()) / 1000,
+      now.getTime() / 1000 - lastTimestampDate.getTime() / 1000,
     );
     setTimeSinceLastCheck(formatTime(timeSinceLastCheck));
 
