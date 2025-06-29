@@ -203,7 +203,7 @@ export const InnerBattlePage = (): JSX.Element => {
       currentTime - Number(lastRechargeTimestamp) * 1000;
     const timeSinceRechargeUnpaused =
       currentTime - Number(solarFarmDetails.unpausedTimestamp) * 1000;
-    if (timeSinceLastRecharge < timeSinceRechargeUnpaused) {
+    if (timeSinceLastRecharge > timeSinceRechargeUnpaused) {
       timeSinceLastRecharge = timeSinceRechargeUnpaused;
     }
 

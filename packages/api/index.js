@@ -61,8 +61,8 @@ const ALERT_INTERVAL_MS = 1000 * 60 * 60; // 1 hour cooldown
 // In-memory rate limits for faucet
 const ipTimestamps = new Map();
 const addressTimestamps = new Map();
-const FAUCET_INTERVAL = 1000 * 60 * 60 * 1; // 1 hour
-const FAUCET_AMOUNT = parseEther("0.000002"); // Around $0.004 right now
+const FAUCET_INTERVAL = 1000 * 60 * 1 * 1; // 1 minute
+const FAUCET_AMOUNT = parseEther("0.000004"); // Around $0.008 right now
 
 const port = process.env.PORT || 3002;
 
