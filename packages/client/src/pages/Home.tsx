@@ -26,6 +26,26 @@ import { BATTLES_PATH } from '@/Routes';
 import { BATTERY_STORAGE_LIMIT, MAX_PLAYERS } from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
+const BattleButtonContent = ({
+  isCreatingBattle,
+}: {
+  isCreatingBattle: boolean;
+}) => (
+  <div className="flex items-center justify-center">
+    {isCreatingBattle ? (
+      <>
+        <Loader2 className="animate-spin h-8 w-8 mr-2" />
+        <span className="text-xl uppercase">Joining battle</span>
+      </>
+    ) : (
+      <>
+        <Play className="h-8 w-8 mr-2 animate-pulse" />
+        <span className="text-xl uppercase animate-pulse">Join battle</span>
+      </>
+    )}
+  </div>
+);
+
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
   const { isConnected, address } = useAccount();
@@ -332,7 +352,7 @@ export const Home = (): JSX.Element => {
           height="80"
         />
       </div>
-      <h4 className="text-xl text-white text-center tracking-wide mb-3">
+      <h4 className="mx-auto w-fit bg-clip-text bg-gradient-to-r font-medium from-purple-400 text-center text-transparent text-2xl to-pink-400 via-cyan-400">
         AUTO TOWER DEFENSE
       </h4>
       <h1 className="text-5xl text-white text-center flex flex-col space-y-2 uppercase">
@@ -344,7 +364,7 @@ export const Home = (): JSX.Element => {
         </span>
       </h1>
 
-      <p className="text-white text-center text-lg max-w-lg mx-auto my-4">
+      <p className="text-gray-300 text-center text-lg max-w-lg mx-auto my-6">
         The game is a mix of tower defense strategy, chess-like planning, and
         on-chain innovation, where every battle helps you grow — and every win
         can pay off. Right now, it teaches Solidity, the language of smart
@@ -375,14 +395,12 @@ export const Home = (): JSX.Element => {
 
       {!!sessionClient && (
         <div className="flex flex-col items-center bg-cyan-900/20 border border-cyan-600/50 rounded-lg p-5 w-full max-w-lg mx-auto space-y-4 mb-12">
-          {usernameSaved && (
-            <div className="neon-text-cyan text-center text-xl">
-              Welcome back, {username}!
-            </div>
-          )}
-
-          <div className="flex justify-center items-center ">
-            <span className="text-white mr-2">Wallet:</span>
+          <div className="flex items-center justify-center gap-4">
+            {usernameSaved && (
+              <span className="neon-text-cyan text-lg" title="Your username">
+                {username}
+              </span>
+            )}
             <AccountButton />
           </div>
 
@@ -450,21 +468,11 @@ export const Home = (): JSX.Element => {
                 <Button
                   aria-label="Submit username and play"
                   disabled={isCreatingBattle}
-                  className="group bg-cyan-900/20 border-cyan-500 duration-200 focus:bg-cyan-900/30 focus:text-cyan-300 rounded-full text-cyan-400 hover:bg-cyan-900/50 hover:border-cyan-400 hover:text-cyan-300 neon-border transition-all w-fit py-6 px-8"
+                  className="bg-cyan-900/20 border-cyan-500 duration-200 focus:bg-cyan-900/30 focus:text-cyan-300 rounded-full text-cyan-400 hover:bg-cyan-900/50 hover:border-cyan-400 hover:text-cyan-300 neon-border transition-all w-fit py-6 px-8"
                   type="submit"
                   variant="outline"
                 >
-                  {isCreatingBattle ? (
-                    <div className="flex items-center justify-center">
-                      <Loader2 className="animate-spin h-8 w-8 mr-2" />
-                      <span className="text-xl uppercase">Joining battle</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center">
-                      <Play className="h-8 w-8 mr-2 group-hover:translate-x-0.5 transition-transform duration-200" />
-                      <span className="text-xl uppercase">Join battle</span>
-                    </div>
-                  )}
+                  <BattleButtonContent isCreatingBattle={isCreatingBattle} />
                 </Button>
               </div>
             </form>
