@@ -67,6 +67,7 @@ export const USDC_ADDRESSES: { [key: number]: string } = {
   [base.id]: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
   [baseSepolia.id]: '0xCE420e1793A91efaB6E2cf8aa6b8314b46bde58F',
   [pyrope.id]: '0xAC49338E773d463b9fcd88D44456E0130a7ce35b',
+  [redstone.id]: '0xD5d59fC063e7548b6015A36fEb10B875924A19be',
 };
 
 export const ESCROW_ADDRESSES: { [key: number]: string } = {
