@@ -385,6 +385,13 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__syncSolarFarmFiatBalance",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__toggleSolarFarmRecharge",
     "inputs": [],
     "outputs": [],
