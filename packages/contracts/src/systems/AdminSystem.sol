@@ -60,6 +60,15 @@ contract AdminSystem is System {
     SolarFarmDetails.setElectricityBalance(newElectricityBalance);
   }
 
+  function syncSolarFarmFiatBalance() external {
+    address usdcTokenAddress = AddressBook.getUsdcAddress();
+    require(usdcTokenAddress != address(0), "USDC token address not set");
+    MockUSDC usdc = MockUSDC(usdcTokenAddress);
+    address solarFarmSystemAddress = _solarFarmSystemAddress();
+    uint256 balance = usdc.balanceOf(solarFarmSystemAddress);
+    SolarFarmDetails.setFiatBalance(balance);
+  }
+
   function toggleSolarFarmRecharge() external {
     bool isPaused = SolarFarmDetails.getRechargePaused();
     SolarFarmDetails.setRechargePaused(!isPaused);
