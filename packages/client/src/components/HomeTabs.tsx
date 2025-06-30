@@ -300,14 +300,14 @@ export const HomeTabs: React.FC = () => {
       <Tabs className="w-full" defaultValue="players">
         <TabsList className="bg-transparent grid grid-cols-4 w-full">
           <TabsTrigger
-            className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 data-[state=active]:rounded-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400  data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
             value="players"
           >
             <span className="sm:inline hidden">Top Players</span>
             <span className="sm:hidden">Players</span> ({topPlayers.length})
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 data-[state=active]:rounded-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400  data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
             value="kingdoms"
           >
             <span className="sm:inline hidden">Top Kingdoms</span>
@@ -315,13 +315,13 @@ export const HomeTabs: React.FC = () => {
             {kingdomsByLevel.length})
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 data-[state=active]:rounded-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400  data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
             value="active"
           >
             Active ({activeBattles.length})
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 data-[state=active]:rounded-none data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-cyan-400  data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 hover:cursor-pointer hover:text-cyan-300 text-gray-400 sm:text-sm text-xs"
             value="completed"
           >
             Completed ({completedBattles.length})
@@ -334,7 +334,7 @@ export const HomeTabs: React.FC = () => {
             <div className="hidden md:block">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-gray-800">
+                  <TableRow className="border-gray-800 hover:bg-transparent">
                     <TableHead className="text-cyan-400">Rank</TableHead>
                     <TableHead className="text-cyan-400">Player</TableHead>
                     <TableHead className="text-cyan-400">
@@ -347,7 +347,7 @@ export const HomeTabs: React.FC = () => {
                   {topPlayers.map((player, i) => (
                     <TableRow
                       key={player.playerAddress}
-                      className="border-gray-800"
+                      className="border-gray-800 hover:bg-gray-900"
                     >
                       <TableCell className="font-medium">{i + 1}</TableCell>
                       <TableCell>{player.playerUsername}</TableCell>
