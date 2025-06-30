@@ -400,7 +400,7 @@ export const HomeTabs: React.FC = () => {
                         </span>
                       </div>
                       <span className="text-sm text-white">
-                        Highets Level: {player.playerLevel}
+                        Highest Level: {player.playerLevel}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
