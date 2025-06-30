@@ -1,3 +1,4 @@
+@import url('https://fonts.bunny.net/css?family=saira:100,200,300,400,500,600,700,800,900');
 @import 'tailwindcss';
 
 @plugin 'tailwindcss-animate';
@@ -127,8 +128,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    font-family: 'Saira', sans-serif;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-light;
+  }
+  h1 {
+    @apply font-semibold tracking-tight;
   }
 }
 
