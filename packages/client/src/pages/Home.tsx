@@ -352,10 +352,10 @@ export const Home = (): JSX.Element => {
           height="80"
         />
       </div>
-      <h4 className="mx-auto w-fit bg-clip-text bg-gradient-to-r font-medium from-purple-400 text-center text-transparent text-2xl to-pink-400 via-cyan-400">
+      <h4 className="mx-auto w-fit bg-clip-text bg-gradient-to-r font-medium from-purple-400 text-center text-transparent text-xl lg:text-2xl to-pink-400 via-cyan-400">
         AUTO TOWER DEFENSE
       </h4>
-      <h1 className="text-5xl text-white text-center flex flex-col space-y-2 uppercase">
+      <h1 className="text-4xl lg:text-5xl text-white text-center flex flex-col space-y-2 uppercase">
         <span>
           <span className="text-cyan-400">Play</span> to Learn.
         </span>
