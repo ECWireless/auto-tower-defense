@@ -6,7 +6,7 @@ import {
   getComponentValueStrict,
 } from '@latticexyz/recs';
 import { encodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
-import { Battery, Loader2, Play, Signal, Zap } from 'lucide-react';
+import { Battery, Loader2, Play, Zap } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -324,29 +324,32 @@ export const Home = (): JSX.Element => {
           </p>
         </div>
       )}
-
-      <h1 className="bg-clip-text bg-gradient-to-r font-bold from-purple-400 mb-6 mt-20 text-center text-transparent text-4xl to-pink-400 via-cyan-400">
+      <div className="flex justify-center my-6">
+        <img
+          src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Symbols/Pirate%20Flag.png"
+          alt="Pirate Flag"
+          width="80"
+          height="80"
+        />
+      </div>
+      <h4 className="text-xl text-white text-center tracking-wide mb-3">
         AUTO TOWER DEFENSE
+      </h4>
+      <h1 className="text-5xl text-white text-center flex flex-col space-y-2 uppercase">
+        <span>
+          <span className="text-cyan-400">Play</span> to Learn.
+        </span>
+        <span>
+          <span className="text-cyan-400">Master</span> to Earn.
+        </span>
       </h1>
 
-      {/* Player Count Display */}
-      <div className="flex justify-center mb-8">
-        <div className="bg-gray-900/60 border border-cyan-900/30 flex gap-2 items-center px-4 py-2 rounded-full">
-          <Signal className="h-4 text-cyan-400 w-4" />
-          <span className="text-gray-300 text-sm">
-            <span className="font-medium text-cyan-400">{playerCount}</span>
-            <span className="mx-1">/</span>
-            <span className="text-gray-400">{MAX_PLAYERS}</span>
-            <span className="ml-1">players</span>
-          </span>
-        </div>
-      </div>
-
-      {!isConnected && (
-        <div className="mb-4 neon-text-cyan text-center text-xl">
-          Connect your wallet to play!
-        </div>
-      )}
+      <p className="text-white text-center text-lg max-w-lg mx-auto my-4">
+        The game is a mix of tower defense strategy, chess-like planning, and
+        on-chain innovation, where every battle helps you grow — and every win
+        can pay off. Right now, it teaches Solidity, the language of smart
+        contracts.
+      </p>
 
       {!sessionClient && isConnected && (
         <div className="mb-4 neon-text-cyan text-center text-xl">
@@ -354,23 +357,38 @@ export const Home = (): JSX.Element => {
         </div>
       )}
 
-      <div
-        className={`flex justify-center ${!isConnected || !sessionClient ? 'mb-20' : 'mb-8'}`}
-      >
-        <AccountButton />
-      </div>
+      {!isConnected && (
+        <div
+          className={`flex justify-center ${!isConnected || !sessionClient ? 'mb-20' : 'mb-8'}`}
+        >
+          <div className="flex flex-col items-center rounded-lg p-4 w-full max-w-lg  bg-yellow-700/20 border border-yellow-600/50">
+            <p className="text-yellow-50 text-center text-base mb-4">
+              Sign in with your wallet to start playing. Your next battle
+              awaits!
+            </p>
+            <div className="flex justify-center w-fit rounded-md overflow-hidden">
+              <AccountButton />
+            </div>
+          </div>
+        </div>
+      )}
 
       {!!sessionClient && (
-        <>
+        <div className="flex flex-col items-center bg-cyan-900/20 border border-cyan-600/50 rounded-lg p-5 w-full max-w-lg mx-auto space-y-4 mb-12">
           {usernameSaved && (
-            <div className="mb-8 neon-text-cyan text-center text-xl">
+            <div className="neon-text-cyan text-center text-xl">
               Welcome back, {username}!
             </div>
           )}
 
+          <div className="flex justify-center items-center ">
+            <span className="text-white mr-2">Wallet:</span>
+            <AccountButton />
+          </div>
+
           {/* Battery Information */}
           {batteryDetails && (
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center">
               <div className="bg-gray-900/60 border border-gray-800 flex gap-2 py-2 items-center rounded-full sm:gap-4 px-3 sm:px-4">
                 {/* Battery Charge */}
                 <div className="flex gap-1 sm:gap-2 sm:items-center">
@@ -406,12 +424,12 @@ export const Home = (): JSX.Element => {
             </div>
           )}
 
-          <div className="max-w-md mb-8 mx-auto w-full">
+          <div className="max-w-md mx-auto w-full">
             <form className="space-y-6" onSubmit={onCreateBattle}>
               {!usernameSaved && (
                 <div className="space-y-2">
                   <Label className="text-lg text-cyan-300" htmlFor="username">
-                    Username
+                    Add a username
                   </Label>
                   <Input
                     className="bg-transparent border-cyan-800 focus:border-cyan-100 text-cyan-100"
@@ -428,25 +446,30 @@ export const Home = (): JSX.Element => {
                   )}
                 </div>
               )}
-              <div className="flex justify-center mb-16">
+              <div className="flex justify-center">
                 <Button
                   aria-label="Submit username and play"
-                  className="active:bg-cyan-900 active:scale-95 bg-cyan-900/20 border-cyan-500 duration-200 focus:bg-cyan-900/30 focus:text-cyan-300 h-16 rounded-full text-cyan-400 w-16 hover:bg-cyan-900/50 hover:border-cyan-400 hover:text-cyan-300 neon-border transition-all"
                   disabled={isCreatingBattle}
-                  size="icon"
+                  className="group bg-cyan-900/20 border-cyan-500 duration-200 focus:bg-cyan-900/30 focus:text-cyan-300 rounded-full text-cyan-400 hover:bg-cyan-900/50 hover:border-cyan-400 hover:text-cyan-300 neon-border transition-all w-fit py-6 px-8"
                   type="submit"
                   variant="outline"
                 >
                   {isCreatingBattle ? (
-                    <Loader2 className="animate-spin h-8 w-8" />
+                    <div className="flex items-center justify-center">
+                      <Loader2 className="animate-spin h-8 w-8 mr-2" />
+                      <span className="text-xl uppercase">Joining battle</span>
+                    </div>
                   ) : (
-                    <Play className="h-8 w-8" />
+                    <div className="flex items-center justify-center">
+                      <Play className="h-8 w-8 mr-2 group-hover:translate-x-0.5 transition-transform duration-200" />
+                      <span className="text-xl uppercase">Join battle</span>
+                    </div>
                   )}
                 </Button>
               </div>
             </form>
           </div>
-        </>
+        </div>
       )}
 
       <div className="mb-20 z-1">
