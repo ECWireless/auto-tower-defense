@@ -39,8 +39,8 @@ const BattleButtonContent = ({
       </>
     ) : (
       <>
-        <Play className="h-8 w-8 mr-2 animate-pulse" />
-        <span className="text-xl uppercase animate-pulse">Join battle</span>
+        <Play className="h-10 w-10 mr-2" />
+        <span className="text-xl uppercase font-semibold">Join battle</span>
       </>
     )}
   </div>
@@ -466,11 +466,12 @@ export const Home = (): JSX.Element => {
               )}
               <div className="flex justify-center">
                 <Button
-                  aria-label="Submit username and play"
+                  aria-label="Join battle"
                   disabled={isCreatingBattle}
-                  className="bg-cyan-900/20 border-cyan-500 duration-200 focus:bg-cyan-900/30 focus:text-cyan-300 rounded-full text-cyan-400 hover:bg-cyan-900/50 hover:border-cyan-400 hover:text-cyan-300 neon-border transition-all w-fit py-6 px-8"
+                  className="bg-gradient-to-r font-medium from-purple-400 text-center text-2xl to-pink-400 via-cyan-400 text-black rounded-full shadow-lg shadow-purple-900/20 py-6 px-8 hover:scale-105 transition-all duration-200"
                   type="submit"
-                  variant="outline"
+                  size="lg"
+                  variant="default"
                 >
                   <BattleButtonContent isCreatingBattle={isCreatingBattle} />
                 </Button>
