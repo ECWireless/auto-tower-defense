@@ -353,27 +353,27 @@ export const Home = (): JSX.Element => {
         />
       </div>
       <h4 className="mx-auto w-fit bg-clip-text bg-gradient-to-r font-medium from-purple-400 text-center text-transparent text-xl lg:text-2xl to-pink-400 via-cyan-400">
-        AUTO TOWER DEFENSE
+        BUILD. BATTLE. EARN.
       </h4>
       <h1 className="text-4xl lg:text-5xl text-white text-center flex flex-col space-y-2 uppercase">
-        <span>
-          <span className="text-cyan-400">Play</span> to Learn.
-        </span>
-        <span>
-          <span className="text-cyan-400">Master</span> to Earn.
-        </span>
+        AUTO TOWER DEFENSE
       </h1>
 
-      <p className="text-gray-300 text-center text-lg max-w-lg mx-auto my-6">
-        The game is a mix of tower defense strategy, chess-like planning, and
-        on-chain innovation, where every battle helps you grow — and every win
-        can pay off. Right now, it teaches Solidity, the language of smart
-        contracts.
+      <p className="text-gray-300 text-center text-lg max-w-lg mx-auto mt-3 mb-6">
+        Play a strategy game for builders and thinkers. Code, customize, or
+        license modular tower logic. Every match is a new opponent — every
+        component you create is an opportunity to profit. Whether you&apos;re a
+        tactician or an engineer, there&apos;s a path to victory.
       </p>
 
       {!sessionClient && isConnected && (
-        <div className="mb-4 neon-text-cyan text-center text-xl">
-          Complete session setup to play!
+        <div className="flex flex-col items-center mb-6">
+          <div className="mb-4 neon-text-cyan text-center text-xl">
+            Complete session setup to play!
+          </div>
+          <div className="flex justify-center w-fit rounded-md overflow-hidden">
+            <AccountButton />
+          </div>
         </div>
       )}
 
@@ -386,6 +386,7 @@ export const Home = (): JSX.Element => {
               Sign in with your wallet to start playing. Your next battle
               awaits!
             </p>
+
             <div className="flex justify-center w-fit rounded-md overflow-hidden">
               <AccountButton />
             </div>
