@@ -1,4 +1,4 @@
-import { HelpCircle, Loader2, Play, Undo2 } from 'lucide-react';
+import { HelpCircle, Loader2, StopCircle, Undo2 } from 'lucide-react';
 
 import { ClickIndicator } from '@/components/ClickIndicator';
 import { Button } from '@/components/ui/button';
@@ -54,9 +54,9 @@ export const BattleControlButtons: React.FC<BattleControlButtonsProps> = ({
           {isChangingTurn ? (
             <Loader2 className=" animate-spin h-6 w-6" />
           ) : (
-            <Play className="h-4 w-4 mr-1" />
+            <StopCircle className="h-4 w-4 mr-1" />
           )}
-          Next Turn
+          End turn
         </Button>
         {(tutorialStep === TutorialSteps.THREE_THREE ||
           tutorialStep === TutorialSteps.FOUR_SEVEN) &&

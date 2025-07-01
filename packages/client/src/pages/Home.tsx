@@ -6,7 +6,7 @@ import {
   getComponentValueStrict,
 } from '@latticexyz/recs';
 import { encodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
-import { Battery, Loader2, Play, Signal, Zap } from 'lucide-react';
+import { Battery, Castle, Loader2, Play, Zap } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -25,6 +25,26 @@ import { useMUD } from '@/hooks/useMUD';
 import { BATTLES_PATH } from '@/Routes';
 import { BATTERY_STORAGE_LIMIT, MAX_PLAYERS } from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
+
+const BattleButtonContent = ({
+  isCreatingBattle,
+}: {
+  isCreatingBattle: boolean;
+}) => (
+  <div className="flex items-center justify-center">
+    {isCreatingBattle ? (
+      <>
+        <Loader2 className="animate-spin h-8 w-8 mr-2" />
+        <span className="text-xl uppercase">Joining battle</span>
+      </>
+    ) : (
+      <>
+        <Play className="h-10 w-10 mr-2" />
+        <span className="text-xl uppercase font-semibold">Join battle</span>
+      </>
+    )}
+  </div>
+);
 
 export const Home = (): JSX.Element => {
   const navigate = useNavigate();
@@ -289,6 +309,25 @@ export const Home = (): JSX.Element => {
     return null;
   }, [username]);
 
+  // Shows total players who have played. Important for playtest cap (100 players) so users know if the limit is close.
+  const PlayerCountDisplay = (
+    <div className="flex flex-col items-center justify-center mb-8">
+      <div className="bg-gray-900 border border-cyan-800 flex gap-2 items-center px-4 py-2 rounded-full -mb-4 z-10">
+        <Castle className="h-4 text-cyan-400 w-4" />
+        <span className="text-gray-300 text-sm">
+          <span className="font-medium text-cyan-400">{playerCount}</span>
+          <span className="mx-1">/</span>
+          <span className="text-gray-400">{MAX_PLAYERS}</span>
+          <span className="ml-1">playtesters {playerCount >= 100 && '🚨'}</span>
+        </span>
+      </div>
+      <div className="mt-2 rounded-lg bg-cyan-900/60 px-4 py-3 text-xs lg:text-sm text-cyan-100 max-w-xs text-center border border-cyan-800">
+        The playtest is limited to 100 players. If the cap is reached, new
+        players can&apos;t join.
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-black flex flex-col min-h-screen p-4 relative text-white">
       <BackgroundAnimation />
@@ -325,52 +364,64 @@ export const Home = (): JSX.Element => {
         </div>
       )}
 
-      <h1 className="bg-clip-text bg-gradient-to-r font-bold from-purple-400 mb-6 mt-20 text-center text-transparent text-4xl to-pink-400 via-cyan-400">
+      <h4 className="mt-10 mx-auto w-fit bg-clip-text bg-gradient-to-r font-medium from-purple-400 text-center text-transparent text-xl lg:text-2xl to-pink-400 via-cyan-400">
+        BUILD. BATTLE. EARN.
+      </h4>
+      <h1 className="text-4xl lg:text-5xl text-white text-center flex flex-col space-y-2 uppercase">
         AUTO TOWER DEFENSE
       </h1>
 
-      {/* Player Count Display */}
-      <div className="flex justify-center mb-8">
-        <div className="bg-gray-900/60 border border-cyan-900/30 flex gap-2 items-center px-4 py-2 rounded-full">
-          <Signal className="h-4 text-cyan-400 w-4" />
-          <span className="text-gray-300 text-sm">
-            <span className="font-medium text-cyan-400">{playerCount}</span>
-            <span className="mx-1">/</span>
-            <span className="text-gray-400">{MAX_PLAYERS}</span>
-            <span className="ml-1">players</span>
-          </span>
-        </div>
-      </div>
+      <p className="text-gray-300 text-center text-lg max-w-lg mx-auto mt-3 mb-6">
+        Play a strategy game for builders and thinkers. Code, customize, or
+        license modular tower logic. Every match is a new opponent — every
+        component you create is an opportunity to profit. Whether you&apos;re a
+        tactician or an engineer, there&apos;s a path to victory.
+      </p>
 
-      {!isConnected && (
-        <div className="mb-4 neon-text-cyan text-center text-xl">
-          Connect your wallet to play!
-        </div>
-      )}
+      {PlayerCountDisplay}
 
       {!sessionClient && isConnected && (
-        <div className="mb-4 neon-text-cyan text-center text-xl">
-          Complete session setup to play!
+        <div className="flex flex-col items-center mb-6">
+          <div className="mb-4 neon-text-cyan text-center text-xl">
+            Complete session setup to play!
+          </div>
+          <div className="flex justify-center w-fit rounded-md overflow-hidden">
+            <AccountButton />
+          </div>
         </div>
       )}
 
-      <div
-        className={`flex justify-center ${!isConnected || !sessionClient ? 'mb-20' : 'mb-8'}`}
-      >
-        <AccountButton />
-      </div>
+      {!isConnected && (
+        <div
+          className={`flex justify-center ${!isConnected || !sessionClient ? 'mb-20' : 'mb-8'}`}
+        >
+          <div className="flex flex-col items-center rounded-lg p-4 w-full max-w-lg  bg-yellow-700/20 border border-yellow-600/50">
+            <p className="text-yellow-50 text-center text-base mb-4">
+              Sign in with your wallet to start playing. Your next battle
+              awaits!
+            </p>
+
+            <div className="flex justify-center w-fit rounded-md overflow-hidden">
+              <AccountButton />
+            </div>
+          </div>
+        </div>
+      )}
 
       {!!sessionClient && (
-        <>
-          {usernameSaved && (
-            <div className="mb-8 neon-text-cyan text-center text-xl">
-              Welcome back, {username}!
-            </div>
-          )}
+        <div className="flex flex-col items-center bg-cyan-900/20 border border-cyan-600/50 rounded-lg p-5 w-full max-w-lg mx-auto space-y-4 mb-12">
+          <div className="flex items-center justify-center gap-4">
+            {usernameSaved && (
+              <span className="neon-text-cyan text-lg" title="Your username">
+                {username}
+              </span>
+            )}
+            <AccountButton />
+          </div>
 
           {/* Battery Information */}
           {batteryDetails && (
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center">
               <div className="bg-gray-900/60 border border-gray-800 flex gap-2 py-2 items-center rounded-full sm:gap-4 px-3 sm:px-4">
                 {/* Battery Charge */}
                 <div className="flex gap-1 sm:gap-2 sm:items-center">
@@ -406,12 +457,12 @@ export const Home = (): JSX.Element => {
             </div>
           )}
 
-          <div className="max-w-md mb-8 mx-auto w-full">
+          <div className="max-w-md mx-auto w-full">
             <form className="space-y-6" onSubmit={onCreateBattle}>
               {!usernameSaved && (
                 <div className="space-y-2">
                   <Label className="text-lg text-cyan-300" htmlFor="username">
-                    Username
+                    Add a username
                   </Label>
                   <Input
                     className="bg-transparent border-cyan-800 focus:border-cyan-100 text-cyan-100"
@@ -428,25 +479,21 @@ export const Home = (): JSX.Element => {
                   )}
                 </div>
               )}
-              <div className="flex justify-center mb-16">
+              <div className="flex justify-center">
                 <Button
-                  aria-label="Submit username and play"
-                  className="active:bg-cyan-900 active:scale-95 bg-cyan-900/20 border-cyan-500 duration-200 focus:bg-cyan-900/30 focus:text-cyan-300 h-16 rounded-full text-cyan-400 w-16 hover:bg-cyan-900/50 hover:border-cyan-400 hover:text-cyan-300 neon-border transition-all"
+                  aria-label="Join battle"
                   disabled={isCreatingBattle}
-                  size="icon"
+                  className="bg-gradient-to-r font-medium from-purple-400 text-center text-2xl to-pink-400 via-cyan-400 text-black rounded-full shadow-lg shadow-purple-900/20 py-6 px-8 hover:scale-105 transition-all duration-200"
                   type="submit"
-                  variant="outline"
+                  size="lg"
+                  variant="default"
                 >
-                  {isCreatingBattle ? (
-                    <Loader2 className="animate-spin h-8 w-8" />
-                  ) : (
-                    <Play className="h-8 w-8" />
-                  )}
+                  <BattleButtonContent isCreatingBattle={isCreatingBattle} />
                 </Button>
               </div>
             </form>
           </div>
-        </>
+        </div>
       )}
 
       <div className="mb-20 z-1">
