@@ -6,7 +6,7 @@ import {
   getComponentValueStrict,
 } from '@latticexyz/recs';
 import { encodeEntity, singletonEntity } from '@latticexyz/store-sync/recs';
-import { Battery, Loader2, Play, Zap } from 'lucide-react';
+import { Battery, Loader2, Play, Signal, Zap } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ import { useAccount } from 'wagmi';
 import { BackgroundAnimation } from '@/components/BackgroundAnimation';
 import { MaxPlayersDialog } from '@/components/dialogs/MaxPlayersDialog';
 import { HomeTabs } from '@/components/HomeTabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -309,6 +310,30 @@ export const Home = (): JSX.Element => {
     return null;
   }, [username]);
 
+  // Shows total players who have played. Important for playtest cap (100 players) so users know if the limit is close.
+  const PlayerCountDisplay = (
+    <div className="flex flex-col items-center justify-center mb-8">
+      <div className="bg-gray-900/60 border border-cyan-900/30 flex gap-2 items-center px-4 py-2 rounded-full">
+        <Signal className="h-4 text-cyan-400 w-4" />
+        <span className="text-gray-300 text-sm">
+          <span className="font-medium text-cyan-400">{playerCount}</span>
+          <span className="mx-1">/</span>
+          <span className="text-gray-400">{MAX_PLAYERS}</span>
+          <span className="ml-1">players</span>
+        </span>
+      </div>
+      <Alert className="mt-2 w-full max-w-xs text-xs bg-cyan-950/80 border-cyan-800 text-cyan-100">
+        <AlertDescription>
+          This is the total number of unique players who have played so far (not
+          active participants).
+          <br />
+          The playtest is limited to 100 players. If the cap is reached, new
+          players can&apos;t join.
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
+
   return (
     <div className="bg-black flex flex-col min-h-screen p-4 relative text-white">
       <BackgroundAnimation />
@@ -358,6 +383,8 @@ export const Home = (): JSX.Element => {
         component you create is an opportunity to profit. Whether you&apos;re a
         tactician or an engineer, there&apos;s a path to victory.
       </p>
+
+      {PlayerCountDisplay}
 
       {!sessionClient && isConnected && (
         <div className="flex flex-col items-center mb-6">
