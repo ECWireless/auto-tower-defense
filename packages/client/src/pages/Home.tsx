@@ -344,14 +344,7 @@ export const Home = (): JSX.Element => {
           </p>
         </div>
       )}
-      <div className="flex justify-center my-6">
-        <img
-          src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Symbols/Pirate%20Flag.png"
-          alt="Pirate Flag"
-          width="80"
-          height="80"
-        />
-      </div>
+
       <h4 className="mx-auto w-fit bg-clip-text bg-gradient-to-r font-medium from-purple-400 text-center text-transparent text-xl lg:text-2xl to-pink-400 via-cyan-400">
         BUILD. BATTLE. EARN.
       </h4>
