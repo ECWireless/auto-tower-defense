@@ -338,7 +338,7 @@ export const Home = (): JSX.Element => {
         batteryDetails &&
         (batteryDetails.activeBalance ?? BigInt(0)) < BATTERY_STORAGE_LIMIT && (
           <Button
-            className="bg-green-800/80 border border-green-600/50 fixed hover:bg-green-700/90 left-1/2 mt-2 shadow-green-900/20 shadow-md text-green-100 text-xs top-4"
+            className="bg-green-800/80 border border-green-600/50 fixed hover:bg-green-700/90 left-1/2 shadow-green-900/20 shadow-md text-green-100 text-xs top-4"
             disabled={isClaimingRecharge}
             onClick={onClaimRecharge}
             size="sm"
@@ -364,7 +364,7 @@ export const Home = (): JSX.Element => {
         </div>
       )}
 
-      <h4 className="mt-10 mx-auto w-fit bg-clip-text bg-gradient-to-r font-medium from-purple-400 text-center text-transparent text-xl lg:text-2xl to-pink-400 via-cyan-400">
+      <h4 className="mt-14 mx-auto w-fit bg-clip-text bg-gradient-to-r font-medium from-purple-400 text-center text-transparent text-xl lg:text-2xl to-pink-400 via-cyan-400">
         BUILD. BATTLE. EARN.
       </h4>
       <h1 className="text-4xl lg:text-5xl text-white text-center flex flex-col space-y-2 uppercase">
@@ -372,10 +372,10 @@ export const Home = (): JSX.Element => {
       </h1>
 
       <p className="text-gray-300 text-center text-lg max-w-lg mx-auto mt-3 mb-6">
-        Play a strategy game for builders and thinkers. Code, customize, or
-        license modular tower logic. Every match is a new opponent — every
-        component you create is an opportunity to profit. Whether you&apos;re a
-        tactician or an engineer, there&apos;s a path to victory.
+        Play a strategy game for both battlers and builders. Battle to become
+        the top kingdom, or build and patent tower components to earn royalties.
+        Whether you&apos;re a tactician or an engineer, there&apos;s a path to
+        victory.
       </p>
 
       {PlayerCountDisplay}
@@ -395,7 +395,7 @@ export const Home = (): JSX.Element => {
         <div
           className={`flex justify-center ${!isConnected || !sessionClient ? 'mb-20' : 'mb-8'}`}
         >
-          <div className="flex flex-col items-center rounded-lg p-4 w-full max-w-lg  bg-yellow-700/20 border border-yellow-600/50">
+          <div className="flex flex-col items-center rounded-lg p-4 w-full max-w-lg bg-yellow-700/20 border border-yellow-600/50">
             <p className="text-yellow-50 text-center text-base mb-4">
               Sign in with your wallet to start playing. Your next battle
               awaits!
@@ -410,7 +410,7 @@ export const Home = (): JSX.Element => {
 
       {!!sessionClient && (
         <div className="flex flex-col items-center bg-cyan-900/20 border border-cyan-600/50 rounded-lg p-5 w-full max-w-lg mx-auto space-y-4 mb-12">
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex flex-col items-center gap-4 justify-center sm:flex-row ">
             {usernameSaved && (
               <span className="neon-text-cyan text-lg" title="Your username">
                 {username}
