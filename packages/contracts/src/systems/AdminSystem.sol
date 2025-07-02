@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, Patent, SolarFarmDetails } from "../codegen/index.sol";
+import { AddressBook, Patent, SolarFarmDetails, Username, UsernameTaken } from "../codegen/index.sol";
 import { BatteryHelpers } from "../Libraries/BatteryHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { PatentHelpers } from "../Libraries/PatentHelpers.sol";
@@ -87,5 +87,18 @@ contract AdminSystem is System {
 
   function updateSellEmitterAddress(address sellEmitterAddress) external {
     AddressBook.setSellEmitterAddress(sellEmitterAddress);
+  }
+
+  function updateUsername(address playerAddress, string memory newUsername) external {
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(playerAddress);
+    require(globalPlayerId != bytes32(0), "AdminSystem: player not registered");
+    string memory oldUsername = Username.get(globalPlayerId);
+    bytes32 oldUsernameBytes = keccak256(abi.encodePacked(oldUsername));
+    bytes32 newUsernameBytes = keccak256(abi.encodePacked(newUsername));
+    require(oldUsernameBytes != newUsernameBytes, "AdminSystem: new username is the same as the current one");
+    require(!UsernameTaken.get(newUsernameBytes), "AdminSystem: username is already taken");
+    Username.set(globalPlayerId, newUsername);
+    UsernameTaken.set(oldUsernameBytes, false);
+    UsernameTaken.set(newUsernameBytes, true);
   }
 }

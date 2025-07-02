@@ -31,4 +31,6 @@ interface IAdminSystem {
   function app__updateBuyReceiverAddress(address buyReceiverAddress) external;
 
   function app__updateSellEmitterAddress(address sellEmitterAddress) external;
+
+  function app__updateUsername(address playerAddress, string memory newUsername) external;
 }
