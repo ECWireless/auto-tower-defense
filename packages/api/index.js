@@ -134,7 +134,7 @@ app.post("/api/faucet", async (req, res) => {
         await sgMail.send({
           to: alertEmail,
           from: alertEmail,
-          subject: "⚠️ Faucet balance is low!",
+          subject: "Auto Tower Defense - ⚠️ Faucet balance is low!",
           text: `Your faucet has a low balance: ${balanceEth} ETH remaining on chain ID ${chainId}. Please refill it soon to keep the faucet operational.`,
         });
         lastAlertSent = now;
@@ -274,6 +274,17 @@ app.post("/buy-validator-signature", async (req, res) => {
     const signature = await walletClient.signMessage({
       message: { raw: structHash },
     });
+
+    try {
+      await sgMail.send({
+        to: alertEmail,
+        from: alertEmail,
+        subject: "Auto Tower Defense - Buy Validator Signature Request",
+        text: `A buy validator signature request was made with the following details:\n\nAmount: ${amount}\nBuyer: ${buyer}\nDestination Chain ID: ${destinationChainId}\nNonce: ${nonce}\nOrigin Chain ID: ${originChainId}\nTransaction Hash: ${txHash}\n\nSignature: ${signature}.`,
+      });
+    } catch (emailErr) {
+      console.error("SendGrid error:", emailErr);
+    }
     res.json({ signature });
   } catch (err) {
     console.error(err);
@@ -372,6 +383,18 @@ app.post("/sell-validator-signature", async (req, res) => {
     const signature = await walletClient.signMessage({
       message: { raw: structHash },
     });
+
+    try {
+      await sgMail.send({
+        to: alertEmail,
+        from: alertEmail,
+        subject: "Auto Tower Defense - Sell Validator Signature Request",
+        text: `A sell validator signature request was made with the following details:\n\nAmount: ${amount}\nSeller: ${seller}\nDestination Chain ID: ${destinationChainId}\nNonce: ${nonce}\nOrigin Chain ID: ${originChainId}\nTransaction Hash: ${txHash}\n\nSignature: ${signature}.`,
+      });
+    } catch (emailErr) {
+      console.error("SendGrid error:", emailErr);
+    }
+
     res.json({ signature });
   } catch (err) {
     console.error(err);
