@@ -13,6 +13,7 @@ const {
   isAddress,
   keccak256,
   parseEther,
+  formatUnits,
 } = require("viem");
 const sgMail = require("@sendgrid/mail");
 const { privateKeyToAccount } = require("viem/accounts");
@@ -280,7 +281,7 @@ app.post("/buy-validator-signature", async (req, res) => {
         to: alertEmail,
         from: alertEmail,
         subject: "Auto Tower Defense - Buy Validator Signature Request",
-        text: `A buy validator signature request was made with the following details:\n\nAmount: ${amount}\nBuyer: ${buyer}\nDestination Chain ID: ${destinationChainId}\nNonce: ${nonce}\nOrigin Chain ID: ${originChainId}\nTransaction Hash: ${txHash}\n\nSignature: ${signature}.`,
+        text: `A buy validator signature request was made with the following details:\n\nAmount: ${formatUnits(amount, 6)}\nBuyer: ${buyer}\nDestination Chain ID: ${destinationChainId}\nNonce: ${nonce}\nOrigin Chain ID: ${originChainId}\nTransaction Hash: ${txHash}\n\nSignature: ${signature}.`,
       });
     } catch (emailErr) {
       console.error("SendGrid error:", emailErr);
@@ -389,7 +390,7 @@ app.post("/sell-validator-signature", async (req, res) => {
         to: alertEmail,
         from: alertEmail,
         subject: "Auto Tower Defense - Sell Validator Signature Request",
-        text: `A sell validator signature request was made with the following details:\n\nAmount: ${amount}\nSeller: ${seller}\nDestination Chain ID: ${destinationChainId}\nNonce: ${nonce}\nOrigin Chain ID: ${originChainId}\nTransaction Hash: ${txHash}\n\nSignature: ${signature}.`,
+        text: `A sell validator signature request was made with the following details:\n\nAmount: ${formatUnits(amount, 6)}\nSeller: ${seller}\nDestination Chain ID: ${destinationChainId}\nNonce: ${nonce}\nOrigin Chain ID: ${originChainId}\nTransaction Hash: ${txHash}\n\nSignature: ${signature}.`,
       });
     } catch (emailErr) {
       console.error("SendGrid error:", emailErr);

@@ -173,6 +173,13 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__grantElectricityToTopKingdoms",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__mintUsdcToPlayer",
     "inputs": [
       {
