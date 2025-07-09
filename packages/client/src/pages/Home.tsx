@@ -372,10 +372,9 @@ export const Home = (): JSX.Element => {
       </h1>
 
       <p className="text-gray-300 text-center text-lg max-w-lg mx-auto mt-3 mb-6">
-        Play a strategy game for both battlers and builders. Battle to become
-        the top kingdom, or build and patent tower components to earn royalties.
-        Whether you&apos;re a tactician or an engineer, there&apos;s a path to
-        victory.
+        A strategy game for both battlers and builders. Battle to become the top
+        kingdom, or build and patent tower components to earn royalties. Whether
+        you&apos;re a tactician or an engineer, there&apos;s a path to victory.
       </p>
 
       {PlayerCountDisplay}
