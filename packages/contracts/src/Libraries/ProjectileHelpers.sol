@@ -152,9 +152,10 @@ library ProjectileHelpers {
     );
 
     (bool success, bytes memory returndata) = tower.projectileAddress.call(data);
-    require(success, "getNextProjectilePosition call failed");
-
-    (newX, newY) = abi.decode(returndata, (int16, int16));
+    
+    if (success) {
+      (newX, newY) = abi.decode(returndata, (int16, int16));
+    }
 
     (, int16 mapWidth) = MapConfig.get();
     if (tower.x > mapWidth / 2) {

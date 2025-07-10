@@ -141,7 +141,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
     }
   }, [Patent, Username]);
 
-  const onRefreshPatentList = useCallback((): PatentType[] => {
+  const onRefreshPatentList = useCallback(async (): Promise<PatentType[]> => {
     try {
       if (!battle) return [];
       const _patents = fetchPatents();
@@ -160,14 +160,16 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       const projectile = getComponentValue(Projectile, tower.id as Entity);
 
       if (projectile) {
-        format(projectile.sourceCode, {
-          parser: 'solidity-parse',
-          plugins: [solidityPlugin],
-        }).then(formattedSourceCode => {
+        try {
+          const formattedSourceCode = await format(projectile.sourceCode, {
+            parser: 'solidity-parse',
+            plugins: [solidityPlugin],
+          });
+
           const flattenedSourceCode = formattedSourceCode
             .replace(/\s+/g, ' ')
             .trim();
-          newPatent.sourceCode = flattenedSourceCode.trim();
+          newPatent.sourceCode = flattenedSourceCode;
 
           const patentMatch = _patents.find(
             s => s.sourceCode === flattenedSourceCode,
@@ -178,9 +180,16 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
           } else {
             setSelectedPatent(newPatent);
           }
+
           setSizeLimit(projectile.sizeLimit);
           setSourceCode(formattedSourceCode.trim());
-        });
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('Error formatting source code:', error);
+          setSizeLimit(projectile.sizeLimit);
+          setSourceCode('There was an error formatting the source code.');
+          setSelectedPatent(_patents[0]);
+        }
       } else {
         setSourceCode('');
       }
@@ -198,14 +207,21 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
     }
   }, [battle, fetchPatents, Projectile, tower.id]);
 
-  const onSelectPatent = useCallback((patent: PatentType) => {
-    format(patent.sourceCode, {
-      parser: 'solidity-parse',
-      plugins: [solidityPlugin],
-    }).then(formattedSourceCode => {
+  const onSelectPatent = useCallback(async (patent: PatentType) => {
+    try {
+      const formattedSourceCode = await format(patent.sourceCode, {
+        parser: 'solidity-parse',
+        plugins: [solidityPlugin],
+      });
+
       setSourceCode(formattedSourceCode.trim());
       setSelectedPatent(patent);
-    });
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error formatting source code:', error);
+      setSourceCode('There was an error formatting the source code.');
+      setSelectedPatent(patent);
+    }
   }, []);
 
   const onCompileCode = useCallback(async (): Promise<string | null> => {
@@ -391,7 +407,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       setShowRegisterPatentModal(false);
       setName('');
       setDescription('');
-      const _patents = onRefreshPatentList();
+      const _patents = await onRefreshPatentList();
 
       const matchingPatent = _patents.find(
         s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
@@ -455,7 +471,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       toast.success('Patent Amended!');
 
       setShowRegisterPatentModal(false);
-      const _patents = onRefreshPatentList();
+      const _patents = await onRefreshPatentList();
 
       const matchingPatent = _patents.find(
         s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
@@ -503,7 +519,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       toast.success('Patent Deleted!');
 
       setShowDisclaimPatentModal(false);
-      const _patents = onRefreshPatentList();
+      const _patents = await onRefreshPatentList();
 
       onSelectPatent(_patents[0]);
     } catch (error) {
