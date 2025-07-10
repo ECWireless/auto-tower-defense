@@ -4,6 +4,19 @@ import { anvil, base, baseSepolia, redstone } from 'viem/chains';
 
 import { CHAIN_ID, SUPPORTED_CHAINS, WORLD_ADDRESS } from './constants';
 
+/*
+ * This matches the normalized coordinates used in the smart contracts
+ */
+export const getActualCoordinates = (
+  x: number,
+  y: number,
+): { actualX: number; actualY: number } => {
+  const actualX = Math.floor(x / 10) * 10 + 5;
+  const actualY = Math.floor(y / 10) * 10 + 5;
+
+  return { actualX, actualY };
+};
+
 export const shortenAddress = (address: string, length = 4): string =>
   `${address.slice(0, length + 2)}...${address.slice(-length)}`;
 
