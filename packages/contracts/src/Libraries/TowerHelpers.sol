@@ -85,27 +85,29 @@ library TowerHelpers {
   ) external returns (address projectileLogicAddress) {
     BattleData memory currentBattle = Battle.get(battleId);
 
-    bool success = _validModifySystem(battleId, towerId, globalPlayerId);
-    if (!success) {
-      // Fail without reverting
-      return address(0);
-    }
-
-    address newSystem;
+        address newSystem;
     assembly {
       newSystem := create(0, add(bytecode, 0x20), mload(bytecode))
     }
 
-    uint256 size;
+        uint256 size;
     assembly {
       size := extcodesize(newSystem)
     }
+
 
     require(size > 0, "TowerSystem: contract creation failed");
     require(
       size <= DEFAULT_LOGIC_SIZE_LIMIT,
       string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
     );
+
+    bool success = _validModifySystem(battleId, towerId, globalPlayerId, newSystem);
+    if (!success) {
+      // Fail without reverting
+      return address(0);
+    }
+
 
     Battle.setActionCount(battleId, currentBattle.actionCount - 1);
     Projectile.set(towerId, address(newSystem), DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
@@ -297,7 +299,8 @@ library TowerHelpers {
   function _validModifySystem(
     bytes32 battleId,
     bytes32 towerId,
-    bytes32 globalPlayerId
+    bytes32 globalPlayerId,
+    address newSystemAddress
   ) internal returns (bool success) {
     bool isPlayer2 = globalPlayerId == Battle.getPlayer2Id(battleId);
 
@@ -353,15 +356,14 @@ library TowerHelpers {
     (int16 oldX, int16 oldY) = Position.get(towerId);
 
     bytes memory data = abi.encodeWithSignature("getNextProjectilePosition(int16,int16)", oldX, oldY);
-    address projectileAddress = Projectile.getLogicAddress(towerId);
-    (bool nextPositionSuccess, bytes memory returndata) = projectileAddress.call(data);
+    (bool nextPositionSuccess, bytes memory returndata) = newSystemAddress.call(data);
     if (!nextPositionSuccess) {
       require(isPlayer2, "TowerSystem: getNextProjectilePosition call failed");
       return false;
     }
     (oldX, oldY) = abi.decode(returndata, (int16, int16));
 
-    (nextPositionSuccess, returndata) = projectileAddress.call(data);
+    (nextPositionSuccess, returndata) = newSystemAddress.call(data);
     if (!nextPositionSuccess) {
       require(isPlayer2, "TowerSystem: getNextProjectilePosition call failed");
       return false;
