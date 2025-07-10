@@ -26,6 +26,7 @@ import {
   TutorialSteps,
   useTutorialIndicator,
 } from '@/hooks/useTutorialIndicator';
+import { getActualCoordinates } from '@/utils/helpers';
 import { type Tower } from '@/utils/types';
 
 export const INSTALLABLE_TOWERS = [
@@ -471,37 +472,25 @@ export const BattleBoard: React.FC = () => {
                 enemyCastlePosition &&
                 tower.projectileTrajectory[tickCount]
               ) {
+                const { actualX, actualY } = getActualCoordinates(
+                  tower.projectileTrajectory[tickCount].x,
+                  tower.projectileTrajectory[tickCount].y,
+                );
                 const towerCollision = towers.find(
                   _tower =>
                     _tower.id !== tower.id &&
-                    Math.abs(
-                      _tower.x - tower.projectileTrajectory[tickCount].x,
-                    ) <= 5 &&
-                    Math.abs(
-                      _tower.y - tower.projectileTrajectory[tickCount].y,
-                    ) <= 5 &&
+                    _tower.x === actualX &&
+                    _tower.y === actualY &&
                     _tower.owner !== tower.owner,
                 );
 
                 const enemyCastleCollision =
-                  Math.abs(
-                    enemyCastlePosition.x -
-                      tower.projectileTrajectory[tickCount].x,
-                  ) <= 5 &&
-                  Math.abs(
-                    enemyCastlePosition.y -
-                      tower.projectileTrajectory[tickCount].y,
-                  ) <= 5;
+                  enemyCastlePosition.x === actualX &&
+                  enemyCastlePosition.y === actualY;
 
                 const myCastleCollision =
-                  Math.abs(
-                    myCastlePosition.x -
-                      tower.projectileTrajectory[tickCount].x,
-                  ) <= 5 &&
-                  Math.abs(
-                    myCastlePosition.y -
-                      tower.projectileTrajectory[tickCount].y,
-                  ) <= 5;
+                  myCastlePosition.x === actualX &&
+                  myCastlePosition.y === actualY;
 
                 let collisionEntity:
                   | Tower
