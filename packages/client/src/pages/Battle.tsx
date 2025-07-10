@@ -246,17 +246,19 @@ export const InnerBattlePage = (): JSX.Element => {
             Home
           </Button>
         </div>
-        <div className="fixed right-4 text-cyan-400 text-sm top-4 z-10">
-          <Button
-            className="text-gray-500 hover:text-red-400 hover:bg-red-900/10"
-            onClick={() => setShowForfeitDialog(true)}
-            size="sm"
-            variant="ghost"
-          >
-            <Flag className="h-4 w-4 mr-1" />
-            Forfeit
-          </Button>
-        </div>
+        {isPlayer1 && (
+          <div className="fixed right-4 text-cyan-400 text-sm top-4 z-10">
+            <Button
+              className="text-gray-500 hover:text-red-400 hover:bg-red-900/10"
+              onClick={() => setShowForfeitDialog(true)}
+              size="sm"
+              variant="ghost"
+            >
+              <Flag className="h-4 w-4 mr-1" />
+              Forfeit
+            </Button>
+          </div>
+        )}
 
         {/* Battery Information - Desktop (fixed position) */}
         {batteryDetails && (
