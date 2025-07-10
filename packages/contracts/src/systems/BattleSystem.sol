@@ -68,7 +68,9 @@ contract BattleSystem is System {
     bytes32 globalPlayer1Id = battle.player1Id;
     bytes32 globalPlayer2Id = battle.player2Id;
 
-    require(EntityHelpers.addressToGlobalPlayerId(_msgSender()) == globalPlayer1Id, "BattleSystem: not player1");
+    if (battle.turn == globalPlayer1Id) {
+      require(EntityHelpers.addressToGlobalPlayerId(_msgSender()) == globalPlayer1Id, "BattleSystem: not player1");
+    }
 
     if (battle.turn == globalPlayer1Id) {
       // For all actions remaining, add that number of skipped actions

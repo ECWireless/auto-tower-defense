@@ -173,6 +173,13 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__grantElectricityToTopKingdoms",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__mintUsdcToPlayer",
     "inputs": [
       {
@@ -470,6 +477,24 @@ declare const abi: [
         "name": "newElectricityBalance",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateUsername",
+    "inputs": [
+      {
+        "name": "playerAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "newUsername",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [],

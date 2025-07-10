@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, Patent, SolarFarmDetails } from "../codegen/index.sol";
+import { AddressBook, KingdomsByLevel, Patent, SavedKingdom, SolarFarmDetails, TopLevel, Username, UsernameTaken } from "../codegen/index.sol";
 import { BatteryHelpers } from "../Libraries/BatteryHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { PatentHelpers } from "../Libraries/PatentHelpers.sol";
@@ -87,5 +87,61 @@ contract AdminSystem is System {
 
   function updateSellEmitterAddress(address sellEmitterAddress) external {
     AddressBook.setSellEmitterAddress(sellEmitterAddress);
+  }
+
+  function updateUsername(address playerAddress, string memory newUsername) external {
+    bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(playerAddress);
+    require(globalPlayerId != bytes32(0), "AdminSystem: player not registered");
+    string memory oldUsername = Username.get(globalPlayerId);
+    bytes32 oldUsernameBytes = keccak256(abi.encodePacked(oldUsername));
+    bytes32 newUsernameBytes = keccak256(abi.encodePacked(newUsername));
+    require(oldUsernameBytes != newUsernameBytes, "AdminSystem: new username is the same as the current one");
+    require(!UsernameTaken.get(newUsernameBytes), "AdminSystem: username is already taken");
+    Username.set(globalPlayerId, newUsername);
+    UsernameTaken.set(oldUsernameBytes, false);
+    UsernameTaken.set(newUsernameBytes, true);
+  }
+
+  function grantElectricityToTopKingdoms() external {
+    uint256 topLevel = TopLevel.get();
+    require(topLevel > 1, "AdminSystem: no kingdoms to reward");
+
+    uint256 count = 0;
+    for (uint256 i = 2; i <= topLevel; i++) {
+      bytes32[] memory kingdomsInLevel = KingdomsByLevel.get(i);
+      if (kingdomsInLevel.length == 0) {
+        continue;
+      }
+      for (uint256 j = 0; j < kingdomsInLevel.length; j++) {
+        count++;
+      }
+    }
+
+    bytes32[] memory kingdoms = new bytes32[](count);
+    uint256 index = 0;
+    for (uint256 i = 2; i <= topLevel; i++) {
+      bytes32[] memory kingdomsInLevel = KingdomsByLevel.get(i);
+      if (kingdomsInLevel.length == 0) {
+        continue; // Skip if no kingdoms in this level
+      }
+      for (uint256 j = 0; j < kingdomsInLevel.length; j++) {
+        kingdoms[index] = kingdomsInLevel[j];
+        index++;
+      }
+    }
+    require(kingdoms.length > 0, "AdminSystem: no kingdoms to reward");
+
+    // Loop through each kingdom and reward 192kWh from the Solar Farm for each win of the kingdom
+    for (uint256 i = 0; i < kingdoms.length; i++) {
+      bytes32 kingdomId = kingdoms[i];
+      uint256 kingdomWins = SavedKingdom.getWins(kingdomId);
+      if (kingdomWins > 0) {
+        uint256 reward = kingdomWins * 192e3; // 192kWh in Wh
+        uint256 currentElectricityBalance = SolarFarmDetails.getElectricityBalance();
+        require(currentElectricityBalance >= reward, "AdminSystem: not enough electricity in Solar Farm");
+        SolarFarmDetails.setElectricityBalance(currentElectricityBalance - reward);
+        SavedKingdom.setElectricityBalance(kingdomId, SavedKingdom.getElectricityBalance(kingdomId) + reward);
+      }
+    }
   }
 }
