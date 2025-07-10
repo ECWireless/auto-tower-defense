@@ -28,7 +28,10 @@ const getContractError = (error: BaseError): string => {
 
   if (error instanceof UserOperationExecutionError) {
     const errorMessage = error.cause.shortMessage;
-    if (errorMessage.includes('sufficient funds')) {
+    if (
+      errorMessage.includes('sufficient funds') ||
+      errorMessage.includes('UserOperation reverted during simulation')
+    ) {
       return 'Insufficient funds. Please top up your account.';
     }
     return (
