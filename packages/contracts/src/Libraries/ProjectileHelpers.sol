@@ -23,6 +23,23 @@ library ProjectileHelpers {
 
     _simulateTicks(towers);
 
+    (int16 mapHeight, int16 mapWidth) = MapConfig.get();
+
+    bytes32 player1CastleId = EntityAtPosition.get(EntityHelpers.positionToEntityKey(battleId, 5, mapHeight / 2));
+    bytes32 player2CastleId = EntityAtPosition.get(
+      EntityHelpers.positionToEntityKey(battleId, mapWidth - 5, mapHeight / 2)
+    );
+    uint8 player1CastleHealth = Health.getCurrentHealth(player1CastleId);
+    uint8 player2CastleHealth = Health.getCurrentHealth(player2CastleId);
+
+    if (player2CastleHealth == 0 && Castle.get(player2CastleId)) {
+      // If both castles destroyed, or player 2 castle destroyed, give win to player 1
+      endBattle(battleId, battle.player1Id);
+    } else if (player1CastleHealth == 0 && Castle.get(player1CastleId)) {
+      // If player 1 castle destroyed, and player 2 castle is not, give win to player 2
+      endBattle(battleId, battle.player2Id);
+    }
+
     bool isBattleOver = Battle.getEndTimestamp(battleId) != 0;
     if (battle.roundCount > MAX_ROUNDS && !isBattleOver) {
       endBattle(battleId, battle.player2Id);
@@ -216,26 +233,17 @@ library ProjectileHelpers {
       return;
     }
     uint8 newHealth = entityHealth - 1;
+    Health.setCurrentHealth(positionEntity, newHealth);
+    towers[i].projectileAddress = address(0);
 
     if (Castle.get(positionEntity)) {
-      Health.setCurrentHealth(positionEntity, newHealth);
-      towers[i].projectileAddress = address(0);
-
       if (newHealth == 0) {
         bytes32 battleId = CurrentBattle.get(towers[i].id);
         if (battleId == 0) {
           battleId = CurrentBattle.get(positionEntity);
         }
-
-        // Preference is given to player 1 if both castles are destroyed at the same time
-        if (Battle.getEndTimestamp(battleId) == 0) {
-          endBattle(battleId, Owner.get(towers[i].id));
-        }
       }
     } else {
-      Health.setCurrentHealth(positionEntity, newHealth);
-      towers[i].projectileAddress = address(0);
-
       if (newHealth == 0) {
         _removeDestroyedTower(positionEntity);
       }
