@@ -167,7 +167,8 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
           });
 
           const flattenedSourceCode = formattedSourceCode
-            .replace(/\s+/g, ' ')
+            .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+            .replace(/\r?\n\s*/g, '\n') // trim line indentation but keep newlines
             .trim();
           newPatent.sourceCode = flattenedSourceCode;
 
@@ -277,7 +278,10 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       const { error, success } = await modifyTowerSystem(
         tower.id,
         bytecode,
-        sourceCode.replace(/\s+/g, ' ').trim(),
+        sourceCode
+          .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+          .replace(/\r?\n\s*/g, '\n') // trim line indentation but keep newlines
+          .trim(),
       );
 
       if (error && !success) {
@@ -395,7 +399,10 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
         bytecode,
         description,
         name,
-        sourceCode.replace(/\s+/g, ' ').trim(),
+        sourceCode
+          .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+          .replace(/\r?\n\s*/g, '\n') // trim line indentation but keep newlines
+          .trim(),
       );
 
       if (error && !success) {
@@ -410,7 +417,12 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       const _patents = await onRefreshPatentList();
 
       const matchingPatent = _patents.find(
-        s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
+        s =>
+          s.sourceCode ===
+          sourceCode
+            .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+            .replace(/\r?\n\s*/g, '\n') // trim line indentation but keep newlines
+            .trim(),
       );
       if (matchingPatent) {
         onSelectPatent(matchingPatent);
@@ -474,7 +486,12 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       const _patents = await onRefreshPatentList();
 
       const matchingPatent = _patents.find(
-        s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
+        s =>
+          s.sourceCode ===
+          sourceCode
+            .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+            .replace(/\r?\n\s*/g, '\n') // trim line indentation but keep newlines
+            .trim(),
       );
       if (matchingPatent) {
         onSelectPatent(matchingPatent);
@@ -552,7 +569,10 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
 
   const isPatentRegistered = useMemo(() => {
     if (!sourceCode) return false;
-    const flattenedSourceCode = sourceCode.replace(/\s+/g, ' ').trim();
+    const flattenedSourceCode = sourceCode
+      .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+      .replace(/\r?\n\s*/g, '\n') // trim line indentation but keep newlines
+      .trim();
 
     return patents.slice(1).some(s => s.sourceCode === flattenedSourceCode);
   }, [patents, sourceCode]);
@@ -904,7 +924,10 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
               height="300px"
               onChange={value => {
                 if (!value) return;
-                const flattenedSourceCode = value.replace(/\s+/g, ' ').trim();
+                const flattenedSourceCode = value
+                  .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+                  .replace(/\r?\n\s*/g, '\n') // trim line indentation but keep newlines
+                  .trim();
 
                 const patentMatch = patents
                   .slice(1)

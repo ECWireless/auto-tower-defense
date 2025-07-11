@@ -85,12 +85,12 @@ library TowerHelpers {
   ) external returns (address projectileLogicAddress) {
     BattleData memory currentBattle = Battle.get(battleId);
 
-        address newSystem;
+    address newSystem;
     assembly {
       newSystem := create(0, add(bytecode, 0x20), mload(bytecode))
     }
 
-        uint256 size;
+    uint256 size;
     assembly {
       size := extcodesize(newSystem)
     }

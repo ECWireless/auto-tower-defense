@@ -172,6 +172,10 @@ app.post("/compile", (req, res) => {
             "*": ["*"],
           },
         },
+        metadata: {
+          useLiteralContent: true,
+          bytecodeHash: "none",
+        },
       },
     };
 
