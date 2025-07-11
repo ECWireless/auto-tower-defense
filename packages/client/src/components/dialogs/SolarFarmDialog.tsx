@@ -783,17 +783,13 @@ export const SolarFarmDialog: React.FC = () => {
       return 'Amount must be greater than 1.92 kWh';
     }
 
+    const bigIntTxCost = parseUnits(calculateTransactionCost().toString(), 6);
+    const externalChain = getChain(chainId);
+
     if (isBuying) {
-      const bigIntTxCost = parseUnits(calculateTransactionCost().toString(), 6);
-      const externalChain = getChain(chainId);
       if (bigIntTxCost > playerUSDCBalance) {
         return externalChain
           ? `Insufficient ${externalChain.name} USDC balance`
-          : 'Unsupported chain';
-      }
-      if (bigIntTxCost > solarFarmUSDCBalance) {
-        return externalChain
-          ? `The Solar Farm does not have enough USDC on ${externalChain.name}`
           : 'Unsupported chain';
       }
       if (
@@ -803,6 +799,11 @@ export const SolarFarmDialog: React.FC = () => {
         return 'Not enough electricity available in Solar Farm';
       }
     } else {
+      if (bigIntTxCost > solarFarmUSDCBalance) {
+        return externalChain
+          ? `The Solar Farm does not have enough USDC on ${externalChain.name}`
+          : 'Unsupported chain';
+      }
       if (
         parseUnits(electricityAmount, 3) >
         (batteryDetails?.reserveBalance ?? BigInt(0))
