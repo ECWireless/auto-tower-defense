@@ -11,6 +11,7 @@ import { useAccount } from 'wagmi';
 import { AsyncRevenueDialog } from '@/components/dialogs/AsyncRevenueDialog';
 import { SettingsDialog } from '@/components/dialogs/SettingsDialog';
 import { SolarFarmDialog } from '@/components/dialogs/SolarFarmDialog';
+import { Footer } from '@/components/Footer';
 import { Toaster } from '@/components/ui/sonner';
 import { useMUD } from '@/hooks/useMUD';
 import AppRoutes from '@/Routes';
@@ -112,6 +113,7 @@ export const App = (): JSX.Element => {
     <Router>
       <Analytics />
       <AppRoutes />
+      <Footer />
       <SettingsDialog />
       {savedUsername && <SolarFarmDialog />}
       <AsyncRevenueDialog />
