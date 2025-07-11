@@ -84,6 +84,9 @@ export const SolarFarmDialog: React.FC = () => {
   >(null);
 
   const [playerUSDCBalance, setPlayerUSDCBalance] = useState<bigint>(BigInt(0));
+  const [solarFarmUSDCBalance, setSolarFarmUSDCBalance] = useState<bigint>(
+    BigInt(0),
+  );
 
   const batteryDetails = useComponentValue(BatteryDetails, globalPlayerId);
   const solarFarmDetails = useComponentValue(SolarFarmDetails, singletonEntity);
@@ -200,10 +203,82 @@ export const SolarFarmDialog: React.FC = () => {
     solarFarmDetails,
   ]);
 
-  const getUsdcBalance = useCallback(async () => {
-    try {
-      if (!chainId) {
-        throw new Error('Chain ID not found');
+  const getUsdcBalance = useCallback(
+    async (targetAddress: string) => {
+      try {
+        if (!chainId) {
+          throw new Error('Chain ID not found');
+        }
+
+        const externalChain = getChain(chainId);
+        if (!externalChain) {
+          throw new Error('External chain not found');
+        }
+
+        const usdcAddress = USDC_ADDRESSES[externalChain.id];
+        if (!usdcAddress) {
+          throw new Error('USDC address not found');
+        }
+
+        const publicClient = createPublicClient({
+          batch: { multicall: false },
+          chain: externalChain,
+          transport: http(),
+        });
+
+        if (!publicClient) {
+          return BigInt(0);
+        }
+
+        const balance = await publicClient.readContract({
+          address: usdcAddress as `0x${string}`,
+          abi: [
+            {
+              constant: true,
+              inputs: [{ name: 'account', type: 'address' }],
+              name: 'balanceOf',
+              outputs: [{ name: 'balance', type: 'uint256' }],
+              type: 'function',
+            },
+          ],
+          functionName: 'balanceOf',
+          args: [targetAddress],
+        });
+
+        return balance as bigint;
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Smart contract error: ${(error as Error).message}`);
+
+        toast.error('Error Fetching USDC Balance', {
+          description: (error as Error).message,
+        });
+        return BigInt(0);
+      }
+    },
+    [chainId],
+  );
+
+  const isBridgeRequired = useMemo(() => {
+    const externalChain = getChain(chainId);
+    if (!externalChain) {
+      return false;
+    }
+    return externalChain.id !== getGameChain().id;
+  }, [chainId]);
+
+  useEffect(() => {
+    const fetchPlayerUsdcBalance = async () => {
+      if (!playerAddress) return;
+      const usdcBalance = await getUsdcBalance(playerAddress);
+      setPlayerUSDCBalance(usdcBalance);
+    };
+    const fetchSolarFarmUsdcBalance = async () => {
+      const { solarFarmAddress } =
+        getComponentValue(AddressBook, singletonEntity) ?? {};
+
+      if (!solarFarmAddress) {
+        throw new Error('Solar farm address not found');
       }
 
       const externalChain = getChain(chainId);
@@ -211,58 +286,30 @@ export const SolarFarmDialog: React.FC = () => {
         throw new Error('External chain not found');
       }
 
-      const usdcAddress = USDC_ADDRESSES[externalChain.id];
-      if (!usdcAddress) {
-        throw new Error('USDC address not found');
+      const buyEscrowAddress = ESCROW_ADDRESSES[externalChain.id];
+      if (isBridgeRequired && !buyEscrowAddress) {
+        throw new Error('Buy escrow address not found');
       }
 
-      const publicClient = createPublicClient({
-        batch: { multicall: false },
-        chain: externalChain,
-        transport: http(),
-      });
-
-      if (!publicClient) {
-        return BigInt(0);
-      }
-
-      const balance = await publicClient.readContract({
-        address: usdcAddress as `0x${string}`,
-        abi: [
-          {
-            constant: true,
-            inputs: [{ name: 'account', type: 'address' }],
-            name: 'balanceOf',
-            outputs: [{ name: 'balance', type: 'uint256' }],
-            type: 'function',
-          },
-        ],
-        functionName: 'balanceOf',
-        args: [playerAddress],
-      });
-
-      return balance as bigint;
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`Smart contract error: ${(error as Error).message}`);
-
-      toast.error('Error Fetching USDC Balance', {
-        description: (error as Error).message,
-      });
-      return BigInt(0);
-    }
-  }, [chainId, playerAddress]);
-
-  useEffect(() => {
-    const fetchUsdcBalance = async () => {
-      const usdcBalance = await getUsdcBalance();
-      setPlayerUSDCBalance(usdcBalance);
+      const usdcBalance = await getUsdcBalance(
+        isBridgeRequired ? buyEscrowAddress : solarFarmAddress,
+      );
+      setSolarFarmUSDCBalance(usdcBalance);
     };
 
     if (isSolarFarmDialogOpen) {
-      fetchUsdcBalance();
+      fetchPlayerUsdcBalance();
+      fetchSolarFarmUsdcBalance();
     }
-  }, [getUsdcBalance, isSolarFarmDialogOpen]);
+  }, [
+    AddressBook,
+    chainId,
+    getUsdcBalance,
+    isBridgeRequired,
+    isSolarFarmDialogOpen,
+    playerAddress,
+    solarFarmDetails,
+  ]);
 
   const handleElectricityAmountChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -299,14 +346,6 @@ export const SolarFarmDialog: React.FC = () => {
     }
     return Number(transactionCost.toFixed(2));
   }, [electricityAmount, solarFarmDetails?.whPerCentPrice]);
-
-  const isBridgeRequired = useMemo(() => {
-    const externalChain = getChain(chainId);
-    if (!externalChain) {
-      return false;
-    }
-    return externalChain.id !== getGameChain().id;
-  }, [chainId]);
 
   const onApprove = useCallback(async () => {
     const { solarFarmAddress } =
@@ -384,6 +423,10 @@ export const SolarFarmDialog: React.FC = () => {
       setIsProcessing(true);
       playSfx('click2');
 
+      if (!playerAddress) {
+        throw new Error('Player address not found');
+      }
+
       if (isBuying) {
         await onApprove();
       }
@@ -405,7 +448,7 @@ export const SolarFarmDialog: React.FC = () => {
           isBuying ? 'Bought' : 'Sold'
         } ${electricityAmount} kWh of electricity!`,
       );
-      const usdcBalance = await getUsdcBalance();
+      const usdcBalance = await getUsdcBalance(playerAddress);
       setPlayerUSDCBalance(usdcBalance);
       setElectricityAmount('1.92');
     } catch (error) {
@@ -428,6 +471,7 @@ export const SolarFarmDialog: React.FC = () => {
     getUsdcBalance,
     isBuying,
     onApprove,
+    playerAddress,
     playSfx,
     sellElectricity,
   ]);
@@ -439,6 +483,10 @@ export const SolarFarmDialog: React.FC = () => {
 
       if (!walletClient) {
         throw new Error('Wallet client not found');
+      }
+
+      if (!playerAddress) {
+        throw new Error('Player address not found');
       }
 
       if (!sessionClient) {
@@ -698,7 +746,7 @@ export const SolarFarmDialog: React.FC = () => {
           isBuying ? 'Bought' : 'Sold'
         } ${electricityAmount} kWh of electricity!`,
       );
-      const usdcBalance = await getUsdcBalance();
+      const usdcBalance = await getUsdcBalance(playerAddress);
       setPlayerUSDCBalance(usdcBalance);
       setElectricityAmount('1.92');
     } catch (error) {
@@ -735,9 +783,10 @@ export const SolarFarmDialog: React.FC = () => {
       return 'Amount must be greater than 1.92 kWh';
     }
 
+    const bigIntTxCost = parseUnits(calculateTransactionCost().toString(), 6);
+    const externalChain = getChain(chainId);
+
     if (isBuying) {
-      const bigIntTxCost = parseUnits(calculateTransactionCost().toString(), 6);
-      const externalChain = getChain(chainId);
       if (bigIntTxCost > playerUSDCBalance) {
         return externalChain
           ? `Insufficient ${externalChain.name} USDC balance`
@@ -750,6 +799,11 @@ export const SolarFarmDialog: React.FC = () => {
         return 'Not enough electricity available in Solar Farm';
       }
     } else {
+      if (bigIntTxCost > solarFarmUSDCBalance) {
+        return externalChain
+          ? `The Solar Farm does not have enough USDC on ${externalChain.name}`
+          : 'Unsupported chain';
+      }
       if (
         parseUnits(electricityAmount, 3) >
         (batteryDetails?.reserveBalance ?? BigInt(0))
@@ -766,6 +820,7 @@ export const SolarFarmDialog: React.FC = () => {
     isBuying,
     playerUSDCBalance,
     solarFarmDetails,
+    solarFarmUSDCBalance,
   ]);
 
   const lowElectricityBalanceMessage = useMemo(() => {
@@ -878,8 +933,7 @@ export const SolarFarmDialog: React.FC = () => {
                 <div className="text-gray-400 text-sm">
                   Balance:{' '}
                   <span className="text-green-400">
-                    $
-                    {formatUnits(solarFarmDetails?.fiatBalance ?? BigInt(0), 6)}
+                    ${formatUnits(solarFarmUSDCBalance, 6)}
                   </span>
                 </div>
               </div>
