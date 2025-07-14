@@ -68,7 +68,7 @@ export const WelcomeDialog: React.FC = () => {
               How to Play
             </h3>
             <p>
-              The ultimate goal of Auto Tower Defense to to accumulate
+              The ultimate goal of Auto Tower Defense to accumulate
               <span className="font-semibold text-yellow-400">
                 {' '}
                 electricity

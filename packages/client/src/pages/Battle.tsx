@@ -263,7 +263,7 @@ export const InnerBattlePage = (): JSX.Element => {
         {/* Battery Information - Desktop (fixed position) */}
         {batteryDetails && (
           <div
-            className="fixed flex-col hidden items-center left-1/2 sm:flex top-4 z-10"
+            className={`${tutorialStep === TutorialSteps.TWO && 'battery-button-tutorial '} fixed flex-col hidden items-center left-1/2 sm:flex top-4 z-10`}
             style={{
               transform: 'translateX(-50%)',
             }}
