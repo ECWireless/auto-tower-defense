@@ -484,6 +484,24 @@
   },
   {
     "type": "function",
+    "name": "app__updateTemplateBytecode",
+    "inputs": [
+      {
+        "name": "oldBytecode",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "newBytecode",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__updateUsername",
     "inputs": [
       {
