@@ -32,7 +32,7 @@ export const CastleHitDialog: React.FC = () => {
           className="bg-gray-900 border border-pink-900/50 text-white"
         >
           <DialogHeader>
-            <DialogTitle className="text-pink-400 text-xl">
+            <DialogTitle className="text-pink-400 text-2xl">
               Your Castle Was Hit!
             </DialogTitle>
           </DialogHeader>
@@ -62,7 +62,7 @@ export const CastleHitDialog: React.FC = () => {
         className="bg-gray-900 border border-cyan-900/50 text-white"
       >
         <DialogHeader>
-          <DialogTitle className="text-cyan-400 text-xl">
+          <DialogTitle className="text-cyan-400 text-2xl">
             You Hit {battle.player2Username}&apos;s Castle!
           </DialogTitle>
         </DialogHeader>

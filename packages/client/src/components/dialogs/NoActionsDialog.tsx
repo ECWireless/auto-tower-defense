@@ -28,7 +28,7 @@ export const NoActionsDialog: React.FC = () => {
         className="bg-gray-900 border border-pink-900/50 text-white"
       >
         <DialogHeader>
-          <DialogTitle className="text-pink-400 text-xl">
+          <DialogTitle className="text-pink-400 text-2xl">
             No Actions Remaining
           </DialogTitle>
         </DialogHeader>

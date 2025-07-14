@@ -93,7 +93,7 @@ export const AsyncRevenueDialog: React.FC = () => {
     >
       <DialogContent className="bg-gray-900 border border-blue-900/50 max-h-[90vh] overflow-y-auto text-white">
         <DialogHeader>
-          <DialogTitle className="text-blue-400 text-xl">
+          <DialogTitle className="text-blue-400 text-2xl">
             Revenue Earned
           </DialogTitle>
           <DialogDescription className="mt-2 text-gray-300">

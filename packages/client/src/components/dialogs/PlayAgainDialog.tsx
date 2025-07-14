@@ -226,7 +226,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
           className="bg-gray-900 border border-pink-900/50 text-white"
         >
           <DialogHeader>
-            <DialogTitle className="text-red-400 text-xl">
+            <DialogTitle className="text-red-400 text-2xl">
               An Error Occurred
             </DialogTitle>
           </DialogHeader>
@@ -252,7 +252,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
           className="bg-gray-900 border border-cyan-900/50 max-h-[90vh] overflow-y-auto text-white"
         >
           <DialogHeader>
-            <DialogTitle className="text-cyan-400 text-xl">
+            <DialogTitle className="text-cyan-400 text-2xl">
               Victory!
             </DialogTitle>
           </DialogHeader>
@@ -380,7 +380,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
       >
         <DialogContent className="bg-gray-900 border border-blue-900/50 max-h-[90vh] overflow-y-auto text-white">
           <DialogHeader>
-            <DialogTitle className="text-blue-400 text-xl">
+            <DialogTitle className="text-blue-400 text-2xl">
               Victory!
             </DialogTitle>
             <DialogDescription className="text-gray-300 mt-2">
@@ -503,7 +503,7 @@ export const PlayAgainDialog: React.FC<PlayAgainDialogProps> = ({
     >
       <DialogContent className="bg-gray-900 border border-pink-900/50  max-h-[90vh] overflow-y-auto text-white">
         <DialogHeader>
-          <DialogTitle className="text-pink-400 text-xl">Defeat!</DialogTitle>
+          <DialogTitle className="text-pink-400 text-2xl">Defeat!</DialogTitle>
           <DialogDescription className="mt-2 text-gray-300">
             Your castle has been destroyed by the enemy.
           </DialogDescription>
