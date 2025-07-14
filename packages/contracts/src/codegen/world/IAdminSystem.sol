@@ -35,4 +35,6 @@ interface IAdminSystem {
   function app__updateUsername(address playerAddress, string memory newUsername) external;
 
   function app__grantElectricityToTopKingdoms() external;
+
+  function app__updateTemplateBytecode(bytes memory oldBytecode, bytes memory newBytecode) external;
 }
