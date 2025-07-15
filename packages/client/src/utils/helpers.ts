@@ -1,5 +1,5 @@
 import { garnet, pyrope } from '@latticexyz/common/chains';
-import { Chain } from 'viem';
+import { Chain, formatUnits } from 'viem';
 import { anvil, base, baseSepolia, redstone } from 'viem/chains';
 
 import { CHAIN_ID, SUPPORTED_CHAINS, WORLD_ADDRESS } from './constants';
@@ -125,4 +125,9 @@ export const getChainLogo = (chainId?: number): string => {
     default:
       return '';
   }
+};
+
+export const wattToUsdc = (watt: bigint): string => {
+  const usdcValue = watt / BigInt(1920); // $0.01 per 1.92 watt hours
+  return `$${Number(formatUnits(usdcValue, 2))}`;
 };

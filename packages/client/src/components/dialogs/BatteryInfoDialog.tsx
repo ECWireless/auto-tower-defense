@@ -82,9 +82,10 @@ export const BatteryInfoDialog: React.FC<BatteryInfoDialogProps> = ({
                 Battery System
               </h3>
               <p className="text-gray-200">
-                Your battery has a capacity of 24 kWh. Each battle run costs{' '}
-                <span className="font-semibold text-white">8 kWh</span> to run.
-                The battery naturally recharges over time.
+                Your battery has a capacity of 24 kWh ($0.12). Each battle run
+                costs{' '}
+                <span className="font-semibold text-white">8 kWh ($0.04)</span>{' '}
+                to run. The battery naturally recharges over time.
               </p>
             </div>
           </div>
