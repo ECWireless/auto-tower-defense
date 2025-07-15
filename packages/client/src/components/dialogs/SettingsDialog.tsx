@@ -1,6 +1,8 @@
 import { AccountButton } from '@latticexyz/entrykit/internal';
-import { Music, Settings, Volume2, VolumeX } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useComponentValue } from '@latticexyz/react';
+import { Loader2, Music, Settings, Volume2, VolumeX } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -9,15 +11,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useMUD } from '@/hooks/useMUD';
 import type { AudioSettings } from '@/utils/types';
 
 export const SettingsDialog: React.FC = () => {
-  const { setMusicVolume, setSfxMuted, setSfxVolume, toggleMusic } =
+  const {
+    components: { Username },
+    network: { globalPlayerId },
+    systemCalls: { updateUsername },
+  } = useMUD();
+  const { playSfx, setMusicVolume, setSfxMuted, setSfxVolume, toggleMusic } =
     useSettings();
+
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<AudioSettings>({
     musicEnabled: true,
@@ -25,6 +35,65 @@ export const SettingsDialog: React.FC = () => {
     sfxEnabled: true,
     sfxVolume: 80,
   });
+  const [username, setUsername] = useState('');
+  const [newUsername, setNewUsername] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const savedUsername = useComponentValue(Username, globalPlayerId)?.value;
+  useEffect(() => {
+    if (!globalPlayerId) return;
+    if (savedUsername) {
+      setUsername(savedUsername);
+      setNewUsername(savedUsername);
+    }
+  }, [globalPlayerId, savedUsername]);
+
+  const usernameError = useMemo(() => {
+    if (!newUsername) return null;
+    if (newUsername.length > 20) {
+      return 'Username must be 20 characters or less';
+    }
+    return null;
+  }, [newUsername]);
+
+  const isDisabled = useMemo(() => {
+    if (isUpdating) return true;
+    if (!username) return true;
+    if (!newUsername) return true;
+    if (usernameError) return true;
+    if (newUsername.length > 20) return true;
+    if (newUsername === username) return true;
+    return false;
+  }, [isUpdating, newUsername, username, usernameError]);
+
+  const onUpdateUsername = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (isDisabled) return;
+      try {
+        setIsUpdating(true);
+        playSfx('click2');
+
+        const { error, success } = await updateUsername(newUsername.trim());
+
+        if (error && !success) {
+          throw new Error(error);
+        }
+
+        toast.success('Username Updated!');
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Smart contract error: ${(error as Error).message}`);
+
+        toast.error('Error Updating Username', {
+          description: (error as Error).message,
+        });
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [isDisabled, newUsername, playSfx, updateUsername],
+  );
 
   // Load settings from localStorage on component mount
   useEffect(() => {
@@ -99,6 +168,38 @@ export const SettingsDialog: React.FC = () => {
             >
               <AccountButton />
             </div>
+
+            {!!username && (
+              <form onSubmit={onUpdateUsername}>
+                <div className="mb-4 space-y-2">
+                  <Label className="text-gray-300 text-sm" htmlFor="username">
+                    Username
+                  </Label>
+                  <Input
+                    className="bg-gray-800 border-gray-700 text-white"
+                    disabled={false}
+                    id="username"
+                    onChange={e => setNewUsername(e.target.value)}
+                    required
+                    type="text"
+                    value={newUsername}
+                  />
+                  {usernameError && (
+                    <div className="text-red-500 text-sm ">{usernameError}</div>
+                  )}
+                </div>
+                <div className="flex justify-end mb-8">
+                  <Button
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                    disabled={isDisabled}
+                    type="submit"
+                  >
+                    {isUpdating && <Loader2 className="animate-spin h-6 w-6" />}
+                    Update Username
+                  </Button>
+                </div>
+              </form>
+            )}
 
             {/* Music Settings */}
             <div className="space-y-4">

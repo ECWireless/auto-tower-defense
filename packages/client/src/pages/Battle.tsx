@@ -60,7 +60,7 @@ export const InnerBattlePage = (): JSX.Element => {
   const { isConnected, isReconnecting } = useAccount();
   const { data: sessionClient } = useSessionClient();
   const {
-    components: { BatteryDetails, SolarFarmDetails },
+    components: { BatteryDetails, SolarFarmDetails, Username },
     network: { globalPlayerId },
     systemCalls: { claimRecharge },
   } = useMUD();
@@ -74,6 +74,7 @@ export const InnerBattlePage = (): JSX.Element => {
     myCastlePosition,
     onInstallTower,
     onMoveTower,
+    refreshBattle,
     towers,
   } = useBattle();
   const { playSfx } = useSettings();
@@ -97,6 +98,14 @@ export const InnerBattlePage = (): JSX.Element => {
       navigate('/');
     }
   }, [isConnected, isReconnecting, navigate, sessionClient]);
+
+  // In case the user updates their username in the settings dialog
+  const savedUsername = useComponentValue(Username, globalPlayerId)?.value;
+  useEffect(() => {
+    if (savedUsername) {
+      refreshBattle();
+    }
+  }, [refreshBattle, savedUsername]);
 
   const [isForfeitDialogOpen, setShowForfeitDialog] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);

@@ -22,6 +22,10 @@ contract AccountSystem is System {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
     require(globalPlayerId != bytes32(0), "AccountSystem: player not registered");
 
+    // Validate username
+    require(bytes(newUsername).length > 0, "AccountHelpers: username is empty");
+    require(bytes(newUsername).length <= 20, "AccountHelpers: username is too long");
+
     string memory oldUsername = Username.get(globalPlayerId);
     bytes32 oldUsernameBytes = keccak256(abi.encodePacked(oldUsername));
     bytes32 newUsernameBytes = keccak256(abi.encodePacked(newUsername));

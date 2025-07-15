@@ -134,6 +134,10 @@ export const useMUD = (): {
       error: string | undefined;
       success: boolean;
     }>;
+    updateUsername: (newUsername: string) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
   };
 } => {
   const { address: playerAddress } = useAccount();
@@ -730,6 +734,37 @@ export const useMUD = (): {
     }
   };
 
+  const updateUsername = async (newUsername: string) => {
+    try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [newUsername],
+        functionName: 'app__updateUsername',
+      });
+
+      const tx = await worldContract.write.app__updateUsername([newUsername]);
+      const txResult = await sync.data.waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to update username.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const network = {
     globalPlayerId,
   };
@@ -751,6 +786,7 @@ export const useMUD = (): {
     sellElectricity,
     sellElectricityThroughRelay,
     undoAction,
+    updateUsername,
   };
   return { components, network, systemCalls };
 };

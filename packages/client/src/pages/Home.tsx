@@ -129,7 +129,7 @@ export const Home = (): JSX.Element => {
         }
 
         if (!globalPlayerId) {
-          const { error, success } = await createBattle(username, true);
+          const { error, success } = await createBattle(username.trim(), true);
           if (error && !success) {
             throw new Error(error);
           }
@@ -292,14 +292,14 @@ export const Home = (): JSX.Element => {
     }
   }, [claimRecharge, playSfx]);
 
+  const savedUsername = useComponentValue(Username, globalPlayerId)?.value;
   useEffect(() => {
     if (!globalPlayerId) return;
-    const savedUsername = getComponentValue(Username, globalPlayerId)?.value;
     if (savedUsername) {
       setUsername(savedUsername);
       setUsernameSaved(true);
     }
-  }, [Username, globalPlayerId]);
+  }, [globalPlayerId, savedUsername]);
 
   const usernameError = useMemo(() => {
     if (!username) return null;
