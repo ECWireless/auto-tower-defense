@@ -130,6 +130,10 @@ export const useMUD = (): {
       success: boolean;
       txHash?: `0x${string}`;
     }>;
+    transferAccount: (newOwner: `0x${string}`) => Promise<{
+      error: string | undefined;
+      success: boolean;
+    }>;
     undoAction: () => Promise<{
       error: string | undefined;
       success: boolean;
@@ -703,6 +707,37 @@ export const useMUD = (): {
     }
   };
 
+  const transferAccount = async (newOwner: `0x${string}`) => {
+    try {
+      if (!(worldContract && sync.data)) {
+        throw new Error('World contract or sync data not found');
+      }
+
+      await publicClient.simulateContract({
+        abi: worldContract.abi,
+        account: playerAddress,
+        address: worldContract.address,
+        args: [newOwner],
+        functionName: 'app__transferAccount',
+      });
+
+      const tx = await worldContract.write.app__transferAccount([newOwner]);
+      const txResult = await sync.data.waitForTransaction(tx);
+      const { status } = txResult;
+      const success = status === 'success';
+
+      return {
+        error: success ? undefined : 'Failed to transfer account.',
+        success,
+      };
+    } catch (error) {
+      return {
+        error: getContractError(error as BaseError),
+        success: false,
+      };
+    }
+  };
+
   const undoAction = async () => {
     try {
       if (!(worldContract && sync.data)) {
@@ -785,6 +820,7 @@ export const useMUD = (): {
     registerPatent,
     sellElectricity,
     sellElectricityThroughRelay,
+    transferAccount,
     undoAction,
     updateUsername,
   };

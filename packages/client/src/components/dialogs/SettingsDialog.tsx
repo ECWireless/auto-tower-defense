@@ -19,6 +19,8 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
 import type { AudioSettings } from '@/utils/types';
 
+import { TransferOwnershipDialog } from './TranserOwnershipDialog';
+
 export const SettingsDialog: React.FC = () => {
   const {
     components: { Username },
@@ -38,6 +40,8 @@ export const SettingsDialog: React.FC = () => {
   const [username, setUsername] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
 
   const savedUsername = useComponentValue(Username, globalPlayerId)?.value;
   useEffect(() => {
@@ -292,6 +296,22 @@ export const SettingsDialog: React.FC = () => {
               Settings are automatically saved to your browser.
             </div>
           </div>
+
+          {!!username && (
+            <div className="flex justify-center mt-8">
+              <Button
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                onClick={() => setIsTransferDialogOpen(true)}
+                type="button"
+              >
+                Transfer Ownership
+              </Button>
+            </div>
+          )}
+          <TransferOwnershipDialog
+            isTransferDialogOpen={isTransferDialogOpen}
+            setIsTransferDialogOpen={setIsTransferDialogOpen}
+          />
         </DialogContent>
       </Dialog>
     </>
