@@ -1,4 +1,6 @@
 import { useDndContext } from '@dnd-kit/core';
+import { useComponentValue } from '@latticexyz/react';
+import { singletonEntity } from '@latticexyz/store-sync/recs';
 import { Binoculars, Loader2, Wrench } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -52,6 +54,7 @@ const GRID_COLS = 14;
 
 export const BattleBoard: React.FC = () => {
   const {
+    components: { DefaultLogic },
     network: { globalPlayerId },
   } = useMUD();
   const {
@@ -77,6 +80,11 @@ export const BattleBoard: React.FC = () => {
   const [selectedTower, setSelectedTower] = useState<Tower | null>(null);
   const [isAssemblyDrawerOpen, setIsAssemblyDrawerOpen] = useState(false);
   const [tooltipSelection, setTooltipSelection] = useState<string | null>(null);
+
+  const defaultLogicAddress = useComponentValue(
+    DefaultLogic,
+    singletonEntity,
+  )?.value;
 
   const onViewTower = useCallback(
     (tower: Tower) => {
@@ -324,8 +332,14 @@ export const BattleBoard: React.FC = () => {
                                     <GiCannon
                                       className={
                                         isLeftSide
-                                          ? 'text-cyan-400'
-                                          : 'text-pink-400'
+                                          ? towerOnTile.projectileLogicAddress ===
+                                            defaultLogicAddress
+                                            ? 'text-cyan-400'
+                                            : 'text-blue-600'
+                                          : towerOnTile.projectileLogicAddress ===
+                                              defaultLogicAddress
+                                            ? 'text-pink-400'
+                                            : 'text-red-600'
                                       }
                                       size={28}
                                     />
