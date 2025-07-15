@@ -32,7 +32,7 @@ interface IAdminSystem {
 
   function app__updateSellEmitterAddress(address sellEmitterAddress) external;
 
-  function app__updateUsername(address playerAddress, string memory newUsername) external;
+  function app__adminUpdateUsername(address playerAddress, string memory newUsername) external;
 
   function app__grantElectricityToTopKingdoms() external;
 
