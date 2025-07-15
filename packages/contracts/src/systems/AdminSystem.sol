@@ -89,7 +89,7 @@ contract AdminSystem is System {
     AddressBook.setSellEmitterAddress(sellEmitterAddress);
   }
 
-  function updateUsername(address playerAddress, string memory newUsername) external {
+  function adminUpdateUsername(address playerAddress, string memory newUsername) external {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(playerAddress);
     require(globalPlayerId != bytes32(0), "AdminSystem: player not registered");
     string memory oldUsername = Username.get(globalPlayerId);

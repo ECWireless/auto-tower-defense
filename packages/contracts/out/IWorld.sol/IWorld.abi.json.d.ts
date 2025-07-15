@@ -1,6 +1,24 @@
 declare const abi: [
   {
     "type": "function",
+    "name": "app__adminUpdateUsername",
+    "inputs": [
+      {
+        "name": "playerAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "newUsername",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__amendPatent",
     "inputs": [
       {
@@ -504,11 +522,6 @@ declare const abi: [
     "type": "function",
     "name": "app__updateUsername",
     "inputs": [
-      {
-        "name": "playerAddress",
-        "type": "address",
-        "internalType": "address"
-      },
       {
         "name": "newUsername",
         "type": "string",
