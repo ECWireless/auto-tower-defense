@@ -23,7 +23,11 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSolarFarm } from '@/contexts/SolarFarmContext';
 import { useMUD } from '@/hooks/useMUD';
 import { BATTLES_PATH } from '@/Routes';
-import { BATTERY_STORAGE_LIMIT, MAX_PLAYERS } from '@/utils/constants';
+import {
+  API_ENDPOINT,
+  BATTERY_STORAGE_LIMIT,
+  MAX_PLAYERS,
+} from '@/utils/constants';
 import { formatWattHours, getBatteryColor } from '@/utils/helpers';
 
 const BattleButtonContent = ({
@@ -129,6 +133,23 @@ export const Home = (): JSX.Element => {
         }
 
         if (!globalPlayerId) {
+          const res = await fetch(`${API_ENDPOINT}/check-username`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username: username.trim() }),
+          });
+
+          if (!res.ok) {
+            throw new Error('Failed to validate username');
+          }
+
+          const { acceptable } = await res.json();
+          if (!acceptable) {
+            throw new Error('Username does not pass content moderation');
+          }
+
           const { error, success } = await createBattle(username.trim(), true);
           if (error && !success) {
             throw new Error(error);

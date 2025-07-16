@@ -17,6 +17,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useMUD } from '@/hooks/useMUD';
+import { API_ENDPOINT } from '@/utils/constants';
 import type { AudioSettings } from '@/utils/types';
 
 import { TransferOwnershipDialog } from './TranserOwnershipDialog';
@@ -77,6 +78,23 @@ export const SettingsDialog: React.FC = () => {
       try {
         setIsUpdating(true);
         playSfx('click2');
+
+        const res = await fetch(`${API_ENDPOINT}/check-username`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username: newUsername.trim() }),
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to validate username');
+        }
+
+        const { acceptable } = await res.json();
+        if (!acceptable) {
+          throw new Error('Username does not pass content moderation');
+        }
 
         const { error, success } = await updateUsername(newUsername.trim());
 
