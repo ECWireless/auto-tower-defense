@@ -76,6 +76,7 @@ export const InnerBattlePage = (): JSX.Element => {
     onMoveTower,
     refreshBattle,
     towers,
+    triggerAnimation,
   } = useBattle();
   const { playSfx } = useSettings();
   const { tutorialStep } = useTutorialIndicator();
@@ -115,13 +116,14 @@ export const InnerBattlePage = (): JSX.Element => {
 
   useEffect(() => {
     if (!battle) return;
+    if (triggerAnimation) return;
     if (battle.winner === zeroHash && battle.endTimestamp === BigInt(0)) return;
     if (globalPlayerId !== battle.player1Id) return;
     if (battle.winner === globalPlayerId) {
       playSfx('win');
     }
     setIsBattleOverDialogOpen(true);
-  }, [battle, globalPlayerId, playSfx]);
+  }, [battle, globalPlayerId, playSfx, triggerAnimation]);
 
   const onClaimRecharge = useCallback(async () => {
     try {
