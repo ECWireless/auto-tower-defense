@@ -32,8 +32,7 @@ contract SolarFarmTest is MudTest {
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
 
     vm.warp(block.timestamp + 1 hours);
@@ -42,8 +41,7 @@ contract SolarFarmTest is MudTest {
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 55, 15);
     IWorld(worldAddress).app__playerModifyTowerSystem(towerId, AUTHORED_BYTECODE, "");
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 3 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);

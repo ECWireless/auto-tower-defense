@@ -19,28 +19,22 @@ contract BattleTest is MudTest {
   bytes constant AUTHORED_BYTECODE =
     hex"6080604052348015600e575f5ffd5b506101ef8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063cae93eb91461002d575b5f5ffd5b610047600480360381019061004291906100bf565b61005e565b60405161005592919061010c565b60405180910390f35b5f5f60058461006d9190610160565b60018461007a9190610160565b915091509250929050565b5f5ffd5b5f8160010b9050919050565b61009e81610089565b81146100a8575f5ffd5b50565b5f813590506100b981610095565b92915050565b5f5f604083850312156100d5576100d4610085565b5b5f6100e2858286016100ab565b92505060206100f3858286016100ab565b9150509250929050565b61010681610089565b82525050565b5f60408201905061011f5f8301856100fd565b61012c60208301846100fd565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61016a82610089565b915061017583610089565b925082820190507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008112617fff821317156101b3576101b2610133565b5b9291505056fea26469706673582212200f36ce47d179e4a4274b65916ffd491b33285775935ab7ab90dc53e854837fdb64736f6c634300081c0033";
 
-  function _beatTutorial(address player, string memory username) internal {  
+  function _beatTutorial(address player, string memory username) internal {
     vm.startPrank(player);
     bytes32 battleId = IWorld(worldAddress).app__createBattle(username, true);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
 
     vm.warp(block.timestamp + 1 hours);
-    
+
     battleId = IWorld(worldAddress).app__createBattle(username, false);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 55, 15);
-    IWorld(worldAddress).app__playerModifyTowerSystem(
-      towerId,
-      AUTHORED_BYTECODE,
-      ""
-    );
+    IWorld(worldAddress).app__playerModifyTowerSystem(towerId, AUTHORED_BYTECODE, "");
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 3 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
@@ -53,8 +47,7 @@ contract BattleTest is MudTest {
     vm.startPrank(player);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
 
-    // Need to go through 4 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 3 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
@@ -166,14 +159,13 @@ contract BattleTest is MudTest {
   function testNextTurn() public {
     vm.startPrank(aliceAddress);
     bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
-
     IWorld(worldAddress).app__nextTurn(battleId);
     vm.stopPrank();
 
     BattleData memory battle = Battle.get(battleId);
     assertEq(battle.actionCount, 2);
     assertEq(battle.turn, ROB_ID);
-    assertEq(battle.roundCount, 1);
+    assertEq(battle.roundCount, 2);
   }
 
   function testNextRound() public {
@@ -229,7 +221,6 @@ contract BattleTest is MudTest {
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
     IWorld(worldAddress).app__nextTurn(battleId);
-    IWorld(worldAddress).app__nextTurn(battleId);
     vm.stopPrank();
 
     uint256 endTimestamp = Battle.get(battleId).endTimestamp;
@@ -248,7 +239,6 @@ contract BattleTest is MudTest {
     _beatTutorial(aliceAddress, "Alice");
     vm.startPrank(aliceAddress);
     bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", false);
-    IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);

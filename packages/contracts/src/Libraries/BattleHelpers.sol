@@ -28,7 +28,7 @@ library BattleHelpers {
       player2Id: globalPlayer2Id,
       roundCount: 1,
       startTimestamp: timestamp,
-      turn: globalPlayer1Id,
+      turn: globalPlayer2Id,
       winner: bytes32(0)
     });
     Battle.set(battleId, newBattle);
@@ -68,6 +68,12 @@ library BattleHelpers {
 
     Level.set(battleId, WinStreak.get(globalPlayer1Id));
 
+    for (uint256 i = 0; i < MAX_ACTIONS; i++) {
+      executePlayer2Actions(battleId, globalPlayer1Id, globalPlayer2Id);
+    }
+
+    Battle.setActionCount(battleId, MAX_ACTIONS);
+    Battle.setTurn(battleId, globalPlayer1Id);
     return battleId;
   }
 

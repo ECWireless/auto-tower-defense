@@ -59,28 +59,22 @@ contract RelayTest is MudTest {
     vm.stopPrank();
   }
 
-  function _beatTutorial(address player, string memory username) internal {  
+  function _beatTutorial(address player, string memory username) internal {
     vm.startPrank(player);
     bytes32 battleId = IWorld(worldAddress).app__createBattle(username, true);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
 
     vm.warp(block.timestamp + 1 hours);
-    
+
     battleId = IWorld(worldAddress).app__createBattle(username, false);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 55, 15);
-    IWorld(worldAddress).app__playerModifyTowerSystem(
-      towerId,
-      AUTHORED_BYTECODE,
-      ""
-    );
+    IWorld(worldAddress).app__playerModifyTowerSystem(towerId, AUTHORED_BYTECODE, "");
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 3 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
@@ -94,8 +88,7 @@ contract RelayTest is MudTest {
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     vm.stopPrank();
   }
@@ -399,7 +392,7 @@ contract RelayTest is MudTest {
 
     // Create a battle to get battery
     _beatTutorial(aliceAddress, "Alice");
-    
+
     vm.prank(aliceAddress);
     relayReceiver.handleElectricityPurchase(aliceAddress, spendAmount, nonce, signature);
     SolarFarmDetailsData memory solarFarmDetails = SolarFarmDetails.get();
