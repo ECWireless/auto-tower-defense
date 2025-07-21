@@ -18,28 +18,22 @@ contract BatteryHelpersTest is MudTest {
   bytes constant AUTHORED_BYTECODE =
     hex"6080604052348015600e575f5ffd5b506101ef8061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063cae93eb91461002d575b5f5ffd5b610047600480360381019061004291906100bf565b61005e565b60405161005592919061010c565b60405180910390f35b5f5f60058461006d9190610160565b60018461007a9190610160565b915091509250929050565b5f5ffd5b5f8160010b9050919050565b61009e81610089565b81146100a8575f5ffd5b50565b5f813590506100b981610095565b92915050565b5f5f604083850312156100d5576100d4610085565b5b5f6100e2858286016100ab565b92505060206100f3858286016100ab565b9150509250929050565b61010681610089565b82525050565b5f60408201905061011f5f8301856100fd565b61012c60208301846100fd565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f61016a82610089565b915061017583610089565b925082820190507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80008112617fff821317156101b3576101b2610133565b5b9291505056fea26469706673582212200f36ce47d179e4a4274b65916ffd491b33285775935ab7ab90dc53e854837fdb64736f6c634300081c0033";
 
-  function _beatTutorial(address player, string memory username) internal {  
+  function _beatTutorial(address player, string memory username) internal {
     vm.startPrank(player);
     bytes32 battleId = IWorld(worldAddress).app__createBattle(username, true);
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
 
     vm.warp(block.timestamp + 1 hours);
-    
+
     battleId = IWorld(worldAddress).app__createBattle(username, false);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 55, 15);
-    IWorld(worldAddress).app__playerModifyTowerSystem(
-      towerId,
-      AUTHORED_BYTECODE,
-      ""
-    );
+    IWorld(worldAddress).app__playerModifyTowerSystem(towerId, AUTHORED_BYTECODE, "");
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 3 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
@@ -54,8 +48,7 @@ contract BatteryHelpersTest is MudTest {
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     vm.stopPrank();
     vm.warp(block.timestamp + 1 hours);
@@ -64,8 +57,7 @@ contract BatteryHelpersTest is MudTest {
   function _loseRun(address player, string memory username, bool reset) internal {
     vm.startPrank(player);
     bytes32 battleId = IWorld(worldAddress).app__createBattle(username, reset);
-    // Need to go through 4 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 3 turns to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
     IWorld(worldAddress).app__nextTurn(battleId);
@@ -150,14 +142,13 @@ contract BatteryHelpersTest is MudTest {
 
     // Have Jane reach top spot, so that Alice's stake does not get returned to active balance later
     _beatTutorial(janeAddress, "Jane");
-    
+
     vm.startPrank(janeAddress);
     bytes32 janeBattleId = IWorld(worldAddress).app__createBattle("Jane", false);
     IWorld(worldAddress).app__playerInstallTower(true, 15, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 25, 35);
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(janeBattleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(janeBattleId);
     vm.stopPrank();
     vm.warp(block.timestamp + 1 hours);
@@ -181,8 +172,7 @@ contract BatteryHelpersTest is MudTest {
     IWorld(worldAddress).app__playerInstallTower(true, 15, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 55, 35);
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(aliceBattleId);
     vm.stopPrank();
     vm.warp(block.timestamp + 1 hours);
@@ -228,8 +218,7 @@ contract BatteryHelpersTest is MudTest {
     bytes32 janeBattleId = IWorld(worldAddress).app__createBattle("Jane", false);
     IWorld(worldAddress).app__playerInstallTower(true, 15, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 25, 35);
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(janeBattleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(janeBattleId);
     vm.stopPrank();
     vm.warp(block.timestamp + 1 hours);
@@ -342,7 +331,6 @@ contract BatteryHelpersTest is MudTest {
     IWorld(worldAddress).app__playerInstallTower(false, 15, 35);
     IWorld(worldAddress).app__playerInstallTower(false, 25, 35);
     IWorld(worldAddress).app__nextTurn(aliceBattleId);
-    IWorld(worldAddress).app__nextTurn(aliceBattleId);
     vm.stopPrank();
 
     // Staked balance should be 0 since Alice is the top player (run is over)
@@ -396,8 +384,7 @@ contract BatteryHelpersTest is MudTest {
     bytes32 janeBattleId = IWorld(worldAddress).app__createBattle("Jane", true);
     IWorld(worldAddress).app__playerInstallTower(true, 15, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 25, 35);
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(janeBattleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(janeBattleId);
     vm.stopPrank();
     vm.warp(block.timestamp + 1 hours);

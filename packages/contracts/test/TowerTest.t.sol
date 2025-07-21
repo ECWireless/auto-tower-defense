@@ -161,8 +161,7 @@ contract TowerTest is MudTest {
     bytes32 battleId = IWorld(worldAddress).app__createBattle("Alice", true);
     bytes32 towerId = IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
 
     vm.expectRevert(bytes("TowerSystem: battle has ended"));
@@ -290,8 +289,7 @@ contract TowerTest is MudTest {
     IWorld(worldAddress).app__playerInstallTower(true, 35, 35);
     IWorld(worldAddress).app__playerInstallTower(true, 45, 35);
 
-    // Need to go through 2 turns to end the battle
-    IWorld(worldAddress).app__nextTurn(battleId);
+    // Need to go through 1 turn to end the battle
     IWorld(worldAddress).app__nextTurn(battleId);
 
     vm.expectRevert(bytes("TowerSystem: battle not active"));

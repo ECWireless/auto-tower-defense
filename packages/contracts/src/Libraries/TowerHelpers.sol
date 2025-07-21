@@ -95,7 +95,6 @@ library TowerHelpers {
       size := extcodesize(newSystem)
     }
 
-
     require(size > 0, "TowerSystem: contract creation failed");
     require(
       size <= DEFAULT_LOGIC_SIZE_LIMIT,
@@ -107,7 +106,6 @@ library TowerHelpers {
       // Fail without reverting
       return address(0);
     }
-
 
     Battle.setActionCount(battleId, currentBattle.actionCount - 1);
     Projectile.set(towerId, address(newSystem), DEFAULT_LOGIC_SIZE_LIMIT, bytecode, sourceCode);
@@ -316,6 +314,23 @@ library TowerHelpers {
       return false;
     }
 
+    if (currentBattle.endTimestamp != 0) {
+      require(isPlayer2, "TowerSystem: battle has ended");
+      return false;
+    }
+    if (currentBattle.actionCount == 0) {
+      require(isPlayer2, "TowerSystem: player has no actions remaining");
+      return false;
+    }
+    if (!Tower.get(towerId)) {
+      require(isPlayer2, "TowerSystem: entity is not a tower");
+      return false;
+    }
+    if (Health.getCurrentHealth(towerId) <= 0) {
+      require(isPlayer2, "TowerSystem: tower is destroyed");
+      return false;
+    }
+
     if (globalPlayerId == currentBattle.player2Id) {
       if (Owner.get(towerId) != currentBattle.player2Id) {
         require(isPlayer2, "TowerSystem: player does not own tower");
@@ -334,23 +349,6 @@ library TowerHelpers {
         require(isPlayer2, "TowerSystem: not player's turn");
         return false;
       }
-    }
-
-    if (currentBattle.endTimestamp != 0) {
-      require(isPlayer2, "TowerSystem: battle has ended");
-      return false;
-    }
-    if (currentBattle.actionCount == 0) {
-      require(isPlayer2, "TowerSystem: player has no actions remaining");
-      return false;
-    }
-    if (!Tower.get(towerId)) {
-      require(isPlayer2, "TowerSystem: entity is not a tower");
-      return false;
-    }
-    if (Health.getCurrentHealth(towerId) <= 0) {
-      require(isPlayer2, "TowerSystem: tower is destroyed");
-      return false;
     }
 
     (int16 oldX, int16 oldY) = Position.get(towerId);
