@@ -95,4 +95,18 @@ contract BattleSystem is System {
     Battle.setActionCount(battleId, MAX_ACTIONS);
     Battle.setTurn(battleId, battle.turn == globalPlayer1Id ? globalPlayer2Id : globalPlayer1Id);
   }
+
+  function endStaleBattles(bytes32[] memory battleIds) external {
+    for (uint256 i = 0; i < battleIds.length; i++) {
+      _endStaleBattle(battleIds[i]);
+    }
+  }
+
+  function _endStaleBattle(bytes32 battleId) public {
+    BattleData memory battle = Battle.get(battleId);
+    require(battle.endTimestamp == 0, "BattleSystem: battle already ended");
+    require(battle.startTimestamp + 5 minutes < block.timestamp, "BattleSystem: battle is not stale");
+
+    ProjectileHelpers.endBattle(battleId, battle.player2Id);
+  }
 }

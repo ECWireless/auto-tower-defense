@@ -1,6 +1,19 @@
 declare const abi: [
   {
     "type": "function",
+    "name": "app___endStaleBattle",
+    "inputs": [
+      {
+        "name": "battleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__adminUpdateUsername",
     "inputs": [
       {
@@ -145,6 +158,19 @@ declare const abi: [
         "name": "patentId",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__endStaleBattles",
+    "inputs": [
+      {
+        "name": "battleIds",
+        "type": "bytes32[]",
+        "internalType": "bytes32[]"
       }
     ],
     "outputs": [],
