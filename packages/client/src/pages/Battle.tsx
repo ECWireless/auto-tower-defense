@@ -257,7 +257,7 @@ export const InnerBattlePage = (): JSX.Element => {
             Home
           </Button>
         </div>
-        {isPlayer1 && (
+        {isPlayer1 && battle.endTimestamp === BigInt(0) && (
           <div className="fixed right-4 text-cyan-400 text-sm top-4 z-10">
             <Button
               className="text-gray-500 hover:text-red-400 hover:bg-red-900/10"

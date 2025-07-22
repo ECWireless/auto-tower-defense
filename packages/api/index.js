@@ -181,7 +181,7 @@ app.post("/check-username", async (req, res) => {
   }
 });
 
-app.post("/api/faucet", async (req, res) => {
+app.post("/faucet", async (req, res) => {
   const ip = req.ip;
   const { address, chainId } = req.body;
 

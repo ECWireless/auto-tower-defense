@@ -36,7 +36,7 @@ export const BattleControlButtons: React.FC<BattleControlButtonsProps> = ({
         <HelpCircle className="h-4 mr-1 w-4" />
         Help
       </Button>
-      {isPlayer1 && (
+      {isPlayer1 && battle && battle.endTimestamp === BigInt(0) && (
         <>
           <Button
             className="border-orange-500 hover:bg-orange-950/50 hover:text-orange-400 text-orange-400"
