@@ -180,4 +180,10 @@ contract AdminSystem is System {
     });
     Patent.set(newPatentId, newPatent);
   }
+
+  function updateTemplateSourceCode(bytes32 patentId, string memory newSourceCode) external {
+    PatentData memory patent = Patent.get(patentId);
+    require(keccak256(abi.encodePacked(patent.bytecode)) == patentId, "AdminSystem: patent does not exist");
+    Patent.setSourceCode(patentId, newSourceCode);
+  }
 }

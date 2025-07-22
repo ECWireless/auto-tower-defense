@@ -33,32 +33,15 @@ contract PatentSystem is System {
     patentId = keccak256(abi.encodePacked(bytecode));
 
     bytes memory patentBytecode = Patent.getBytecode(patentId);
-    require(
-      keccak256(abi.encodePacked(patentBytecode)) != patentId,
-      "PatentSystem: patent already exists"
-    );
+    require(keccak256(abi.encodePacked(patentBytecode)) != patentId, "PatentSystem: patent already exists");
 
     PatentHelpers.validatePatent(patentId, description, name);
 
-    Patent.set(
-      patentId,
-      globalPlayerId,
-      contractSize,
-      block.timestamp,
-      0,
-      bytecode,
-      description,
-      name,
-      sourceCode
-    );
+    Patent.set(patentId, globalPlayerId, contractSize, block.timestamp, 0, bytecode, description, name, sourceCode);
     return patentId;
   }
 
-  function amendPatent(
-    bytes32 patentId,
-    string memory description,
-    string memory name
-  ) external onlyRegisteredPlayer {
+  function amendPatent(bytes32 patentId, string memory description, string memory name) external onlyRegisteredPlayer {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
 
     bytes memory bytecode = Patent.getBytecode(patentId);
@@ -70,10 +53,7 @@ contract PatentSystem is System {
 
     require(nameHasChanged || descriptionHasChanged, "PatentSystem: name and description are the same as original");
     require(keccak256(abi.encodePacked(bytecode)) == patentId, "PatentSystem: patent does not exist");
-    require(
-      Patent.getPatentee(patentId) == globalPlayerId,
-      "PatentSystem: only the patentee can amend this patent"
-    );
+    require(Patent.getPatentee(patentId) == globalPlayerId, "PatentSystem: only the patentee can amend this patent");
 
     PatentHelpers.validatePatent(patentId, description, name);
 
@@ -85,10 +65,7 @@ contract PatentSystem is System {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(_msgSender());
     bytes memory bytecode = Patent.getBytecode(patentId);
     require(keccak256(abi.encodePacked(bytecode)) == patentId, "PatentSystem: patent does not exist");
-    require(
-      Patent.getPatentee(patentId) == globalPlayerId,
-      "PatentSystem: only the patentee can disclaim this patent"
-    );
+    require(Patent.getPatentee(patentId) == globalPlayerId, "PatentSystem: only the patentee can disclaim this patent");
 
     bytes32 nameHash = keccak256(abi.encodePacked(Patent.getName(patentId)));
     PatentNameTaken.set(nameHash, bytes32(0));

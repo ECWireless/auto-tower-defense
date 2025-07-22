@@ -37,4 +37,6 @@ interface IAdminSystem {
   function app__grantElectricityToTopKingdoms() external;
 
   function app__updateTemplateBytecode(bytes memory oldBytecode, bytes memory newBytecode) external;
+
+  function app__updateTemplateSourceCode(bytes32 patentId, string memory newSourceCode) external;
 }
