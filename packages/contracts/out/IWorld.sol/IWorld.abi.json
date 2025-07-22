@@ -546,6 +546,24 @@
   },
   {
     "type": "function",
+    "name": "app__updateTemplateSourceCode",
+    "inputs": [
+      {
+        "name": "patentId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "newSourceCode",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__updateUsername",
     "inputs": [
       {
