@@ -19,9 +19,12 @@ export const HowToPlayDialog: React.FC<HowToPlayDialogProps> = ({
       onOpenChange={open => setIsHelpDialogOpen(open)}
       open={isHelpDialogOpen}
     >
-      <DialogContent className="bg-gray-900/95 border border-purple-900/50 h-[90vh] max-w-lg text-white">
+      <DialogContent
+        aria-describedby={undefined}
+        className="bg-gray-900/95 border border-purple-900/50 h-[90vh] max-w-lg text-white"
+      >
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-purple-400">
+          <DialogTitle className="font-bold text-purple-400 text-2xl">
             HOW TO PLAY
           </DialogTitle>
         </DialogHeader>

@@ -518,19 +518,23 @@ export const BattleProvider = ({
         await completeTutorialStep(4);
       }
 
-      if (battle.turn === battle.player2Id) {
+      if (battle.turn === battle.player1Id) {
         await onNextRound();
-        return;
       }
 
-      const { error, success } = await nextTurn(battle.id);
+      const newBattle = getComponentValue(BattleComponent, battle.id as Entity);
+      if (newBattle && newBattle.endTimestamp === BigInt(0)) {
+        const { error, success } = await nextTurn(battle.id);
 
-      if (error && !success) {
-        throw new Error(error);
+        if (error && !success) {
+          throw new Error(error);
+        }
+      } else {
+        // Slight delay to allow the animation to finish
+        await new Promise(resolve => setTimeout(resolve, 2500));
       }
 
       fetchBattle();
-      await onNextRound();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`Smart contract error: ${(error as Error).message}`);
@@ -543,6 +547,7 @@ export const BattleProvider = ({
     }
   }, [
     battle,
+    BattleComponent,
     completeTutorialStep,
     fetchBattle,
     nextTurn,
@@ -553,7 +558,7 @@ export const BattleProvider = ({
 
   useEffect(() => {
     if (!battle) return () => {};
-    if (battle.turn !== battle.player2Id) return () => {};
+    if (battle.turn !== battle.player1Id) return () => {};
     if (!triggerAnimation) return () => {};
 
     const _towers = Array.from(

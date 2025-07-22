@@ -16,14 +16,17 @@ const {
   formatUnits,
 } = require("viem");
 const sgMail = require("@sendgrid/mail");
+const { OpenAI } = require("openai");
 const { privateKeyToAccount } = require("viem/accounts");
-const { base, baseSepolia, pyrope, redstone } = require("viem/chains");
+const { base, baseSepolia, foundry, pyrope, redstone } = require("viem/chains");
 const BASE_ESCOW_ABI = require("./abi/baseEscrowAbi.json");
 const SELL_EMITTER_ABI = require("./abi/sellEmitterAbi.json");
+const WORLD_ABI = require("./abi/worldAbi.json");
 
 const SUPPORTED_CHAINS = {
   [base.id]: base,
   [baseSepolia.id]: baseSepolia,
+  [foundry.id]: foundry,
   [pyrope.id]: pyrope,
   [redstone.id]: redstone,
 };
@@ -53,6 +56,15 @@ if (!process.env.ALERT_EMAIL) {
   process.exit(1);
 }
 
+if (!process.env.OPENAI_API_KEY) {
+  console.error("Missing OPENAI_API_KEY in environment variables");
+  process.exit(1);
+}
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const LOW_BALANCE_THRESHOLD = parseFloat("0.00001"); // Around $0.02 right now
 const alertEmail = process.env.ALERT_EMAIL;
@@ -71,7 +83,105 @@ app.get("/", (_, res) => {
   res.send("Auto Tower Defense API");
 });
 
-app.post("/api/faucet", async (req, res) => {
+app.post("/end-stale-battles", async (req, res) => {
+  try {
+    const { battleIds, chainId, worldAddress } = req.body;
+
+    if (!battleIds || !Array.isArray(battleIds) || battleIds.length === 0) {
+      return res.status(400).json({ error: "Invalid or missing battleIds" });
+    }
+
+    const chain = SUPPORTED_CHAINS[chainId];
+    if (!chain) {
+      return res.status(400).json({ error: "Invalid or missing chainId" });
+    }
+
+    if (!worldAddress || !isAddress(worldAddress)) {
+      return res.status(400).json({ error: "Invalid or missing worldAddress" });
+    }
+
+    const publicClient = createPublicClient({
+      batch: { multicall: false },
+      chain,
+      transport: http(),
+    });
+
+    const serverPrivateKey = process.env.FAUCET_PRIVATE_KEY;
+    if (!serverPrivateKey) {
+      return res
+        .status(500)
+        .json({ success: false, error: "Server wallet not configured" });
+    }
+
+    const serverAccount = privateKeyToAccount(serverPrivateKey);
+    const serverWalletClient = createWalletClient({
+      account: serverAccount,
+      chain: SUPPORTED_CHAINS[chainId],
+      transport: http(),
+    });
+
+    const args = {
+      abi: WORLD_ABI,
+      address: worldAddress,
+      args: [battleIds],
+      functionName: "app__endStaleBattles",
+    };
+
+    await publicClient.simulateContract(args);
+    const txHash = await serverWalletClient.writeContract({
+      ...args,
+      account: serverAccount,
+    });
+
+    const { status } = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+
+    if (status !== "success") {
+      return res.status(500).json({ error: "Transaction failed" });
+    }
+
+    return res.status(200).json({ success: true, txHash });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Ending stale battles failed" });
+  }
+});
+
+app.post("/check-username", async (req, res) => {
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ error: "Username is required" });
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a strict content moderator. Given a username, return whether it is acceptable based on standard content policies (no slurs, profanity, targeted harassment, or sexual content).",
+        },
+        {
+          role: "user",
+          content: `Is the username "${username}" acceptable? Reply only "yes" or "no".`,
+        },
+      ],
+      temperature: 0,
+    });
+
+    const answer = response.choices[0].message.content.toLowerCase().trim();
+
+    return res.json({ username, acceptable: answer === "yes" });
+  } catch (error) {
+    console.error("OpenAI error:", error);
+    return res.status(500).json({ error: "Error checking username" });
+  }
+});
+
+app.post("/faucet", async (req, res) => {
   const ip = req.ip;
   const { address, chainId } = req.body;
 
@@ -171,6 +281,10 @@ app.post("/compile", (req, res) => {
           "*": {
             "*": ["*"],
           },
+        },
+        metadata: {
+          useLiteralContent: true,
+          bytecodeHash: "none",
         },
       },
     };

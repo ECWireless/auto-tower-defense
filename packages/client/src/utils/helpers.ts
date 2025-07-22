@@ -1,5 +1,5 @@
 import { garnet, pyrope } from '@latticexyz/common/chains';
-import { Chain } from 'viem';
+import { Chain, formatUnits } from 'viem';
 import { anvil, base, baseSepolia, redstone } from 'viem/chains';
 
 import { CHAIN_ID, SUPPORTED_CHAINS, WORLD_ADDRESS } from './constants';
@@ -39,16 +39,19 @@ export const formatTimeFromTimestamp = (timestamp: bigint): string => {
   });
 };
 
-// Format duration in minutes to readable string (e.g., "1h 15m" or "45m")
-const formatDuration = (minutes: number): string => {
+// Format duration in minutes to readable string (e.g., "1 hour, 30 minutes")
+export const formatDuration = (minutes: number): string => {
   const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
+  const remainingMinutes = Math.floor(minutes % 60);
 
   if (hours > 0) {
-    return `${hours}h ${remainingMinutes}m`;
-  } else {
-    return `${remainingMinutes}m`;
+    return `${hours} hour${hours > 1 ? 's' : ''}`;
   }
+  if (remainingMinutes > 0) {
+    return `${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`;
+  }
+
+  return '< 0 minutes';
 };
 
 export const formatWattHours = (wattHours: bigint): string => {
@@ -62,18 +65,6 @@ export const formatWattHours = (wattHours: bigint): string => {
     return `${(Number(wattHours) / 1_000).toFixed(2)} kWh`;
   }
   return `${wattHours.toString()} Wh`;
-};
-
-export const getElapsedTime = (
-  startTimestamp: bigint,
-  endTimestamp: bigint,
-): string => {
-  const startTime = new Date(Number(startTimestamp) * 1000);
-  const endTime = new Date(Number(endTimestamp) * 1000);
-  const elapsedMs = endTime.getTime() - startTime.getTime();
-  const elapsedMinutes = Math.floor(elapsedMs / (1000 * 60));
-
-  return formatDuration(elapsedMinutes);
 };
 
 export const getBatteryColor = (charge: number): string => {
@@ -125,4 +116,9 @@ export const getChainLogo = (chainId?: number): string => {
     default:
       return '';
   }
+};
+
+export const wattToUsdc = (watt: bigint): string => {
+  const usdcValue = watt / BigInt(1920); // $0.01 per 1.92 watt hours
+  return `$${Number(formatUnits(usdcValue, 2))}`;
 };

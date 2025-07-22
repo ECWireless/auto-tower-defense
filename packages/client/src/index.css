@@ -310,30 +310,27 @@
   color: rgba(236, 72, 153, 0.8);
 }
 
-/* These animation are for the ClickIndicator  */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.7);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1);
-    opacity: 0.4;
-  }
-  100% {
-    transform: scale(0.7);
-    opacity: 0.6;
-  }
+.battery-button-tutorial {
+  animation: shrink-down 2s linear;
 }
 
-@keyframes pulse-dot {
+/* This animation for the battery details component during the tutorial */
+@keyframes shrink-down {
   0% {
-    transform: scale(0.8);
+    scale: 2;
+    top: 50%;
+    transform: translateX(-25%);
   }
-  50% {
-    transform: scale(1);
+  75% {
+    scale: 2;
+    top: 50%;
+    transform: translateX(-25%);
+  }
+  88% {
+    transform: translateX(-34%);
   }
   100% {
-    transform: scale(0.8);
+    scale: 1;
+    transform: translateX(-50%);
   }
 }

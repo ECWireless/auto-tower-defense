@@ -70,9 +70,7 @@ contract BattleSystem is System {
 
     if (battle.turn == globalPlayer1Id) {
       require(EntityHelpers.addressToGlobalPlayerId(_msgSender()) == globalPlayer1Id, "BattleSystem: not player1");
-    }
 
-    if (battle.turn == globalPlayer1Id) {
       // For all actions remaining, add that number of skipped actions
       uint256 skippedActions = Battle.getActionCount(battleId);
       for (uint256 i = 0; i < skippedActions; i++) {
@@ -84,18 +82,31 @@ contract BattleSystem is System {
 
       bytes32[] memory allTowers = ProjectileHelpers.getAllTowers(localPlayer1Id, localPlayer2Id);
       ProjectileHelpers.clearAllProjectiles(allTowers);
-    } else {
       Battle.setRoundCount(battleId, battle.roundCount + 1);
       ProjectileHelpers.executeRoundResults(battleId);
     }
-
-    Battle.setTurn(battleId, battle.turn == globalPlayer1Id ? globalPlayer2Id : globalPlayer1Id);
-    Battle.setActionCount(battleId, MAX_ACTIONS);
 
     if (Battle.getTurn(battleId) == globalPlayer2Id) {
       for (uint256 i = 0; i < MAX_ACTIONS; i++) {
         BattleHelpers.executePlayer2Actions(battleId, globalPlayer1Id, globalPlayer2Id);
       }
     }
+
+    Battle.setActionCount(battleId, MAX_ACTIONS);
+    Battle.setTurn(battleId, battle.turn == globalPlayer1Id ? globalPlayer2Id : globalPlayer1Id);
+  }
+
+  function endStaleBattles(bytes32[] memory battleIds) external {
+    for (uint256 i = 0; i < battleIds.length; i++) {
+      _endStaleBattle(battleIds[i]);
+    }
+  }
+
+  function _endStaleBattle(bytes32 battleId) public {
+    BattleData memory battle = Battle.get(battleId);
+    require(battle.endTimestamp == 0, "BattleSystem: battle already ended");
+    require(battle.startTimestamp + 5 minutes < block.timestamp, "BattleSystem: battle is not stale");
+
+    ProjectileHelpers.endBattle(battleId, battle.player2Id);
   }
 }

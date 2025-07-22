@@ -60,7 +60,7 @@ export const InnerBattlePage = (): JSX.Element => {
   const { isConnected, isReconnecting } = useAccount();
   const { data: sessionClient } = useSessionClient();
   const {
-    components: { BatteryDetails, SolarFarmDetails },
+    components: { BatteryDetails, SolarFarmDetails, Username },
     network: { globalPlayerId },
     systemCalls: { claimRecharge },
   } = useMUD();
@@ -74,7 +74,9 @@ export const InnerBattlePage = (): JSX.Element => {
     myCastlePosition,
     onInstallTower,
     onMoveTower,
+    refreshBattle,
     towers,
+    triggerAnimation,
   } = useBattle();
   const { playSfx } = useSettings();
   const { tutorialStep } = useTutorialIndicator();
@@ -98,6 +100,14 @@ export const InnerBattlePage = (): JSX.Element => {
     }
   }, [isConnected, isReconnecting, navigate, sessionClient]);
 
+  // In case the user updates their username in the settings dialog
+  const savedUsername = useComponentValue(Username, globalPlayerId)?.value;
+  useEffect(() => {
+    if (savedUsername) {
+      refreshBattle();
+    }
+  }, [refreshBattle, savedUsername]);
+
   const [isForfeitDialogOpen, setShowForfeitDialog] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isBattleOverDialogOpen, setIsBattleOverDialogOpen] = useState(false);
@@ -106,13 +116,14 @@ export const InnerBattlePage = (): JSX.Element => {
 
   useEffect(() => {
     if (!battle) return;
+    if (triggerAnimation) return;
     if (battle.winner === zeroHash && battle.endTimestamp === BigInt(0)) return;
     if (globalPlayerId !== battle.player1Id) return;
     if (battle.winner === globalPlayerId) {
       playSfx('win');
     }
     setIsBattleOverDialogOpen(true);
-  }, [battle, globalPlayerId, playSfx]);
+  }, [battle, globalPlayerId, playSfx, triggerAnimation]);
 
   const onClaimRecharge = useCallback(async () => {
     try {
@@ -246,7 +257,7 @@ export const InnerBattlePage = (): JSX.Element => {
             Home
           </Button>
         </div>
-        {isPlayer1 && (
+        {isPlayer1 && battle.endTimestamp === BigInt(0) && (
           <div className="fixed right-4 text-cyan-400 text-sm top-4 z-10">
             <Button
               className="text-gray-500 hover:text-red-400 hover:bg-red-900/10"
@@ -263,7 +274,7 @@ export const InnerBattlePage = (): JSX.Element => {
         {/* Battery Information - Desktop (fixed position) */}
         {batteryDetails && (
           <div
-            className="fixed flex-col hidden items-center left-1/2 sm:flex top-4 z-10"
+            className={`${tutorialStep === TutorialSteps.TWO && 'battery-button-tutorial '} fixed flex-col hidden items-center left-1/2 sm:flex top-4 z-10`}
             style={{
               transform: 'translateX(-50%)',
             }}

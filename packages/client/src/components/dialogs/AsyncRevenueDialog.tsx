@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useMUD } from '@/hooks/useMUD';
-import { formatWattHours } from '@/utils/helpers';
+import { formatWattHours, wattToUsdc } from '@/utils/helpers';
 
 const ASYNC_REVENUE_TIMESTAMP_KEY = 'async-kingdom-revenue-timestamp';
 
@@ -93,13 +93,17 @@ export const AsyncRevenueDialog: React.FC = () => {
     >
       <DialogContent className="bg-gray-900 border border-blue-900/50 max-h-[90vh] overflow-y-auto text-white">
         <DialogHeader>
-          <DialogTitle className="text-blue-400 text-xl">
+          <DialogTitle className="text-blue-400 text-2xl">
             Revenue Earned
           </DialogTitle>
           <DialogDescription className="mt-2 text-gray-300">
             Congrats! Your kingdoms have earned you{' '}
-            <strong>{formatWattHours(revenueSinceTimestamp)}</strong> in the
-            last <strong>{timeSinceLastCheck}</strong>.
+            <span className="font-medium text-blue-400">
+              {formatWattHours(revenueSinceTimestamp)} (
+              {wattToUsdc(revenueSinceTimestamp)})
+            </span>{' '}
+            in the last{' '}
+            <span className="font-medium">{timeSinceLastCheck}</span>.
           </DialogDescription>
         </DialogHeader>
 

@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, KingdomsByLevel, Patent, SavedKingdom, SolarFarmDetails, TopLevel, Username, UsernameTaken } from "../codegen/index.sol";
+import { AddressBook, KingdomsByLevel, Patent, PatentData, SavedKingdom, SolarFarmDetails, TopLevel, Username, UsernameTaken } from "../codegen/index.sol";
 import { BatteryHelpers } from "../Libraries/BatteryHelpers.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import { PatentHelpers } from "../Libraries/PatentHelpers.sol";
@@ -89,7 +89,7 @@ contract AdminSystem is System {
     AddressBook.setSellEmitterAddress(sellEmitterAddress);
   }
 
-  function updateUsername(address playerAddress, string memory newUsername) external {
+  function adminUpdateUsername(address playerAddress, string memory newUsername) external {
     bytes32 globalPlayerId = EntityHelpers.addressToGlobalPlayerId(playerAddress);
     require(globalPlayerId != bytes32(0), "AdminSystem: player not registered");
     string memory oldUsername = Username.get(globalPlayerId);
@@ -143,5 +143,41 @@ contract AdminSystem is System {
         SavedKingdom.setElectricityBalance(kingdomId, SavedKingdom.getElectricityBalance(kingdomId) + reward);
       }
     }
+  }
+
+  function updateTemplateBytecode(bytes memory oldBytecode, bytes memory newBytecode) external {
+    bytes32 oldPatentId = keccak256(abi.encodePacked(oldBytecode));
+    PatentData memory oldPatent = Patent.get(oldPatentId);
+    require(keccak256(abi.encodePacked(oldPatent.bytecode)) == oldPatentId, "AdminSystem: patent does not exist");
+
+    uint256 contractSize;
+    address newSystem;
+    assembly {
+      newSystem := create(0, add(newBytecode, 0x20), mload(newBytecode))
+    }
+
+    assembly {
+      contractSize := extcodesize(newSystem)
+    }
+
+    require(contractSize > 0, "AdminSystem: bytecode is invalid");
+    require(
+      contractSize <= DEFAULT_LOGIC_SIZE_LIMIT,
+      string(abi.encodePacked("Contract cannot be larger than ", Strings.toString(DEFAULT_LOGIC_SIZE_LIMIT), " bytes"))
+    );
+    Patent.deleteRecord(oldPatentId);
+
+    bytes32 newPatentId = keccak256(abi.encodePacked(newBytecode));
+    PatentData memory newPatent = PatentData({
+      patentee: oldPatent.patentee,
+      size: contractSize,
+      timestamp: oldPatent.timestamp,
+      useCount: oldPatent.useCount,
+      bytecode: newBytecode,
+      description: oldPatent.description,
+      name: oldPatent.name,
+      sourceCode: oldPatent.sourceCode
+    });
+    Patent.set(newPatentId, newPatent);
   }
 }

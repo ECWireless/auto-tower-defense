@@ -74,7 +74,7 @@ export const ForfeitDialog: React.FC<ForfeitDialogProps> = ({
         className="bg-gray-900 border border-red-900/50 text-white"
       >
         <DialogHeader>
-          <DialogTitle className="text-red-400 text-xl">
+          <DialogTitle className="text-red-400 text-2xl">
             Forfeit Battle Run
           </DialogTitle>
         </DialogHeader>

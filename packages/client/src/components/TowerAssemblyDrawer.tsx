@@ -20,7 +20,7 @@ import { format } from 'prettier/standalone';
 import solidityPlugin from 'prettier-plugin-solidity/standalone';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { zeroHash } from 'viem';
+import { Hash, zeroHash } from 'viem';
 
 import { PatentsList } from '@/components/PatentsList';
 import {
@@ -94,6 +94,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
   const [isSemiTransparent, setIsSemiTransparent] = useState<boolean>(false);
   const [sizeLimit, setSizeLimit] = useState<bigint>(BigInt(0));
   const [sourceCode, setSourceCode] = useState<string>('');
+  const [bytecode, setBytecode] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
 
   const [showRegisterPatentModal, setShowRegisterPatentModal] = useState(false);
@@ -147,7 +148,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       const _patents = fetchPatents();
       const newPatent = {
         id: zeroHash as Entity,
-        bytecode: zeroHash,
+        bytecode: zeroHash as Hash,
         description: 'Create a new patent!',
         name: 'New Patent',
         patentee: battle.player1Username,
@@ -167,18 +168,38 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
           });
 
           const flattenedSourceCode = formattedSourceCode
-            .replace(/\s+/g, ' ')
+            .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+            .replace(/\r?\n\s*/g, '\n') // trim line indentation but keep newlines
             .trim();
           newPatent.sourceCode = flattenedSourceCode;
 
+          const res = await fetch(`${API_ENDPOINT}/compile`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ sourceCode: newPatent.sourceCode }),
+          });
+
+          if (!res.ok) {
+            throw new Error('Failed to compile code');
+          }
+
+          const _bytecode = await res.text();
+          if (!_bytecode) {
+            throw new Error('Failed to compile code');
+          }
+
           const patentMatch = _patents.find(
-            s => s.sourceCode === flattenedSourceCode,
+            s => s.bytecode === (`0x${_bytecode}` as Hash),
           );
 
           if (patentMatch) {
             setSelectedPatent(patentMatch);
+            setBytecode(patentMatch.bytecode);
           } else {
             setSelectedPatent(newPatent);
+            setBytecode(`0x${_bytecode}` as Hash);
           }
 
           setSizeLimit(projectile.sizeLimit);
@@ -221,46 +242,17 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       console.error('Error formatting source code:', error);
       setSourceCode('There was an error formatting the source code.');
       setSelectedPatent(patent);
+    } finally {
+      setBytecode(patent.bytecode);
     }
   }, []);
-
-  const onCompileCode = useCallback(async (): Promise<string | null> => {
-    try {
-      const res = await fetch(`${API_ENDPOINT}/compile`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sourceCode }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to compile code');
-      }
-
-      const bytecode = await res.text();
-
-      return `0x${bytecode}`;
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Error compiling code:', error);
-
-      toast.error('Error Compiling Code', {
-        description: (error as Error).message,
-      });
-
-      return null;
-    }
-  }, [sourceCode]);
 
   const onModifyTower = useCallback(async () => {
     try {
       setIsDeploying(true);
       playSfx('click3');
-      const bytecode = await onCompileCode();
       if (!bytecode) {
-        setIsDeploying(false);
-        return;
+        throw new Error('Failed to compile code');
       }
 
       const currentContractSize = await getContractSize(bytecode);
@@ -277,7 +269,10 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       const { error, success } = await modifyTowerSystem(
         tower.id,
         bytecode,
-        sourceCode.replace(/\s+/g, ' ').trim(),
+        sourceCode
+          .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+          .replace(/\r?\n\s*/g, '\n') // trim line indentation but keep newlines
+          .trim(),
       );
 
       if (error && !success) {
@@ -304,9 +299,9 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       setIsDeploying(false);
     }
   }, [
+    bytecode,
     getContractSize,
     modifyTowerSystem,
-    onCompileCode,
     playSfx,
     refreshBattle,
     setIsNoActionsDialogOpen,
@@ -374,10 +369,8 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       const hasError = getHasError();
       if (hasError) return;
 
-      const bytecode = await onCompileCode();
       if (!bytecode) {
-        setIsSaving(false);
-        return;
+        throw new Error('Failed to compile code');
       }
 
       const currentContractSize = await getContractSize(bytecode);
@@ -395,7 +388,10 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
         bytecode,
         description,
         name,
-        sourceCode.replace(/\s+/g, ' ').trim(),
+        sourceCode
+          .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+          .replace(/\r?\n\s*/g, '\n') // trim line indentation but keep newlines
+          .trim(),
       );
 
       if (error && !success) {
@@ -409,9 +405,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       setDescription('');
       const _patents = await onRefreshPatentList();
 
-      const matchingPatent = _patents.find(
-        s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
-      );
+      const matchingPatent = _patents.find(s => s.bytecode === bytecode);
       if (matchingPatent) {
         onSelectPatent(matchingPatent);
       }
@@ -426,10 +420,10 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       setIsSaving(false);
     }
   }, [
+    bytecode,
     description,
     getContractSize,
     getHasError,
-    onCompileCode,
     name,
     onRefreshPatentList,
     onSelectPatent,
@@ -474,7 +468,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
       const _patents = await onRefreshPatentList();
 
       const matchingPatent = _patents.find(
-        s => s.sourceCode === sourceCode.replace(/\s+/g, ' ').trim(),
+        s => s.bytecode === selectedPatent.bytecode,
       );
       if (matchingPatent) {
         onSelectPatent(matchingPatent);
@@ -498,7 +492,6 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
     onSelectPatent,
     playSfx,
     selectedPatent,
-    sourceCode,
   ]);
 
   const onDisclaimPatent = useCallback(async () => {
@@ -551,11 +544,9 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
   }, [battle, isPlayer1, tower.owner]);
 
   const isPatentRegistered = useMemo(() => {
-    if (!sourceCode) return false;
-    const flattenedSourceCode = sourceCode.replace(/\s+/g, ' ').trim();
-
-    return patents.slice(1).some(s => s.sourceCode === flattenedSourceCode);
-  }, [patents, sourceCode]);
+    if (!bytecode) return false;
+    return patents.slice(1).some(s => s.bytecode === bytecode);
+  }, [bytecode, patents]);
 
   const canAmendPatent = useMemo(() => {
     if (!(battle && selectedPatent)) return false;
@@ -618,7 +609,7 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
             </DialogTrigger>
             <DialogContent className="bg-gray-900 border border-cyan-900/50 text-white">
               <DialogHeader>
-                <DialogTitle className="text-cyan-400 text-xl">
+                <DialogTitle className="text-cyan-400 text-2xl">
                   Rules
                 </DialogTitle>
               </DialogHeader>
@@ -904,18 +895,38 @@ export const TowerAssemblyDrawer: React.FC<TowerAssemblyDrawerProps> = ({
               height="300px"
               onChange={value => {
                 if (!value) return;
-                const flattenedSourceCode = value.replace(/\s+/g, ' ').trim();
+                fetch(`${API_ENDPOINT}/compile`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ sourceCode: value }),
+                }).then(res => {
+                  if (!res.ok) {
+                    setBytecode('');
+                    return;
+                  }
 
-                const patentMatch = patents
-                  .slice(1)
-                  .find(s => s.sourceCode === flattenedSourceCode);
+                  res.text().then(_bytecode => {
+                    if (!_bytecode) {
+                      setSourceCode(value);
+                      return;
+                    }
 
-                if (patentMatch) {
-                  setSelectedPatent(patentMatch);
-                } else {
-                  setSelectedPatent(patents[0]);
-                }
-                setSourceCode(value ?? '');
+                    const patentMatch = patents
+                      .slice(1)
+                      .find(s => s.bytecode === `0x${_bytecode}`);
+
+                    if (patentMatch) {
+                      setSelectedPatent(patentMatch);
+                      setBytecode(patentMatch.bytecode);
+                    } else {
+                      setSelectedPatent(patents[0]);
+                      setBytecode(`0x${_bytecode}`);
+                    }
+                    setSourceCode(value ?? '');
+                  });
+                });
               }}
               onMount={onRefreshPatentList}
               options={{

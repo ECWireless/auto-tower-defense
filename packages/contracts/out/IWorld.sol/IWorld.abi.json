@@ -1,6 +1,37 @@
 [
   {
     "type": "function",
+    "name": "app___endStaleBattle",
+    "inputs": [
+      {
+        "name": "battleId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__adminUpdateUsername",
+    "inputs": [
+      {
+        "name": "playerAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "newUsername",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__amendPatent",
     "inputs": [
       {
@@ -127,6 +158,19 @@
         "name": "patentId",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__endStaleBattles",
+    "inputs": [
+      {
+        "name": "battleIds",
+        "type": "bytes32[]",
+        "internalType": "bytes32[]"
       }
     ],
     "outputs": [],
@@ -484,13 +528,26 @@
   },
   {
     "type": "function",
-    "name": "app__updateUsername",
+    "name": "app__updateTemplateBytecode",
     "inputs": [
       {
-        "name": "playerAddress",
-        "type": "address",
-        "internalType": "address"
+        "name": "oldBytecode",
+        "type": "bytes",
+        "internalType": "bytes"
       },
+      {
+        "name": "newBytecode",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "app__updateUsername",
+    "inputs": [
       {
         "name": "newUsername",
         "type": "string",

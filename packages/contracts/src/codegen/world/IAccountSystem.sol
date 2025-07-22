@@ -10,4 +10,6 @@ pragma solidity >=0.8.24;
  */
 interface IAccountSystem {
   function app__transferAccount(address newAddress) external;
+
+  function app__updateUsername(string memory newUsername) external;
 }
