@@ -14,4 +14,8 @@ interface IBattleSystem {
   function app__forfeitRun() external;
 
   function app__nextTurn(bytes32 battleId) external;
+
+  function app__endStaleBattles(bytes32[] memory battleIds) external;
+
+  function app___endStaleBattle(bytes32 battleId) external;
 }

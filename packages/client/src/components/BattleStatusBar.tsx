@@ -1,12 +1,14 @@
 import { useComponentValue } from '@latticexyz/react';
 import { Entity } from '@latticexyz/recs';
 import { Zap } from 'lucide-react';
+import { useMemo } from 'react';
 import { GiCastle } from 'react-icons/gi';
 import { zeroHash } from 'viem';
 
 import { Badge } from '@/components/ui/badge';
 import { useMUD } from '@/hooks/useMUD';
-import { formatWattHours } from '@/utils/helpers';
+import { MAX_BATTLE_DURATION } from '@/utils/constants';
+import { formatDuration, formatWattHours } from '@/utils/helpers';
 import { type Battle, Castle } from '@/utils/types';
 
 type BattleStatusBarProps = {
@@ -33,6 +35,13 @@ export const BattleStatusBar: React.FC<BattleStatusBarProps> = ({
   const savedKingdomBalance =
     useComponentValue(SavedKingdom, savedKingdomId as Entity)
       ?.electricityBalance ?? BigInt(0);
+
+  const remainingTime = useMemo(() => {
+    const currentTime = Date.now() / 1000; // Convert to seconds
+    const battleEndTime = Number(battle.startTimestamp) + MAX_BATTLE_DURATION;
+    const timeLeft = battleEndTime - currentTime;
+    return timeLeft > 0 ? timeLeft : 0;
+  }, [battle.startTimestamp]);
 
   return (
     <div className="bg-gray-900 border border-purple-900/50 grid grid-cols-7 items-center mb-1 p-2 rounded-t-md sm:p-4 text-center">
@@ -74,47 +83,66 @@ export const BattleStatusBar: React.FC<BattleStatusBarProps> = ({
       </div>
 
       {/* Battle Info - Desktop */}
-      <div className="col-span-3 hidden justify-around pl-[20px] sm:flex">
-        <div>
-          <div className="text-cyan-300 text-xs">LEVEL</div>
-          <div className="font-medium text-cyan-400 text-lg">
-            {battle.level.toString()}
+      <div className="justify-between col-span-3 flex-col h-[100%] hidden pl-[20px] sm:flex">
+        <div className="flex justify-around w-full">
+          <div>
+            <div className="text-cyan-300 text-xs">LEVEL</div>
+            <div className="font-medium text-cyan-400 text-lg">
+              {battle.level.toString()}
+            </div>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="text-cyan-300 text-xs">ROUND</div>
+            <div className="font-medium text-cyan-400 text-lg">
+              {battle.roundCount}
+            </div>
+          </div>
+          <div>
+            <div className="text-cyan-300 text-xs">ACTIONS</div>
+            <div className="font-medium text-cyan-400 text-lg">
+              {battle.actionCount}
+            </div>
           </div>
         </div>
-        <div className="flex flex-col items-center">
-          <div className="text-cyan-300 text-xs">ROUND</div>
-          <div className="font-medium text-cyan-400 text-lg">
-            {battle.roundCount}
+        {battle.endTimestamp === BigInt(0) ? (
+          <div>
+            <span className="text-sm">Time Remaining:</span>{' '}
+            {formatDuration(remainingTime / 60)}
           </div>
-        </div>
-        <div>
-          <div className="text-cyan-300 text-xs">ACTIONS</div>
-          <div className="font-medium text-cyan-400 text-lg">
-            {battle.actionCount}
-          </div>
-        </div>
+        ) : (
+          <div className="text-orange-500 text-sm">Battle Went Stale</div>
+        )}
       </div>
 
       {/* Battle Info - Mobile */}
-      <div className="col-span-3 flex justify-around pl-[20px] sm:hidden">
-        <div>
-          <div className="text-[8px] text-cyan-300">LVL</div>
-          <div className="font-medium text-cyan-400 text-xs">
-            {battle.level.toString()}
+      <div className="col-span-3 flex flex-col h-[100%] justify-between pl-[20px] sm:hidden">
+        <div className="flex justify-around sm:hidden">
+          <div>
+            <div className="text-[8px] text-cyan-300">LVL</div>
+            <div className="font-medium text-cyan-400 text-xs">
+              {battle.level.toString()}
+            </div>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="text-[8px] text-cyan-300">ROUND</div>
+            <div className="font-medium text-cyan-400 text-xs">
+              {battle.roundCount}
+            </div>
+          </div>
+          <div>
+            <div className="text-[8px] text-cyan-300">ACTIONS</div>
+            <div className="font-medium text-cyan-400 text-xs">
+              {battle.actionCount}
+            </div>
           </div>
         </div>
-        <div className="flex flex-col items-center">
-          <div className="text-[8px] text-cyan-300">ROUND</div>
-          <div className="font-medium text-cyan-400 text-xs">
-            {battle.roundCount}
+        {battle.endTimestamp === BigInt(0) ? (
+          <div className="text-xs">
+            Time Remaining: {formatDuration(remainingTime / 60)}
           </div>
-        </div>
-        <div>
-          <div className="text-[8px] text-cyan-300">ACTIONS</div>
-          <div className="font-medium text-cyan-400 text-xs">
-            {battle.actionCount}
-          </div>
-        </div>
+        ) : (
+          <div className="text-orange-500 text-xs">Battle Went Stale</div>
+        )}
       </div>
 
       {/* Player 2 */}
