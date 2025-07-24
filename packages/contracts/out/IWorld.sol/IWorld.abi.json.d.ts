@@ -242,6 +242,13 @@ declare const abi: [
   },
   {
     "type": "function",
+    "name": "app__grantKingdomRewards",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "app__mintUsdcToPlayer",
     "inputs": [
       {
