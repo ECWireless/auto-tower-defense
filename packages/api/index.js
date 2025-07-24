@@ -148,6 +148,67 @@ app.post("/end-stale-battles", async (req, res) => {
   }
 });
 
+app.post("/reward-top-kingdoms", async (req, res) => {
+  try {
+    const { chainId, worldAddress } = req.body;
+
+    const chain = SUPPORTED_CHAINS[chainId];
+    if (!chain) {
+      return res.status(400).json({ error: "Invalid or missing chainId" });
+    }
+
+    if (!worldAddress || !isAddress(worldAddress)) {
+      return res.status(400).json({ error: "Invalid or missing worldAddress" });
+    }
+
+    const publicClient = createPublicClient({
+      batch: { multicall: false },
+      chain,
+      transport: http(),
+    });
+
+    const serverPrivateKey = process.env.FAUCET_PRIVATE_KEY;
+    if (!serverPrivateKey) {
+      return res
+        .status(500)
+        .json({ success: false, error: "Server wallet not configured" });
+    }
+
+    const serverAccount = privateKeyToAccount(serverPrivateKey);
+    const serverWalletClient = createWalletClient({
+      account: serverAccount,
+      chain: SUPPORTED_CHAINS[chainId],
+      transport: http(),
+    });
+
+    const args = {
+      abi: WORLD_ABI,
+      address: worldAddress,
+      args: [],
+      functionName: "app__grantKingdomRewards",
+    };
+
+    await publicClient.simulateContract(args);
+    const txHash = await serverWalletClient.writeContract({
+      ...args,
+      account: serverAccount,
+    });
+
+    const { status } = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+
+    if (status !== "success") {
+      return res.status(500).json({ error: "Transaction failed" });
+    }
+
+    return res.status(200).json({ success: true, txHash });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Granting kingdom rewards failed" });
+  }
+});
+
 app.post("/check-username", async (req, res) => {
   const { username } = req.body;
 
