@@ -104,6 +104,15 @@ export default defineWorld({
       },
     },
     LastBattleWonInRun: "bytes32", // ID is global player ID; value is savedBattleId
+    LastRewardDistro: {
+      schema: {
+        value: "uint256", // Timestamp of the last reward distribution
+      },
+      key: [],
+      codegen: {
+        dataStruct: false,
+      },
+    },
     Level: "uint256",
     LoadedKingdomActions: {
       // When a battle is created, the enemy SavedKingdom's actions are loaded into the battle

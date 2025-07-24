@@ -18,4 +18,6 @@ interface ISolarFarmSystem {
   function app__sellElectricityThroughRelay(uint256 electricityAmount) external;
 
   function app__claimRecharge() external;
+
+  function app__grantKingdomRewards() external;
 }

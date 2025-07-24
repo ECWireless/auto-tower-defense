@@ -6,9 +6,9 @@ import { MudTest } from "@latticexyz/world/test/MudTest.t.sol";
 import { EntityHelpers } from "../src/Libraries/EntityHelpers.sol";
 import { IWorld } from "../src/codegen/world/IWorld.sol";
 import { _solarFarmSystemAddress } from "../src/utils.sol";
-import { BATTERY_STORAGE_LIMIT } from "../constants.sol";
+import { BATTERY_STORAGE_LIMIT, REWARD_AMOUNT } from "../constants.sol";
 
-import { AddressBook, BatteryDetails, SolarFarmDetails } from "../src/codegen/index.sol";
+import { AddressBook, BatteryDetails, KingdomsByLevel, LastRewardDistro, SavedKingdom, SolarFarmDetails, TopLevel } from "../src/codegen/index.sol";
 import "../mocks/MockUSDC.sol";
 
 contract SolarFarmTest is MudTest {
@@ -451,5 +451,74 @@ contract SolarFarmTest is MudTest {
     uint256 lastRechargeTimestampAfter = BatteryDetails.getLastRechargeTimestamp(globalPlayerId);
     assertEq(lastRechargeTimestampAfter, block.timestamp); // Last recharge timestamp should be updated
     vm.stopPrank();
+  }
+
+  function testGrantKingdomRewards() public {
+    // Create a battle in order to get a battery
+    _beatTutorial(aliceAddress, "Alice");
+
+    // Grant electricity to top kingdoms
+    vm.prank(adminAddress);
+    IWorld(worldAddress).app__grantKingdomRewards();
+
+    // Check that the LastRewardDistro timestamp is updated
+    uint256 lastRewardTimestamp = LastRewardDistro.get();
+    assertEq(lastRewardTimestamp, block.timestamp);
+
+    // Check that the top level kingdoms received their rewards
+    uint256 topLevel = TopLevel.get();
+    bytes32[] memory kingdoms = KingdomsByLevel.get(topLevel);
+    require(kingdoms.length > 0, "SolarFarmSystem: no kingdoms to reward");
+
+    uint256 rewardPerKingdom = REWARD_AMOUNT / kingdoms.length;
+
+    // Check that the Solar Farm's electricity balance is reduced
+    uint256 solarFarmElectricityBalance = SolarFarmDetails.getElectricityBalance();
+    assertEq(solarFarmElectricityBalance, 16800000 - REWARD_AMOUNT);
+
+    for (uint256 i = 0; i < kingdoms.length; i++) {
+      bytes32 kingdomId = kingdoms[i];
+      uint256 kingdomElectricityBalance = SavedKingdom.getElectricityBalance(kingdomId);
+      assertEq(kingdomElectricityBalance, rewardPerKingdom); // Each kingdom should
+    }
+
+    vm.stopPrank();
+  }
+
+  function testRevertGrantKingdomShortOfInterval() public {
+    // Create a battle in order to get a battery
+    _beatTutorial(aliceAddress, "Alice");
+
+    // Grant electricity to top kingdoms
+    vm.prank(adminAddress);
+    IWorld(worldAddress).app__grantKingdomRewards();
+
+    // Try to grant again before the interval
+    vm.expectRevert("SolarFarmSystem: reward interval not met");
+    vm.prank(adminAddress);
+    IWorld(worldAddress).app__grantKingdomRewards();
+  }
+
+  function testRevertGrantKingdomsNoKingdoms() public {
+    // Try to grant rewards when there are no kingdoms
+    vm.expectRevert("SolarFarmSystem: no kingdoms to reward");
+    vm.prank(adminAddress);
+    IWorld(worldAddress).app__grantKingdomRewards();
+  }
+
+  function testRevertGrantKingdomsLowBalance() public {
+    // Create a battle in order to get a battery
+    _beatTutorial(aliceAddress, "Alice");
+
+    // Set the Solar Farm's electricity balance to 0
+    uint256 adminPrivateKey = vm.envUint("PRIVATE_KEY");
+    address admin = vm.addr(adminPrivateKey);
+    vm.prank(admin);
+    IWorld(worldAddress).app__updateSolarFarmElectricityBalance(0);
+
+    // Try to grant rewards when the Solar Farm has no electricity
+    vm.expectRevert("SolarFarmSystem: not enough electricity in Solar Farm");
+    vm.prank(adminAddress);
+    IWorld(worldAddress).app__grantKingdomRewards();
   }
 }
