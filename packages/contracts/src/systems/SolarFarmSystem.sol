@@ -3,8 +3,8 @@ pragma solidity >=0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { System } from "@latticexyz/world/src/System.sol";
-import { AddressBook, BatteryDetails, SolarFarmDetails, Username } from "../codegen/index.sol";
-import { BATTERY_STORAGE_LIMIT } from "../../constants.sol";
+import { AddressBook, BatteryDetails, KingdomsByLevel, LastRewardDistro, SavedKingdom, SolarFarmDetails, TopLevel, Username } from "../codegen/index.sol";
+import { BATTERY_STORAGE_LIMIT, REWARD_AMOUNT, REWARD_INTERVAL } from "../../constants.sol";
 import { EntityHelpers } from "../Libraries/EntityHelpers.sol";
 import "forge-std/console.sol";
 
@@ -264,5 +264,38 @@ contract SolarFarmSystem is System {
     // Update player's battery active balance
     uint256 newActiveBalance = activeBalance + claimableElectricity;
     BatteryDetails.setActiveBalance(globalPlayerId, newActiveBalance);
+  }
+
+  /**
+   * Grants electricity rewards to the top level kingdoms
+   */
+  function grantKingdomRewards() external {
+    uint256 lastRewardTimestamp = LastRewardDistro.get();
+    if (lastRewardTimestamp != 0) {
+      // Check if enough time has passed since the last reward distribution
+      require(block.timestamp - lastRewardTimestamp >= REWARD_INTERVAL, "SolarFarmSystem: reward interval not met");
+    }
+
+    uint256 topLevel = TopLevel.get();
+    require(topLevel > 1, "SolarFarmSystem: no kingdoms to reward");
+
+    bytes32[] memory topKingdoms = KingdomsByLevel.get(topLevel);
+    require(topKingdoms.length > 0, "SolarFarmSystem: no kingdoms to reward");
+
+    // Calculate the total electricity to distribute
+    uint256 rewardPerKingdom = REWARD_AMOUNT / topKingdoms.length;
+    require(rewardPerKingdom > 0, "SolarFarmSystem: reward amount too low");
+
+    // Distribute rewards to each top kingdom
+    for (uint256 i = 0; i < topKingdoms.length; i++) {
+      bytes32 kingdomId = topKingdoms[i];
+      uint256 currentElectricityBalance = SolarFarmDetails.getElectricityBalance();
+      require(currentElectricityBalance >= rewardPerKingdom, "SolarFarmSystem: not enough electricity in Solar Farm");
+      SolarFarmDetails.setElectricityBalance(currentElectricityBalance - rewardPerKingdom);
+      SavedKingdom.setElectricityBalance(kingdomId, SavedKingdom.getElectricityBalance(kingdomId) + rewardPerKingdom);
+    }
+
+    // Update the last reward distribution timestamp
+    LastRewardDistro.set(block.timestamp);
   }
 }

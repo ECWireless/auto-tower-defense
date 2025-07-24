@@ -18,6 +18,7 @@ import { Health } from "./tables/Health.sol";
 import { HighestLevel } from "./tables/HighestLevel.sol";
 import { KingdomsByLevel } from "./tables/KingdomsByLevel.sol";
 import { LastBattleWonInRun } from "./tables/LastBattleWonInRun.sol";
+import { LastRewardDistro } from "./tables/LastRewardDistro.sol";
 import { Level } from "./tables/Level.sol";
 import { LoadedKingdomActions, LoadedKingdomActionsData } from "./tables/LoadedKingdomActions.sol";
 import { LogicSystemAddress } from "./tables/LogicSystemAddress.sol";

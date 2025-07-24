@@ -102,6 +102,13 @@ contract AdminSystem is System {
     UsernameTaken.set(newUsernameBytes, true);
   }
 
+  function adminGrantElectricityToKingdom(bytes32 kingdomId, uint256 amount) external {
+    uint256 currentElectricityBalance = SolarFarmDetails.getElectricityBalance();
+    require(currentElectricityBalance >= amount, "AdminSystem: not enough electricity in Solar Farm");
+    SolarFarmDetails.setElectricityBalance(currentElectricityBalance - amount);
+    SavedKingdom.setElectricityBalance(kingdomId, SavedKingdom.getElectricityBalance(kingdomId) + amount);
+  }
+
   function grantElectricityToTopKingdoms() external {
     uint256 topLevel = TopLevel.get();
     require(topLevel > 1, "AdminSystem: no kingdoms to reward");
@@ -179,5 +186,11 @@ contract AdminSystem is System {
       sourceCode: oldPatent.sourceCode
     });
     Patent.set(newPatentId, newPatent);
+  }
+
+  function updateTemplateSourceCode(bytes32 patentId, string memory newSourceCode) external {
+    PatentData memory patent = Patent.get(patentId);
+    require(keccak256(abi.encodePacked(patent.bytecode)) == patentId, "AdminSystem: patent does not exist");
+    Patent.setSourceCode(patentId, newSourceCode);
   }
 }

@@ -1,6 +1,12 @@
 import { pyrope, redstone } from '@latticexyz/common/chains';
 import { useComponentValue } from '@latticexyz/react';
-import { getComponentValueStrict, HasValue, runQuery } from '@latticexyz/recs';
+import {
+  getComponentValue,
+  getComponentValueStrict,
+  HasValue,
+  runQuery,
+} from '@latticexyz/recs';
+import { singletonEntity } from '@latticexyz/store-sync/recs';
 import { Analytics } from '@vercel/analytics/react';
 import { toSimpleSmartAccount } from 'permissionless/accounts';
 import { useEffect, useRef } from 'react';
@@ -22,7 +28,7 @@ import { getGameChain, getWorldAddress } from '@/utils/helpers';
 
 export const App = (): JSX.Element => {
   const {
-    components: { Battle, Username },
+    components: { Battle, LastRewardDistro, Username },
     network: { globalPlayerId },
   } = useMUD();
   const { address: playerAddress } = useAccount();
@@ -66,7 +72,9 @@ export const App = (): JSX.Element => {
       }
       if (!sessionAddress) return;
       const gameChain = getGameChain();
+      const worldAddress = getWorldAddress();
 
+      // End stale battles
       const activeBattleIds = Array.from(
         runQuery([HasValue(Battle, { endTimestamp: BigInt(0) })]),
       ).map(entity => {
@@ -87,8 +95,6 @@ export const App = (): JSX.Element => {
         .map(battle => battle.id);
 
       if (staleBattleIds.length > 0) {
-        // End stale battles
-        const worldAddress = getWorldAddress();
         const res = await fetch(`${API_ENDPOINT}/end-stale-battles`, {
           method: 'POST',
           headers: {
@@ -109,6 +115,35 @@ export const App = (): JSX.Element => {
         }
       }
 
+      // Reward top kingdoms from the last 24 hours
+      const lastRewardDistro =
+        getComponentValue(LastRewardDistro, singletonEntity)?.value ??
+        BigInt(0);
+
+      const rewardInterval = 24 * 60 * 60; // 24 hours in seconds
+      const now = Math.floor(Date.now() / 1000);
+
+      if (now - Number(lastRewardDistro) > rewardInterval) {
+        const res = await fetch(`${API_ENDPOINT}/reward-top-kingdoms`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chainId: gameChain.id,
+            worldAddress,
+          }),
+        });
+        if (res.ok) {
+          // eslint-disable-next-line no-console
+          console.info('Top kingdoms rewarded successfully');
+        } else {
+          // eslint-disable-next-line no-console
+          console.error('Failed to reward top kingdoms');
+        }
+      }
+
+      // Drip funds to player if balance is low
       if (gameChain.id === pyrope.id || gameChain.id === redstone.id) {
         // eslint-disable-next-line no-console
         console.info('[Faucet]: Session address -> ', sessionAddress);
@@ -154,7 +189,7 @@ export const App = (): JSX.Element => {
         setInterval(requestDrip, 20000);
       }
     })();
-  }, [Battle, isLive, playerAddress]);
+  }, [Battle, isLive, LastRewardDistro, playerAddress]);
 
   return (
     <Router>

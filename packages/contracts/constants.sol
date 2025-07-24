@@ -12,4 +12,6 @@ uint256 constant MAX_PATENT_NAME_LENGTH = 32;
 uint256 constant MAX_PLAYERS = 100;
 uint256 constant MAX_ROUNDS = 10;
 uint256 constant MAX_TICKS = 28;
+uint256 constant REWARD_AMOUNT = 4800; // $0.25 in watt-hours
+uint256 constant REWARD_INTERVAL = 1 days;
 bytes32 constant ROB_ID = keccak256("ROB");
