@@ -39,9 +39,7 @@ export const NoActionsDialog: React.FC = () => {
         <DialogFooter className="sm:justify-center">
           <Button
             disabled={isChangingTurn}
-            onClick={() =>
-              onNextTurn().then(() => setIsNoActionsDialogOpen(false))
-            }
+            onClick={onNextTurn}
             className="bg-pink-800 hover:bg-pink-700 text-white w-full"
           >
             {isChangingTurn ? (
