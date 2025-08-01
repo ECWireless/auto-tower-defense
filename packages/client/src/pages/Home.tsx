@@ -391,6 +391,11 @@ export const Home = (): JSX.Element => {
       <h1 className="text-4xl lg:text-5xl text-white text-center flex flex-col space-y-2 uppercase">
         AUTO TOWER DEFENSE
       </h1>
+      <div className="flex justify-center mb-4 mt-2">
+        <span className="bg-yellow-500/20 border border-yellow-400/50 py-1 rounded-full text-sm px-3 text-yellow-300">
+          Early Alpha Playtest
+        </span>
+      </div>
 
       <p className="text-gray-300 text-center text-lg max-w-lg mx-auto mt-3 mb-6">
         A strategy game for both battlers and builders. Battle to become the top
