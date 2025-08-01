@@ -523,6 +523,7 @@ export const BattleProvider = ({
       }
 
       const newBattle = getComponentValue(BattleComponent, battle.id as Entity);
+      setIsNoActionsDialogOpen(false);
       if (newBattle && newBattle.endTimestamp === BigInt(0)) {
         const { error, success } = await nextTurn(battle.id);
 
