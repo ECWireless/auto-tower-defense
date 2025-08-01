@@ -81,7 +81,7 @@ export const HowToPlayDialog: React.FC<HowToPlayDialogProps> = ({
               </li>
               <li>
                 Each turn, you can perform{' '}
-                <span className="text-white font-semibold">1 action</span>:
+                <span className="text-white font-semibold">2 actions</span>:
                 install a tower, move a tower, or modify a tower.
               </li>
               <li>
