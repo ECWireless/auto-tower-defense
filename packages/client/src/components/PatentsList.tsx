@@ -52,21 +52,22 @@ export const PatentsList: React.FC<PatentsListProps> = ({
   }, [myUsername, patents]);
 
   const scrollToRow = useCallback(() => {
-    const index = patents.findIndex(s => s.id === selectedPatent.id);
+    const patentsToUse = patentsTab === 'your' ? myPatents : otherPatents;
+    if (patentsToUse.length === 0) return;
+    const index = patentsToUse.findIndex(s => s.id === selectedPatent.id);
     const container = innerRef.current as unknown as HTMLDivElement;
     const row = rowRefs.current[index];
+
     if (container && row) {
-      // compute the row's position relative to the container
-      const containerRect = container.getBoundingClientRect();
-      const rowRect = row.getBoundingClientRect();
-      const offset = rowRect.top - containerRect.top + container.scrollTop;
+      const rowHeight = 58;
+      const offset = index * rowHeight;
 
       container.scrollTo({
         top: offset,
         behavior: 'smooth',
       });
     }
-  }, [patents, rowRefs, selectedPatent]);
+  }, [myPatents, otherPatents, patentsTab, rowRefs, selectedPatent]);
 
   useEffect(() => {
     scrollToRow();
